@@ -1,0 +1,5 @@
+# Cursor — local editor project state (team commands live under .claude/ here)
+.cursor/
+
+# Specify — local init preferences from specify setup, not source of truth
+.specify/init-options.json
