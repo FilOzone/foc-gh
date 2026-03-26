@@ -8,7 +8,7 @@ description: "Task list template for feature implementation"
 **Input**: Design documents from `/specs/[###-feature-name]/`
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
-**Tests**: The examples below include test tasks. Tests are OPTIONAL - only include them if explicitly requested in the feature specification.
+**Tests**: The examples below include test tasks. Per `.specify/memory/constitution.md`, automated tests are optional unless the feature spec explicitly requires them; manual verification tasks are acceptable for merge.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
@@ -23,6 +23,10 @@ description: "Task list template for feature implementation"
 - **Single project**: `src/`, `tests/` at repository root
 - **Web app**: `backend/src/`, `frontend/src/`
 - **Mobile**: `api/src/`, `ios/src/` or `android/src/`
+- **Browser extension (Chromium MV3)**: `src/` (or `extension/`) for
+  background/service worker, content scripts, and shared modules; `manifest.json`
+  (or build output) at package root or `dist/` per plan; extension tests under
+  `tests/` or `e2e/` as chosen in plan.md
 - Paths shown below assume single project - adjust based on plan.md structure
 
 <!-- 

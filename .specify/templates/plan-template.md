@@ -31,7 +31,20 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+Gates derived from `.specify/memory/constitution.md` (TPM Utils GitHub Extension):
+
+- **Least privilege**: Feature lists every host permission, content-script
+  match, and GitHub OAuth/PAT scope; each is justified or marked deferrable
+  with a Complexity Tracking row.
+- **User credentials**: No committed secrets; auth approach is user-initiated;
+  token storage location and revocation path are stated.
+- **API discipline**: GitHub API surfaces (GraphQL/REST) identified; rate limit
+  and error-handling approach sketched for new call paths.
+- **Verification (internal velocity)**: Automated tests optional; PR must
+  document either tests updated or **manual** GitHub flows exercised.
+  Manifest/auth/host-permission changes include a short **smoke checklist**.
+- **Incremental scope**: MVP slice is explicit; speculative features are cut or
+  deferred with rationale.
 
 ## Project Structure
 

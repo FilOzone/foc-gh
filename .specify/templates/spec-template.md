@@ -95,6 +95,22 @@
 - **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
 - **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
 
+### Extension trust and data *(mandatory when delivery is a browser extension)*
+
+<!--
+  Align with `.specify/memory/constitution.md`: least privilege, user-owned
+  credentials, no undisclosed telemetry. Automated tests are optional for this
+  project; still document manual verification scenarios here or in the plan.
+  Omit this subsection only for specs that are explicitly not extension-delivered.
+-->
+
+- **EXT-001**: Feature MUST state which GitHub data is read/written and under
+  which user-consented credentials.
+- **EXT-002**: Feature MUST avoid retaining unrelated page content; list any
+  data persisted locally and its purpose.
+- **EXT-003**: Feature MUST NOT imply server-side storage of user tokens by this
+  project unless covered by a separate, spec-linked design.
+
 ### Key Entities *(include if feature involves data)*
 
 - **[Entity 1]**: [What it represents, key attributes without implementation]
