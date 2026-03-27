@@ -11,10 +11,6 @@ import { renderEditableProjectFields } from './foc-field-renderer.js'
 import { updateProjectItemField } from '../lib/project-item-mutations.js'
 import { syncNativeProjectsExpand } from './native-projects-expand.js'
 
-// Build marker — update this string after each rebuild to confirm reloads land in console.
-const BUILD_MARKER = 'filoz-2026-03-27-C'
-console.log('[FilOzone] content script loaded:', BUILD_MARKER)
-
 let loadToken = 0
 
 function injectStylesheet(): void {
