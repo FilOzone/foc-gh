@@ -144,6 +144,8 @@ broken dark mode erode trust, tire eyes, and read as low quality.
   be reviewed with the Core Principles checklist above.
 - README MUST document: install (including unpacked loading for development),
   required GitHub scopes, and how to revoke access.
+- The local build → reload → verify loop for Chrome extension development is
+  documented in `.specify/memory/dev-debug-loop.md`.
 
 ## Governance
 
