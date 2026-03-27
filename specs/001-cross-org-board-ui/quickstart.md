@@ -24,8 +24,7 @@ You **cannot** rely on “already logged into github.com” to call
 
 1. **OAuth (recommended UX)** — implement “Connect GitHub”; user approves in the
    browser; store the returned **access token** locally.
-2. **PAT** — user pastes a token with **Projects** (and repo) scopes needed for
-   the board and cross-org issues.
+2. **PAT** — user pastes a token that satisfies **[github-pat-permissions.md](../../docs/github-pat-permissions.md)** (Projects read/write on the board org; Issues/PR read on target repos).
 
 See [research.md](./research.md) for why session cookies are not used as bearer
 tokens.
@@ -60,3 +59,4 @@ tokens.
 - **Empty panel**: confirm current repo is in **cross-org target repos**; check
   token scopes; confirm board URL matches project number **14**.
 - **GraphQL errors**: copy `errors[0].message` into an issue with redacted ids.
+  **`INSUFFICIENT_SCOPES`**: see [github-pat-permissions.md](../../docs/github-pat-permissions.md).

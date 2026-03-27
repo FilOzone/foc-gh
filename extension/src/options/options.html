@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>FilOzone FOC board extension</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 48rem;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        line-height: 1.45;
+      }
+      label {
+        display: block;
+        font-weight: 600;
+        margin-top: 1rem;
+      }
+      input[type='password'],
+      input[type='text'],
+      textarea {
+        width: 100%;
+        box-sizing: border-box;
+        margin-top: 0.35rem;
+        padding: 0.45rem;
+      }
+      textarea {
+        min-height: 5rem;
+        font-family: ui-monospace, monospace;
+        font-size: 0.9rem;
+      }
+      button {
+        margin-top: 1.25rem;
+        padding: 0.5rem 1rem;
+      }
+      .hint {
+        font-size: 0.85rem;
+        color: #444;
+        margin-top: 0.25rem;
+      }
+      .diag {
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #d0d7de;
+      }
+      #diag-out {
+        margin-top: 0.75rem;
+        padding: 12px;
+        font-family: ui-monospace, monospace;
+        font-size: 0.8rem;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: #f6f8fa;
+        border: 1px solid #d0d7de;
+        border-radius: 6px;
+        max-height: 28rem;
+        overflow: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>FilOzone FOC board (cross-org)</h1>
+    <p>
+      Store a GitHub <strong>fine-grained</strong> or <strong>classic PAT</strong> with Projects access,
+      or an OAuth token once that flow is implemented.
+    </p>
+    <p class="hint">
+      <a
+        href="https://github.com/FilOzone/tpm-utils-github-extension/blob/main/docs/github-pat-permissions.md"
+        target="_blank"
+        rel="noopener noreferrer"
+        >See docs: required PAT permissions</a
+      >
+      (classic / fine-grained scopes).
+    </p>
+
+    <label for="token">GitHub API token (stored locally)</label>
+    <input id="token" type="password" autocomplete="off" />
+    <p class="hint">Never commit this token. Revoke from GitHub settings when rotating.</p>
+
+    <label for="tokenKind">Token kind</label>
+    <select id="tokenKind">
+      <option value="pat">PAT</option>
+      <option value="oauth">OAuth access token</option>
+    </select>
+
+    <label for="boards">Cross-org board URLs (one per line)</label>
+    <textarea id="boards"></textarea>
+    <p class="hint">Example: <code>https://github.com/orgs/FilOzone/projects/14</code></p>
+
+    <label for="repos">Target repos (owner/repo, one per line)</label>
+    <textarea id="repos"></textarea>
+
+    <label for="statusField">Status column name on the board</label>
+    <input id="statusField" type="text" />
+    <p class="hint">Default: <code>Status</code></p>
+
+    <button id="save" type="button">Save</button>
+    <p id="status" role="status"></p>
+
+    <div class="diag">
+      <h2 style="font-size: 1.1rem; margin: 0">API checks</h2>
+      <p class="hint" style="margin-top: 0.5rem">
+        Runs GraphQL using the <strong>saved</strong> token and board URL (save first after changing the PAT).
+      </p>
+      <button id="diag-run" type="button">Run API checks</button>
+      <pre id="diag-out" aria-live="polite"></pre>
+    </div>
+
+    <script type="module" src="./options.js"></script>
+  </body>
+</html>
