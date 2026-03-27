@@ -6,7 +6,8 @@ import {
   type SerializableProjectField,
 } from '../lib/project-board-fields.js'
 import { parseGithubIssuePrInput } from '../lib/github-url.js'
-import { loadConfig, parseOrgProjectUrl } from '../lib/project-config.js'
+import { handleGetAuthStatus, handleGithubOAuthDisconnect, handleGithubOAuthStart } from './github-oauth-handler.js'
+import { loadConfig, parseOrgProjectUrl, resolveGithubBearer } from '../lib/project-config.js'
 import {
   MUTATION_ADD_PROJECT_ITEM,
   MUTATION_UPDATE_ITERATION,
@@ -632,17 +633,18 @@ async function findProjectItemViaRest(
 async function executeApiDiagnostics(): Promise<DiagnosticsResponse> {
   const lines: string[] = []
   const cfg = await loadConfig()
+  const bearer = resolveGithubBearer(cfg)
 
   lines.push('Using saved options — if you just pasted a new PAT, click Save first.')
   lines.push('')
 
-  if (!cfg.githubApiToken.trim()) {
-    lines.push('FAIL: No token in storage. Enter a PAT and click Save.')
+  if (!bearer) {
+    lines.push('FAIL: No token in storage. Connect GitHub or enter a PAT and click Save.')
     return { ok: false, report: lines.join('\n') }
   }
   lines.push('PASS: Token is non-empty in storage.')
 
-  const viewerRes = await graphqlRequest(cfg.githubApiToken, QUERY_VIEWER)
+  const viewerRes = await graphqlRequest(bearer, QUERY_VIEWER)
   if (viewerRes.errors?.length) {
     lines.push(`FAIL: Viewer (whoami) — ${firstError(viewerRes.errors)}`)
     return { ok: false, report: lines.join('\n') }
@@ -665,7 +667,7 @@ async function executeApiDiagnostics(): Promise<DiagnosticsResponse> {
   }
   lines.push(`PASS: Parsed board → org "${parsed.org}", project #${parsed.number}.`)
 
-  const projRes = await graphqlRequest(cfg.githubApiToken, QUERY_PROJECT_V2, {
+  const projRes = await graphqlRequest(bearer, QUERY_PROJECT_V2, {
     org: parsed.org,
     number: parsed.number,
   })
@@ -684,11 +686,11 @@ async function executeApiDiagnostics(): Promise<DiagnosticsResponse> {
   lines.push(`PASS: Project "${project.title}" (id starts with ${project.id.slice(0, 16)}…).`)
 
   const [pageRes, defsRes] = await Promise.all([
-    graphqlRequest(cfg.githubApiToken, QUERY_PROJECT_V2_ITEMS_PAGE, {
+    graphqlRequest(bearer, QUERY_PROJECT_V2_ITEMS_PAGE, {
       projectId: project.id,
       after: null,
     }),
-    graphqlRequest(cfg.githubApiToken, QUERY_PROJECT_V2_FIELD_DEFINITIONS, {
+    graphqlRequest(bearer, QUERY_PROJECT_V2_FIELD_DEFINITIONS, {
       projectId: project.id,
     }),
   ])
@@ -911,12 +913,23 @@ chrome.runtime.onMessage.addListener(
 )
 
 async function handleMessage(message: ExtensionMessage): Promise<unknown> {
+  if (message.type === 'GITHUB_OAUTH_START') {
+    return handleGithubOAuthStart()
+  }
+  if (message.type === 'GITHUB_OAUTH_DISCONNECT') {
+    return handleGithubOAuthDisconnect()
+  }
+  if (message.type === 'GET_AUTH_STATUS') {
+    return handleGetAuthStatus()
+  }
+
   if (message.type === 'GRAPHQL') {
     const cfg = await loadConfig()
-    if (!cfg.githubApiToken) {
+    const token = resolveGithubBearer(cfg)
+    if (!token) {
       return { errors: [{ message: 'Missing GitHub API token. Open extension options.' }] }
     }
-    return graphqlRequest(cfg.githubApiToken, message.payload.query, message.payload.variables)
+    return graphqlRequest(token, message.payload.query, message.payload.variables)
   }
 
   if (message.type === 'GET_PANEL_STATE') {
@@ -925,10 +938,11 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
 
   if (message.type === 'ADD_TO_PROJECT') {
     const cfg = await loadConfig()
-    if (!cfg.githubApiToken) {
+    const token = resolveGithubBearer(cfg)
+    if (!token) {
       return { ok: false as const, error: 'Missing GitHub API token.' }
     }
-    const result = await graphqlRequest(cfg.githubApiToken, MUTATION_ADD_PROJECT_ITEM, {
+    const result = await graphqlRequest(token, MUTATION_ADD_PROJECT_ITEM, {
       projectId: message.payload.projectId,
       contentId: message.payload.contentNodeId,
     })
@@ -940,7 +954,8 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
 
   if (message.type === 'GET_PRIMARY_BOARD_FIELD_DEFINITIONS') {
     const cfg = await loadConfig()
-    if (!cfg.githubApiToken.trim()) {
+    const token = resolveGithubBearer(cfg)
+    if (!token) {
       return { ok: false as const, error: 'Missing GitHub API token. Save options first.' }
     }
     const primaryUrl = cfg.crossOrgBoardUrls[0]
@@ -951,7 +966,7 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
     if (!parsed) {
       return { ok: false as const, error: `Invalid primary board URL: ${primaryUrl.slice(0, 120)}` }
     }
-    const projRes = await graphqlRequest(cfg.githubApiToken, QUERY_PROJECT_V2, {
+    const projRes = await graphqlRequest(token, QUERY_PROJECT_V2, {
       org: parsed.org,
       number: parsed.number,
     })
@@ -963,7 +978,7 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
     if (!proj?.id) {
       return { ok: false as const, error: 'Project not found or no access.' }
     }
-    const defsRes = await graphqlRequest(cfg.githubApiToken, QUERY_PROJECT_V2_FIELD_DEFINITIONS, {
+    const defsRes = await graphqlRequest(token, QUERY_PROJECT_V2_FIELD_DEFINITIONS, {
       projectId: proj.id,
     })
     if (defsRes.errors?.length) {
@@ -983,10 +998,11 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
 
   if (message.type === 'GET_STATUS_FIELD') {
     const cfg = await loadConfig()
-    if (!cfg.githubApiToken) {
+    const token = resolveGithubBearer(cfg)
+    if (!token) {
       return { ok: false as const, error: 'Missing GitHub API token.' }
     }
-    const result = await graphqlRequest(cfg.githubApiToken, QUERY_PROJECT_STATUS_FIELD, {
+    const result = await graphqlRequest(token, QUERY_PROJECT_STATUS_FIELD, {
       projectId: message.payload.projectId,
       fieldName: message.payload.fieldName,
     })
@@ -1014,11 +1030,11 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
 
   if (message.type === 'UPDATE_ITEM_FIELD') {
     const cfg = await loadConfig()
-    if (!cfg.githubApiToken) {
+    const token = resolveGithubBearer(cfg)
+    if (!token) {
       return { ok: false as const, error: 'Missing GitHub API token.' }
     }
     const { projectId, itemId, fieldId, value } = message.payload
-    const token = cfg.githubApiToken
     const gql =
       value.kind === 'single_select' ?
         graphqlRequest(token, MUTATION_UPDATE_SINGLE_SELECT, {
@@ -1057,10 +1073,11 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
 
   if (message.type === 'UPDATE_STATUS') {
     const cfg = await loadConfig()
-    if (!cfg.githubApiToken) {
+    const token = resolveGithubBearer(cfg)
+    if (!token) {
       return { ok: false as const, error: 'Missing GitHub API token.' }
     }
-    const result = await graphqlRequest(cfg.githubApiToken, MUTATION_UPDATE_SINGLE_SELECT, {
+    const result = await graphqlRequest(token, MUTATION_UPDATE_SINGLE_SELECT, {
       projectId: message.payload.projectId,
       itemId: message.payload.itemId,
       fieldId: message.payload.fieldId,
@@ -1090,7 +1107,8 @@ async function getPanelState(payload: {
   kind: 'issue' | 'pull_request'
 }): Promise<unknown> {
   const cfg = await loadConfig()
-  if (!cfg.githubApiToken) {
+  const bearer = resolveGithubBearer(cfg)
+  if (!bearer) {
     return {
       ok: false as const,
       code: 'NO_TOKEN' as const,
@@ -1110,11 +1128,11 @@ async function getPanelState(payload: {
 
   const idQuery = payload.kind === 'issue' ? QUERY_ISSUE_NODE_ID : QUERY_PR_NODE_ID
   const [projRes, idRes] = await Promise.all([
-    graphqlRequest(cfg.githubApiToken, QUERY_PROJECT_V2, {
+    graphqlRequest(bearer, QUERY_PROJECT_V2, {
       org: parsed.org,
       number: parsed.number,
     }),
-    graphqlRequest(cfg.githubApiToken, idQuery, {
+    graphqlRequest(bearer, idQuery, {
       owner: payload.owner,
       name: payload.name,
       number: payload.number,
@@ -1157,11 +1175,11 @@ async function getPanelState(payload: {
 
   if (crossOrg) {
     const [defsRes, restMatch] = await Promise.all([
-      graphqlRequest(cfg.githubApiToken, QUERY_PROJECT_V2_FIELD_DEFINITIONS, {
+      graphqlRequest(bearer, QUERY_PROJECT_V2_FIELD_DEFINITIONS, {
         projectId: project.id,
       }),
       findProjectItemViaRest(
-        cfg.githubApiToken,
+        bearer,
         parsed.org,
         parsed.number,
         project.id,
@@ -1177,10 +1195,10 @@ async function getPanelState(payload: {
     match = restMatch
   } else {
     const [itemsRes, defsRes] = await Promise.all([
-      graphqlRequest(cfg.githubApiToken, QUERY_NODE_PROJECT_ITEMS, {
+      graphqlRequest(bearer, QUERY_NODE_PROJECT_ITEMS, {
         id: contentId,
       }),
-      graphqlRequest(cfg.githubApiToken, QUERY_PROJECT_V2_FIELD_DEFINITIONS, {
+      graphqlRequest(bearer, QUERY_PROJECT_V2_FIELD_DEFINITIONS, {
         projectId: project.id,
       }),
     ])
@@ -1195,7 +1213,7 @@ async function getPanelState(payload: {
     match = matchProjectItem(items, project.id, parsed.org, parsed.number)
     if (!match) {
       match = await findProjectItemViaRest(
-        cfg.githubApiToken,
+        bearer,
         parsed.org,
         parsed.number,
         project.id,

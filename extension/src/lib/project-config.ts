@@ -1,8 +1,12 @@
-/** Mirrors [data-model.md](../../specs/001-cross-org-board-ui/data-model.md) */
+/** Mirrors cross-org + auth data model (see specs data-model docs). */
 
 export const STORAGE_KEYS = {
   githubApiToken: 'github_api_token',
   githubTokenKind: 'github_token_kind',
+  /** Active credential: pat, oauth, or none. */
+  authMethod: 'auth_method',
+  /** Epoch ms when OAuth access token expires, if GitHub returned expires_in. */
+  oauthTokenExpiresAt: 'oauth_token_expires_at',
   crossOrgBoardUrls: 'cross_org_board_urls',
   crossOrgTargetRepos: 'cross_org_target_repos',
   statusFieldName: 'status_field_name',
@@ -19,9 +23,13 @@ export const DEFAULT_TARGET_REPOS = [
 
 export const DEFAULT_STATUS_FIELD_NAME = 'Status'
 
+export type AuthMethod = 'pat' | 'oauth' | 'none'
+
 export type StoredConfig = {
   githubApiToken: string
   githubTokenKind: 'oauth' | 'pat' | ''
+  authMethod: AuthMethod
+  oauthTokenExpiresAt: number | null
   crossOrgBoardUrls: string[]
   crossOrgTargetRepos: string[]
   statusFieldName: string
@@ -40,10 +48,31 @@ export function parseOrgProjectUrl(url: string): { org: string; number: number }
   return { org: m[1], number: Number(m[2]) }
 }
 
+function readStoredAuthMethod(raw: Record<string, unknown>): AuthMethod | undefined {
+  const explicit = raw[STORAGE_KEYS.authMethod]
+  if (explicit === 'pat' || explicit === 'oauth' || explicit === 'none') {
+    return explicit
+  }
+  return undefined
+}
+
+/**
+ * Returns a non-empty bearer for `api.github.com` when the user has an active
+ * credential (PAT or OAuth access token). Respects `auth_method` and migration.
+ */
+export function resolveGithubBearer(cfg: StoredConfig): string | null {
+  const t = cfg.githubApiToken.trim()
+  if (!t) return null
+  if (cfg.authMethod === 'none') return null
+  return t
+}
+
 export async function loadConfig(): Promise<StoredConfig> {
   const raw = await chrome.storage.local.get([
     STORAGE_KEYS.githubApiToken,
     STORAGE_KEYS.githubTokenKind,
+    STORAGE_KEYS.authMethod,
+    STORAGE_KEYS.oauthTokenExpiresAt,
     STORAGE_KEYS.crossOrgBoardUrls,
     STORAGE_KEYS.crossOrgTargetRepos,
     STORAGE_KEYS.statusFieldName,
@@ -55,9 +84,33 @@ export async function loadConfig(): Promise<StoredConfig> {
   const autoRaw = raw[STORAGE_KEYS.issuePrProjectsAutoExpand]
   const issuePrProjectsAutoExpand = autoRaw === false ? false : true
 
+  const token = String(raw[STORAGE_KEYS.githubApiToken] ?? '')
+  const legacyKind = (raw[STORAGE_KEYS.githubTokenKind] as StoredConfig['githubTokenKind']) ?? ''
+  const trimmed = token.trim()
+
+  const stored = readStoredAuthMethod(raw as Record<string, unknown>)
+  let authMethod: AuthMethod
+  if (stored !== undefined) {
+    authMethod = stored
+  } else if (trimmed.length === 0) {
+    authMethod = 'none'
+  } else {
+    authMethod = legacyKind === 'oauth' ? 'oauth' : 'pat'
+  }
+
+  if (authMethod === 'none' && trimmed.length > 0) {
+    authMethod = legacyKind === 'oauth' ? 'oauth' : 'pat'
+  }
+
+  const expRaw = raw[STORAGE_KEYS.oauthTokenExpiresAt]
+  const oauthTokenExpiresAt =
+    typeof expRaw === 'number' && Number.isFinite(expRaw) ? expRaw : null
+
   return {
-    githubApiToken: String(raw[STORAGE_KEYS.githubApiToken] ?? ''),
-    githubTokenKind: (raw[STORAGE_KEYS.githubTokenKind] as StoredConfig['githubTokenKind']) ?? '',
+    githubApiToken: token,
+    githubTokenKind: legacyKind,
+    authMethod,
+    oauthTokenExpiresAt,
     crossOrgBoardUrls:
       Array.isArray(urls) && urls.length > 0 ? urls : [...DEFAULT_BOARD_URLS],
     crossOrgTargetRepos:

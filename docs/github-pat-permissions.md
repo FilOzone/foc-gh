@@ -84,17 +84,32 @@ token shape vs org/repo policy.
 
 ---
 
-## OAuth app (future)
+## OAuth app
 
 An OAuth app’s user access token needs the **same effective** API access as above:
 GitHub maps OAuth scopes to the same GraphQL capabilities (e.g. `project` for
-mutations). MVP options UI documents “OAuth placeholder” until a flow ships.
+mutations).
 
 ---
 
+## OAuth (authorization code + PKCE)
+
+When using **Connect GitHub** in extension options, the OAuth app requests these
+**classic OAuth scopes** (space-separated), which match the PAT capability above:
+
+| Scope | Role |
+|-------|------|
+| **`repo`** | Repository content (issues/PRs) on target repos, including private when needed. |
+| **`read:org`** | Read org metadata (projects, membership) when required for Projects v2. |
+| **`project`** | Read and write organization Projects (v2) — add items, update fields. |
+
+Register the OAuth App callback as `https://<extension-id>.chromiumapp.org/` (see
+[`github-oauth-app.md`](./github-oauth-app.md)). Build with `GITHUB_OAUTH_CLIENT_ID` and
+`GITHUB_OAUTH_CLIENT_SECRET` (secret is embedded in the service worker; do not commit it).
+
 ## Quick verification
 
-With the token saved in **extension options**:
+With the token saved in **extension options** (OAuth or PAT):
 
 - A minimal check is any successful `viewer { login }` **plus** opening a target-repo
   issue and seeing the panel load without `INSUFFICIENT_SCOPES` in GraphQL errors.

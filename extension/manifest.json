@@ -3,7 +3,7 @@
   "name": "FilOzone FOC board (cross-org)",
   "version": "0.1.0",
   "description": "Show FilOzone Projects v2 board on cross-org GitHub issues and PRs.",
-  "permissions": ["storage"],
+  "permissions": ["storage", "identity"],
   "host_permissions": ["https://github.com/*", "https://api.github.com/*"],
   "background": {
     "service_worker": "service-worker.js",

@@ -13,6 +13,8 @@ Auto-generated from all feature plans. Last updated: 2026-03-27
 - `chrome.storage.local` for OAuth/PAT bearer token + `cross_org_board_urls` + `cross_org_target_repos` (see [data-model.md](./data-model.md); encrypted storage not provided by platform—document threat model in README) (001-cross-org-board-ui)
 - TypeScript (ES modules), Node.js for build (align with repo; 20+ recommended) + Chromium Manifest V3, `chrome.*` APIs, GitHub GraphQL (Projects v2), `fetch`; esbuild (or repo’s existing bundler) for content/background bundles (002-foc-project-widget-ui)
 - `chrome.storage.local` / `sync` for PAT and extension settings only; optional `sessionStorage` for expand/collapse if desired (spec assumes session default) (002-foc-project-widget-ui)
+- TypeScript (ES modules), Node for build (align with repo `package.json`) + Chromium Manifest V3, `chrome.storage`, `chrome.identity`, (004-github-oauth-signin)
+- `chrome.storage.local` for PAT or OAuth access token + `auth_method` (004-github-oauth-signin)
 
 - TypeScript (Node LTS for build tooling, exact version pinned in `package.json` when scaffolded) + Chromium MV3 toolchain (e.g. Vite or esbuild + webextension polyfills if needed), `fetch` to GitHub GraphQL (001-cross-org-board-ui)
 
@@ -32,9 +34,9 @@ npm test && npm run lint
 TypeScript (Node LTS for build tooling, exact version pinned in `package.json` when scaffolded): Follow standard conventions
 
 ## Recent Changes
+- 004-github-oauth-signin: Added TypeScript (ES modules), Node for build (align with repo `package.json`) + Chromium Manifest V3, `chrome.storage`, `chrome.identity`,
 - 003-auto-expand-panels: Added `chrome.storage.local` boolean for issue/PR project panel auto-expand + per-item `sessionStorage` for chevron overrides (`specs/003-auto-expand-panels/plan.md`)
 - 002-foc-project-widget-ui: Added TypeScript (ES modules), Node.js for build (align with repo; 20+ recommended) + Chromium Manifest V3, `chrome.*` APIs, GitHub GraphQL (Projects v2), `fetch`; esbuild (or repo’s existing bundler) for content/background bundles
-- 001-cross-org-board-ui: Added TypeScript (Node LTS for build tooling, exact version pinned in `package.json` when scaffolded) + Chromium MV3 toolchain (e.g. Vite or esbuild + webextension polyfills if needed), `fetch` to GitHub GraphQL
 
 
 <!-- MANUAL ADDITIONS START -->

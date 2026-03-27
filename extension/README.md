@@ -13,17 +13,27 @@ From the **repository root** (parent of `extension/`):
 
 ```bash
 npm install
+# Optional: enables “Connect GitHub” (OAuth + PKCE) in the built extension
+export GITHUB_OAUTH_CLIENT_ID="your_oauth_app_client_id"
+export GITHUB_OAUTH_CLIENT_SECRET="your_oauth_app_client_secret"
 npm run build
 ```
+
+The Client ID is public; the Client Secret is embedded in `service-worker.js` and must not
+be committed. See [`docs/github-oauth-app.md`](../docs/github-oauth-app.md) for registering
+the OAuth App and callback URL.
 
 Load **unpacked** from `extension/dist/` in `chrome://extensions` (Developer mode).
 
 ## Configure
 
 1. Open the extension **Options** page.
-2. Paste a **GitHub PAT** (classic or fine-grained) or OAuth access token that meets
-   **[PAT permissions](../docs/github-pat-permissions.md)** (Projects + Issues/PRs on
-   target repos).
+2. Choose **Sign in with GitHub** (recommended) or **Personal access token**:
+   - **OAuth**: click **Connect GitHub** after building with `GITHUB_OAUTH_CLIENT_ID` and
+     `GITHUB_OAUTH_CLIENT_SECRET` set.
+   - **PAT**: paste a classic or fine-grained token that meets
+     **[PAT permissions](../docs/github-pat-permissions.md)** (Projects + Issues/PRs on
+     target repos).
 3. Adjust board URLs or target repos if needed (defaults match the FilOzone TPM workflow).
 
 The extension does **not** use your github.com session cookie as a bearer token for
@@ -40,8 +50,10 @@ Full tables and caveats: [`docs/github-pat-permissions.md`](../docs/github-pat-p
 
 ### OAuth
 
-MVP is **PAT-only** in options. A GitHub OAuth App + “Connect GitHub” flow can replace
-paste-token UX later without changing GraphQL calls.
+**Connect GitHub** uses a GitHub OAuth App with **PKCE** plus the app’s **client secret**
+at token exchange (injected at build time into the service worker). Requested scopes mirror
+the PAT capability: **`repo`**, **`read:org`**, **`project`**. You can still paste a PAT
+instead; only one credential is active at a time.
 
 ## Verify
 

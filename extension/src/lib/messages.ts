@@ -79,6 +79,29 @@ export type DebugSampleBoardLinkMessage = {
   }
 }
 
+/** Start GitHub OAuth (PKCE) from the options page. */
+export type GithubOauthStartMessage = {
+  type: 'GITHUB_OAUTH_START'
+}
+
+/** Clear OAuth token and set auth to signed-out (see contracts/options-github-auth.md). */
+export type GithubOauthDisconnectMessage = {
+  type: 'GITHUB_OAUTH_DISCONNECT'
+}
+
+/** Read auth_method + whether a bearer is available (no raw token in response). */
+export type GetAuthStatusMessage = {
+  type: 'GET_AUTH_STATUS'
+}
+
+export type GetAuthStatusResponse = {
+  ok: true
+  authMethod: 'pat' | 'oauth' | 'none'
+  hasToken: boolean
+}
+
+export type GithubOauthSimpleResponse = { ok: true } | { ok: false; error: string }
+
 export type ExtensionMessage =
   | GraphqlMessage
   | GetPanelStateMessage
@@ -89,3 +112,6 @@ export type ExtensionMessage =
   | GetPrimaryBoardFieldDefinitionsMessage
   | DebugDiagnosticsMessage
   | DebugSampleBoardLinkMessage
+  | GithubOauthStartMessage
+  | GithubOauthDisconnectMessage
+  | GetAuthStatusMessage

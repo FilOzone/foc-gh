@@ -4,7 +4,7 @@
 import { pageContextFromLocation } from '../lib/github-url.js'
 import type { GetPanelStateMessage, ExtensionMessage } from '../lib/messages.js'
 import type { SerializableProjectField } from '../lib/project-board-fields.js'
-import { isTargetRepo, loadConfig } from '../lib/project-config.js'
+import { isTargetRepo, loadConfig, resolveGithubBearer } from '../lib/project-config.js'
 import { getOrCreatePanelHost, placePanelHost } from './projects-sidebar-mount.js'
 import { createFocProjectCard } from './foc-project-card.js'
 import { renderEditableProjectFields } from './foc-field-renderer.js'
@@ -168,10 +168,10 @@ async function render(
   const bodySlot = card.body
   bodySlot.innerHTML = '<p class="filoz-muted" style="padding:8px 0;margin:0">Loading…</p>'
 
-  if (!cfg.githubApiToken) {
+  if (!resolveGithubBearer(cfg)) {
     card.statusSlot.innerHTML = ''
     bodySlot.innerHTML = `
-      <p class="filoz-error">No API token configured.</p>
+      <p class="filoz-error">No GitHub API credentials configured. Connect GitHub or add a PAT in extension options.</p>
       <button type="button" class="filoz-btn filoz-open-options">Open options</button>
     `
     bodySlot.querySelector('.filoz-open-options')?.addEventListener('click', () => {

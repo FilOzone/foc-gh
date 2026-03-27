@@ -8,6 +8,9 @@ const dist = path.join(root, 'extension', 'dist')
 
 mkdirSync(dist, { recursive: true })
 
+const oauthClientId = process.env.GITHUB_OAUTH_CLIENT_ID ?? ''
+const oauthClientSecret = process.env.GITHUB_OAUTH_CLIENT_SECRET ?? ''
+
 await esbuild.build({
   entryPoints: [path.join(root, 'extension', 'src', 'background', 'service-worker.ts')],
   bundle: true,
@@ -15,6 +18,10 @@ await esbuild.build({
   platform: 'browser',
   target: 'es2022',
   outfile: path.join(dist, 'service-worker.js'),
+  define: {
+    __GITHUB_OAUTH_CLIENT_ID__: JSON.stringify(oauthClientId),
+    __GITHUB_OAUTH_CLIENT_SECRET__: JSON.stringify(oauthClientSecret),
+  },
 })
 
 await esbuild.build({

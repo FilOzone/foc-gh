@@ -4,12 +4,44 @@
     <meta charset="UTF-8" />
     <title>FilOzone FOC board extension</title>
     <style>
+      :root {
+        color-scheme: light dark;
+        --page-bg: #ffffff;
+        --page-fg: #1f2328;
+        --muted: #59636e;
+        --border: #d0d7de;
+        --surface: #f6f8fa;
+        --link: #0969da;
+        --btn-bg: #1f883d;
+        --btn-fg: #ffffff;
+        --danger-bg: #cf222e;
+        --danger-fg: #ffffff;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --page-bg: #0d1117;
+          --page-fg: #e6edf3;
+          --muted: #8b949e;
+          --border: #30363d;
+          --surface: #161b22;
+          --link: #58a6ff;
+          --btn-bg: #238636;
+          --btn-fg: #f0f6fc;
+          --danger-bg: #da3633;
+          --danger-fg: #f0f6fc;
+        }
+      }
       body {
         font-family: system-ui, sans-serif;
         max-width: 48rem;
         margin: 2rem auto;
         padding: 0 1rem;
         line-height: 1.45;
+        background: var(--page-bg);
+        color: var(--page-fg);
+      }
+      a {
+        color: var(--link);
       }
       label {
         display: block;
@@ -23,6 +55,10 @@
         box-sizing: border-box;
         margin-top: 0.35rem;
         padding: 0.45rem;
+        background: var(--page-bg);
+        color: var(--page-fg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
       }
       textarea {
         min-height: 5rem;
@@ -33,19 +69,59 @@
         margin-top: 0.5rem;
         width: auto;
       }
+      .auth-mode-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: center;
+        margin-top: 0.5rem;
+      }
+      .auth-mode-row label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-weight: 600;
+        margin-top: 0;
+      }
+      .oauth-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+        margin-top: 0.75rem;
+      }
       button {
         margin-top: 1.25rem;
         padding: 0.5rem 1rem;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--page-fg);
+        cursor: pointer;
+      }
+      button.primary {
+        background: var(--btn-bg);
+        color: var(--btn-fg);
+        border-color: transparent;
+      }
+      button.danger {
+        background: var(--danger-bg);
+        color: var(--danger-fg);
+        border-color: transparent;
+      }
+      button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
       }
       .hint {
         font-size: 0.85rem;
-        color: #444;
+        color: var(--muted);
         margin-top: 0.25rem;
       }
       .diag {
         margin-top: 2rem;
         padding-top: 1.5rem;
-        border-top: 1px solid #d0d7de;
+        border-top: 1px solid var(--border);
       }
       .diag-pre {
         margin-top: 0.75rem;
@@ -55,39 +131,81 @@
         line-height: 1.5;
         white-space: pre-wrap;
         word-break: break-word;
-        background: #f6f8fa;
-        border: 1px solid #d0d7de;
+        background: var(--surface);
+        border: 1px solid var(--border);
         border-radius: 6px;
         max-height: 28rem;
         overflow: auto;
+      }
+      .panel {
+        margin-top: 1rem;
+        padding: 1rem;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface);
+      }
+      .hidden {
+        display: none !important;
       }
     </style>
   </head>
   <body>
     <h1>FilOzone FOC board (cross-org)</h1>
     <p>
-      Store a GitHub <strong>fine-grained</strong> or <strong>classic PAT</strong> with Projects access,
-      or an OAuth token once that flow is implemented.
+      Connect to GitHub for API access. Use <strong>Sign in with GitHub</strong> (OAuth, no PAT required) or paste a
+      <strong>personal access token</strong> if your org requires it.
     </p>
     <p class="hint">
       <a
         href="https://github.com/FilOzone/tpm-utils-github-extension/blob/main/docs/github-pat-permissions.md"
         target="_blank"
         rel="noopener noreferrer"
-        >See docs: required PAT permissions</a
+        >Token permissions (classic / fine-grained)</a
       >
-      (classic / fine-grained scopes).
+      ·
+      <a
+        href="https://github.com/FilOzone/tpm-utils-github-extension/blob/main/docs/github-oauth-app.md"
+        target="_blank"
+        rel="noopener noreferrer"
+        >OAuth app setup (Connect GitHub)</a
+      >
     </p>
 
-    <label for="token">GitHub API token (stored locally)</label>
-    <input id="token" type="password" autocomplete="off" />
-    <p class="hint">Never commit this token. Revoke from GitHub settings when rotating.</p>
+    <div class="panel">
+      <h2 style="font-size: 1.05rem; margin: 0 0 0.5rem">Authentication</h2>
+      <p class="hint" style="margin-top: 0">
+        Only one method is active at a time. Saving a PAT while in “Personal access token” replaces a prior GitHub
+        sign-in token.
+      </p>
 
-    <label for="tokenKind">Token kind</label>
-    <select id="tokenKind">
-      <option value="pat">PAT</option>
-      <option value="oauth">OAuth access token</option>
-    </select>
+      <div class="auth-mode-row" role="radiogroup" aria-label="Authentication method">
+        <label
+          ><input type="radio" name="auth-mode" id="auth-mode-github" value="github" checked /> Sign in with
+          GitHub</label
+        >
+        <label
+          ><input type="radio" name="auth-mode" id="auth-mode-pat" value="pat" /> Personal access token</label
+        >
+      </div>
+
+      <div id="oauth-panel">
+        <p id="oauth-status" class="hint" style="margin-top: 0.75rem" role="status"></p>
+        <div class="oauth-actions">
+          <button type="button" class="primary" id="connect-github">Connect GitHub</button>
+          <button type="button" class="danger hidden" id="disconnect-github">Disconnect GitHub</button>
+        </div>
+        <p class="hint">
+          OAuth requests scopes equivalent to the PAT doc: <code>repo</code>, <code>read:org</code>, <code>project</code>.
+          Build with <code>GITHUB_OAUTH_CLIENT_ID</code> set (see docs).
+        </p>
+      </div>
+
+      <div id="pat-panel" class="hidden">
+        <label for="token">GitHub API token (stored locally)</label>
+        <input id="token" type="password" autocomplete="off" />
+        <p class="hint">Never commit this token. Revoke from GitHub settings when rotating.</p>
+      </div>
+    </div>
 
     <label for="boards">Cross-org board URLs (one per line)</label>
     <textarea id="boards"></textarea>
@@ -97,7 +215,8 @@
     <textarea id="repos"></textarea>
 
     <label for="issuePrProjectsAutoExpand"
-      >All issues &amp; PRs: expand native Projects sidebar + extension panel</label>
+      >All issues &amp; PRs: expand native Projects sidebar + extension panel</label
+    >
     <input
       id="issuePrProjectsAutoExpand"
       name="issuePrProjectsAutoExpand"
@@ -122,13 +241,13 @@
       <code>Status</code>.
     </p>
 
-    <button id="save" type="button">Save</button>
+    <button id="save" type="button" class="primary">Save</button>
     <p id="status" role="status"></p>
 
     <div class="diag">
       <h2 style="font-size: 1.1rem; margin: 0">API checks</h2>
       <p class="hint" style="margin-top: 0.5rem">
-        Runs GraphQL using the <strong>saved</strong> token and board URL (save first after changing the PAT).
+        Runs GraphQL using the <strong>saved</strong> token (save first after changing credentials).
       </p>
       <button id="diag-run" type="button">Run API checks</button>
       <pre id="diag-out" class="diag-pre" aria-live="polite"></pre>
