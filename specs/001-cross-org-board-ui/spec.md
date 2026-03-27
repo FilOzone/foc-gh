@@ -2,7 +2,7 @@
 
 **Feature Branch**: `001-cross-org-board-ui`  
 **Created**: 2026-03-26  
-**Status**: Draft  
+**Status**: In progress (MVP shipped on branch; UX parity iterations may follow under a new spec)  
 **Input**: User description: "Build a spec based on https://github.com/FilOzone/tpm-utils/issues/23"
 
 ## User Scenarios & Testing *(mandatory)*
@@ -72,12 +72,19 @@ with expected defaults.
 ### User Story 3 - Update FOC board fields from the external-org item page (Priority: P3)
 
 For a cross-org issue or PR that **is** on the FOC project, the user can change
-board-managed fields (for example status, cycle, theme, estimate) from the item
-page, matching the ease of editing those fields when the repository lives in the
-same organization as the project.
+board-managed fields the **implementation supports** (see below) from the item
+page, toward the same outcomes as editing on the board when the repo is in-org.
+
+**MVP scope**: The product **discovers** board columns via `ProjectV2.fields` and
+allows **mutations** for **single-select** fields from the item page (every such
+column may surface an editor). Other types (iteration “cycle”, number, text,
+date, etc.) SHOULD be **visible** on the item when the API returns them in
+`fieldValues`; editing those types is **not** required in this spec—add in a
+later increment if needed.
 
 **Why this priority**: Editing from the board alone is the pain called out for
-busy TPMs; field edits complete parity with the in-org experience.
+busy TPMs; single-select edits cover high-frequency TPM columns (e.g. Status,
+Prio) while keeping the mutation surface small and reliable.
 
 **Independent Test**: On a linked cross-org issue, change at least one configured
 field from the item page and confirm the board shows the same value without a
@@ -98,8 +105,9 @@ separate edit on the board.
 
 - Item exists in multiple GitHub projects; FOC controls MUST remain unambiguous
   (always clear which project is the FOC program project for these actions).
-- User is not signed in to GitHub or session expired: surface a simple prompt to
-  sign in or refresh access before project actions.
+- No **API token** configured, or token missing scopes / revoked: surface a clear
+  prompt to open extension options and fix credentials (this MVP does not use
+  the browser GitHub session as an `api.github.com` bearer).
 - GitHub returns permission, rate, or validation errors: show human-readable
   messages; do not claim success when the server rejected the change.
 - Issue or PR page layout changes on GitHub: degradation SHOULD be graceful (for
@@ -186,3 +194,7 @@ separate edit on the board.
 - “Parity with same-org behavior” means the **user outcomes** (see, add, edit on
   the item page), not pixel-perfect duplication of GitHub’s native sidebar if
   that is technically constrained for cross-org items.
+- **Richer native-sidebar parity** (layout, controls, and editing affordances
+  matching GitHub’s built-in Projects block on in-org repos) may be specified in
+  a **separate feature spec** so this document stays bounded to cross-org
+  visibility + add + supported edits.

@@ -12,8 +12,10 @@ pages for **configured cross-org repositories** (defaults:
 the work item is on the **configured FilOzone FOC board** (default
 [orgs/FilOzone/projects/14](https://github.com/orgs/FilOzone/projects/14)), allows **add**
 and **field updates** using the same outcomes as the native sidebar when the repo
-lives in-org. **GitHub’s GraphQL Projects API** supplies read/write
-(`addProjectV2ItemById`, field updates); the UI is an **injected panel** aligned
+lives in-org. **GitHub’s Projects v2 APIs** supply data and mutations: **GraphQL** for most
+reads/writes (`addProjectV2ItemById`, `updateProjectV2ItemFieldValue`, field and
+item shapes) and **REST** where GitHub exposes a more appropriate endpoint (e.g.
+org **list project items** with `q`). The UI is an **injected panel** aligned
 with the right sidebar—**not** embedded in GitHub’s React tree (unsupported).
 
 **Research** ([research.md](./research.md)) covers prior art, **hardcoded vs generic
@@ -25,7 +27,7 @@ issue—not a gating assumption.
 ## Technical Context
 
 **Language/Version**: TypeScript (Node LTS for build tooling, exact version pinned in `package.json` when scaffolded)  
-**Primary Dependencies**: Chromium MV3 toolchain (e.g. Vite or esbuild + webextension polyfills if needed), `fetch` to GitHub GraphQL  
+**Primary Dependencies**: Chromium MV3 toolchain (esbuild per `package.json`), `fetch` to GitHub **GraphQL** and **REST** (`api.github.com`)  
 **Storage**: `chrome.storage.local` for OAuth/PAT bearer token + `cross_org_board_urls` + `cross_org_target_repos` (see [data-model.md](./data-model.md); encrypted storage not provided by platform—document threat model in README)  
 **Testing**: Manual flows per constitution; optional unit tests for GraphQL payload builders  
 **Target Platform**: Chromium desktop (`github.com`, `api.github.com`)  
@@ -42,7 +44,7 @@ issue—not a gating assumption.
 |------|--------|
 | **Least privilege** | `host_permissions`: `https://github.com/*`, `https://api.github.com/*` (and OAuth callback host if used); content scripts only on issue/PR routes for repos in **`cross_org_target_repos`**. No other hosts. |
 | **User credentials** | **OAuth access token** (preferred) or **PAT** stored in `chrome.storage.local`; user can disconnect/clear; README lists scopes. **Session cookies** are not used as `api.github.com` bearer tokens. |
-| **API discipline** | GraphQL only for Projects v2; errors mapped to UI per [contracts/github-graphql.md](./contracts/github-graphql.md). |
+| **API discipline** | Use **GraphQL and REST** as required by GitHub’s supported APIs (constitution III). Prefer GraphQL for Projects v2 shapes and mutations; use REST when it reduces cost or matches official list/filter semantics. Errors mapped to user-visible messages per [contracts/github-graphql.md](./contracts/github-graphql.md) and the same discipline for REST responses. |
 | **Verification** | PR template: manual steps on sample `filecoin-project` issue + FilOzone board; manifest/options changes include smoke checklist. |
 | **Incremental scope** | MVP = **configured board URL(s)** + **configured repo list** (built-in defaults in [data-model.md](./data-model.md)); “all `projectItems`” readout deferred—see [research.md](./research.md). |
 
@@ -74,15 +76,16 @@ extension/
 ├── manifest.json
 ├── src/
 │   ├── background/
-│   │   └── graphql.ts          # POST helper, error mapping
+│   │   └── service-worker.ts   # GraphQL + REST fetch, message dispatch
 │   ├── content/
-│   │   └── issue-sidebar.tsx   # or .ts: mount panel, wire buttons
+│   │   └── issue-sidebar.ts    # mount panel, wire actions
 │   ├── options/
 │   │   └── options.html + options.ts
 │   └── lib/
 │       ├── github-url.ts       # parse owner/repo/number/kind
 │       ├── project-config.ts   # defaults + storage keys
-│       └── queries.ts          # GraphQL strings / builders
+│       ├── project-board-fields.ts  # normalize ProjectV2.fields for UI
+│       └── queries.ts          # GraphQL documents
 ├── styles/
 │   └── sidebar.css             # match GitHub spacing where practical
 └── README.md                   # install, scopes, security notes

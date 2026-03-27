@@ -96,6 +96,25 @@
 
 ---
 
+## Implementation notes (post–tasks generation)
+
+Shipped behavior **after** T001–T027 includes (not originally broken out as tasks):
+
+- **REST** `GET .../orgs/{org}/projectsV2/{n}/items?q=...` for resolving the
+  project item when GraphQL `projectItems` is incomplete, using row
+  **`content_type`** matching.
+- **No** expensive GraphQL full-board pagination as a fallback for “on board?”
+  detection.
+- **`ProjectV2.fields` discovery** (column names, `dataType`, single-select
+  options, iteration samples) for options + sidebar + diagnostics.
+- **Diagnostics** options page: streaming request log over `runtime.connect`.
+- **`project-board-fields.ts`**: normalize field definitions for UI.
+
+Follow-up UX (e.g. native sidebar parity) → track under a **new spec** / tasks
+file when scoped.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase dependencies

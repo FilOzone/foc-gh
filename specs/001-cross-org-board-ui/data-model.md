@@ -51,6 +51,7 @@ single configured board before generalizing).
 |-----|------|---------|
 | `cross_org_board_urls` | `string[]` | Project pages to surface on matching repos. **Default**: `["https://github.com/orgs/FilOzone/projects/14"]`. |
 | `cross_org_target_repos` | `string[]` | Full names `owner/repo` where the panel may load. **Default**: `["filecoin-project/curio", "filecoin-project/filecoin-pin"]`. |
+| `status_field_name` | `string` | **Primary single-select column name** for sidebar ordering (e.g. which field appears first in multi-select editors). Options UI can **load** real `SINGLE_SELECT` names from `ProjectV2.fields`. **Default**: `Status`. |
 
 Injection runs only when the current page’s `owner/repo` is in
 `cross_org_target_repos` (after normalization to lowercase). No “all repos”
@@ -60,11 +61,18 @@ toggle unless added later.
 
 | Key | Type | Purpose |
 |-----|------|---------|
-| `github_api_token` | `string` (secret) | Bearer token for `api.github.com/graphql`: **OAuth access token** (preferred) or **classic/fine-grained PAT** if the user pastes one. |
+| `github_api_token` | `string` (secret) | Bearer token for **`api.github.com`** — used for **GraphQL** (`POST /graphql`) and **REST** (`GET`/`POST` under `/orgs/.../projectsV2/...` as implemented). **OAuth access token** (preferred) or **classic/fine-grained PAT** if the user pastes one. |
 | `github_token_kind` | `"oauth"` \| `"pat"` (optional) | For UI/help text and revocation instructions. |
 
 The extension **does not** read GitHub’s web **session cookie** and send it to
 `api.github.com` as a supported credential—see [research.md](./research.md).
+
+### Runtime discovery (not persisted)
+
+- **Board column definitions** (`ProjectV2.fields`: name, `dataType`, single-select
+  options, iteration configuration samples) are fetched when loading the issue
+  panel and in options (“Load columns from primary board”). Results are **not**
+  stored long-term in `chrome.storage`; they reflect the board at request time.
 
 ## Validation rules
 
