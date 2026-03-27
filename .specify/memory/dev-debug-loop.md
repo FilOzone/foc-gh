@@ -32,6 +32,17 @@ After reloading, navigate to a GitHub issue or PR and check the page console for
 The `BUILD_MARKER` constant is in `extension/src/content/issue-sidebar.ts`. Update it
 to a new value before each debug session to confirm you're running the latest build.
 
+## Reference URLs for manual testing
+
+Use these GitHub pages when exercising the extension (same-org vs cross-org, issue vs PR):
+
+| Context | URL |
+|---------|-----|
+| FilOzone PR | https://github.com/FilOzone/tpm-utils/pull/7 |
+| FilOzone issue | https://github.com/FilOzone/tpm-utils/issues/23 |
+| Non-FilOzone PR (cross-org) | https://github.com/filecoin-project/filecoin-pin/pull/386 |
+| Non-FilOzone issue (cross-org) | https://github.com/filecoin-project/filecoin-pin/issues/385 |
+
 ## Why not `chrome.runtime.reload()`?
 
 Calling `chrome.runtime.reload()` from the options page restarts the service worker
