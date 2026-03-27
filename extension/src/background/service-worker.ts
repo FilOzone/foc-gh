@@ -1143,37 +1143,68 @@ async function getPanelState(payload: {
     return { ok: false as const, error: 'Issue or pull request not found.' }
   }
 
-  const [itemsRes, defsRes] = await Promise.all([
-    graphqlRequest(cfg.githubApiToken, QUERY_NODE_PROJECT_ITEMS, {
-      id: contentId,
-    }),
-    graphqlRequest(cfg.githubApiToken, QUERY_PROJECT_V2_FIELD_DEFINITIONS, {
-      projectId: project.id,
-    }),
-  ])
-  if (itemsRes.errors?.length) {
-    return { ok: false as const, error: firstError(itemsRes.errors) }
-  }
+  /**
+   * `QUERY_NODE_PROJECT_ITEMS` only returns project links visible in-repo for the
+   * same org; cross-org boards (issue under e.g. filecoin-project, project under
+   * FilOzone) always come back empty after a wasted round trip. Skip GraphQL and
+   * use REST list-items immediately when repo owner !== configured project org.
+   */
+  const crossOrg =
+    payload.owner.trim().toLowerCase() !== parsed.org.trim().toLowerCase()
 
   let boardFields: SerializableProjectField[] = []
-  if (!defsRes.errors?.length) {
-    boardFields = parseProjectV2FieldDefinitions(defsRes.data)
-  }
+  let match: ProjectItemNode | null = null
 
-  const node = (itemsRes.data as { node?: NodeWithItems })?.node
-  const items = node?.projectItems?.nodes
-  let match = matchProjectItem(items, project.id, parsed.org, parsed.number)
-  if (!match) {
-    match = await findProjectItemViaRest(
-      cfg.githubApiToken,
-      parsed.org,
-      parsed.number,
-      project.id,
-      payload.owner,
-      payload.name,
-      payload.number,
-      payload.kind,
-    )
+  if (crossOrg) {
+    const [defsRes, restMatch] = await Promise.all([
+      graphqlRequest(cfg.githubApiToken, QUERY_PROJECT_V2_FIELD_DEFINITIONS, {
+        projectId: project.id,
+      }),
+      findProjectItemViaRest(
+        cfg.githubApiToken,
+        parsed.org,
+        parsed.number,
+        project.id,
+        payload.owner,
+        payload.name,
+        payload.number,
+        payload.kind,
+      ),
+    ])
+    if (!defsRes.errors?.length) {
+      boardFields = parseProjectV2FieldDefinitions(defsRes.data)
+    }
+    match = restMatch
+  } else {
+    const [itemsRes, defsRes] = await Promise.all([
+      graphqlRequest(cfg.githubApiToken, QUERY_NODE_PROJECT_ITEMS, {
+        id: contentId,
+      }),
+      graphqlRequest(cfg.githubApiToken, QUERY_PROJECT_V2_FIELD_DEFINITIONS, {
+        projectId: project.id,
+      }),
+    ])
+    if (itemsRes.errors?.length) {
+      return { ok: false as const, error: firstError(itemsRes.errors) }
+    }
+    if (!defsRes.errors?.length) {
+      boardFields = parseProjectV2FieldDefinitions(defsRes.data)
+    }
+    const node = (itemsRes.data as { node?: NodeWithItems })?.node
+    const items = node?.projectItems?.nodes
+    match = matchProjectItem(items, project.id, parsed.org, parsed.number)
+    if (!match) {
+      match = await findProjectItemViaRest(
+        cfg.githubApiToken,
+        parsed.org,
+        parsed.number,
+        project.id,
+        payload.owner,
+        payload.name,
+        payload.number,
+        payload.kind,
+      )
+    }
   }
 
   return {
