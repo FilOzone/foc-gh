@@ -41,7 +41,7 @@ const CHEVRON_DOWN =
 const CHEVRON_UP =
   '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M3.22 10.72a.749.749 0 0 1 0-1.06l4.25-4.25a.749.749 0 0 1 1.06 0l4.25 4.25a.749.749 0 1 1-1.06 1.06L8 6.06 4.28 9.78a.749.749 0 0 1-1.06 0Z"/></svg>'
 
-export function createFocProjectCard(opts: { title: string }): FocProjectCard {
+export function createFocProjectCard(opts: { title: string; boardUrl?: string }): FocProjectCard {
   const root = document.createElement('div')
   root.className = 'filoz-foc-card'
 
@@ -56,13 +56,25 @@ export function createFocProjectCard(opts: { title: string }): FocProjectCard {
   iconWrap.className = 'filoz-foc-card-icon-wrap'
   iconWrap.innerHTML = projectsIconSvg()
 
-  const titleEl = document.createElement('span')
+  const titleEl = opts.boardUrl
+    ? document.createElement('a')
+    : document.createElement('span')
   titleEl.className = 'filoz-foc-card-title'
   titleEl.textContent = opts.title
+  if (opts.boardUrl && titleEl instanceof HTMLAnchorElement) {
+    titleEl.href = opts.boardUrl
+    titleEl.target = '_blank'
+    titleEl.rel = 'noopener'
+  }
 
-  titleRow.append(iconWrap, titleEl)
+  const toggle = document.createElement('button')
+  toggle.type = 'button'
+  toggle.className = 'filoz-foc-card-chevron'
+  toggle.setAttribute('aria-label', `Expand or collapse ${opts.title} project fields`)
 
-  // Row 2: "Status" label + status control slot + chevron
+  titleRow.append(iconWrap, titleEl, toggle)
+
+  // Row 2: "Status" label + status control slot
   const statusRow = document.createElement('div')
   statusRow.className = 'filoz-foc-card-status-row'
 
@@ -73,12 +85,7 @@ export function createFocProjectCard(opts: { title: string }): FocProjectCard {
   const statusSlot = document.createElement('div')
   statusSlot.className = 'filoz-foc-card-status-slot'
 
-  const toggle = document.createElement('button')
-  toggle.type = 'button'
-  toggle.className = 'filoz-foc-card-chevron'
-  toggle.setAttribute('aria-label', `Expand or collapse ${opts.title} project fields`)
-
-  statusRow.append(statusLabel, statusSlot, toggle)
+  statusRow.append(statusLabel, statusSlot)
   header.append(titleRow, statusRow)
 
   const body = document.createElement('div')

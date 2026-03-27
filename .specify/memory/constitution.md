@@ -1,6 +1,6 @@
 <!--
 Sync Impact Report
-- Version change: 1.0.0 → 1.1.0 (MINOR: new principle VI; conventional commits elevated to MUST)
+- Version change: 1.1.0 → 1.1.1 (PATCH: clarify Principle VI — ban hashed GitHub CSS class names, mandate CSS custom properties)
 - Modified principles: (none renamed)
 - Added: Principle VI — Native GitHub UI fidelity (light/dark, GitHub-like chrome)
 - Expanded: Development Workflow — Conventional Commits now mandatory (MUST)
@@ -86,6 +86,19 @@ variables the host page already defines, or patterns consistent with GitHub’s
 Primer design language) over bespoke themes that visually conflict with the
 host.
 
+Implementations MUST NOT depend on GitHub’s internal build artifacts that are
+expected to change without notice. Specifically:
+
+- **CSS class names with hash suffixes** (e.g. `Token__StyledToken-sc-ldn0r8-0 gEjcWK`,
+  `ProjectItemSection-module__Container__Yvm9q`) are build-time generated and
+  can change with any GitHub frontend deployment; using them WILL cause silent
+  breakage.
+- **Stable alternatives**: GitHub CSS custom properties / design tokens
+  (`--borderColor-default`, `--bgColor-neutral-muted`, `--fgColor-muted`, etc.)
+  are the intentional public theming API and MUST be used instead.
+- `octicon-*` icon class names and Primer data attributes (`data-variant`,
+  `data-size`) are more stable and MAY be used with caution.
+
 The extension MUST respect the user’s GitHub **light and dark** appearance.
 Features MUST behave legibly and intentionally in both modes (contrast,
 borders, focus states). If a technical constraint forces single-theme support
@@ -149,4 +162,4 @@ Compliance expectation: reviewers treat security, permission, and
 credential-handling changes as blocking unless the amendment process was
 followed.
 
-**Version**: 1.1.0 | **Ratified**: 2026-03-26 | **Last Amended**: 2026-03-27
+**Version**: 1.1.1 | **Ratified**: 2026-03-26 | **Last Amended**: 2026-03-27

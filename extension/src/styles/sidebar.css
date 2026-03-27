@@ -1,60 +1,68 @@
-/* FilOzone FOC panel — GitHub Primer tokens (light/dark follow host). */
+/* FilOzone FOC panel — matches GitHub Primer project card tokens exactly. */
 
 #filoz-foc-board-panel-host {
   margin-bottom: 16px;
 }
 
 /* ─── Card shell ─────────────────────────────────────────────────────────── */
+/* Matches ProjectItemSectionContainer: transparent bg, border + radius only. */
 
 .filoz-foc-card {
-  border: 1px solid var(--borderColor-default, #d0d7de);
+  border: 1px solid var(--borderColor-default, #3d444d);
   border-radius: 6px;
-  overflow: hidden;
+  background: transparent;
+  color: var(--fgColor-default, #f0f6fc);
   font-size: 12px;
-  color: var(--fgColor-default, #1f2328);
+  padding: 12px 0 8px;
 }
 
 /* ─── Header ─────────────────────────────────────────────────────────────── */
 
 .filoz-foc-card-header {
-  padding: 8px 10px;
-  background: var(--bgColor-muted, #f6f8fa);
+  padding: 0 12px;
 }
 
 .filoz-foc-card-title-row {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .filoz-foc-card-icon-wrap {
   display: flex;
   flex-shrink: 0;
-  color: var(--fgColor-muted, #57606a);
+  color: var(--fgColor-muted, #9198a1);
 }
 
 .filoz-foc-card-title {
   font-weight: 600;
   font-size: 14px;
   line-height: 1.25;
-  color: var(--fgColor-default, #1f2328);
+  color: var(--fgColor-default, #f0f6fc);
+  text-decoration: none;
+  flex: 1;
 }
 
-/* ─── Status row (in header, always visible) ─────────────────────────────── */
+.filoz-foc-card-title:hover {
+  text-decoration: underline;
+  color: var(--fgColor-accent, #4493f8);
+}
+
+/* ─── Status row ─────────────────────────────────────────────────────────── */
 
 .filoz-foc-card-status-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding-top: 6px;
-  border-top: 1px solid var(--borderColor-muted, rgba(208,215,222,0.48));
+  gap: 8px;
+  padding: 6px 12px 0;
+  border-top: 1px solid var(--borderColor-muted, #3d444db3);
 }
 
 .filoz-foc-card-status-label {
   font-size: 12px;
-  font-weight: 500;
-  color: var(--fgColor-muted, #57606a);
+  font-weight: 400;
+  color: var(--fgColor-muted, #9198a1);
   white-space: nowrap;
   flex-shrink: 0;
   min-width: 38px;
@@ -65,33 +73,33 @@
   min-width: 0;
 }
 
-/* Status pill select */
+/* Status pill — matches prc-Token / GitHub's status badge */
 .filoz-status-select-wrap {
-  position: relative;
   display: inline-flex;
   align-items: center;
-  max-width: 100%;
+  position: relative;
 }
 
 .filoz-status-select {
   appearance: none;
   -webkit-appearance: none;
-  padding: 3px 24px 3px 9px;
-  border-radius: 2em;
-  border: 1px solid var(--borderColor-default, #d0d7de);
-  background-color: var(--bgColor-default, #ffffff);
-  color: var(--fgColor-default, #1f2328);
+  padding: 2px 20px 2px 7px;
+  border-radius: 9999px;
+  border: 1px solid var(--borderColor-default, #3d444d);
+  background-color: var(--bgColor-neutral-muted, rgba(101,108,118,0.2));
+  color: var(--fgColor-default, #f0f6fc);
   font-size: 12px;
   font-family: inherit;
   cursor: pointer;
-  max-width: 100%;
+  max-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 1.5;
 }
 
 .filoz-status-select:focus-visible {
-  outline: 2px solid var(--focus-outlineColor, #0969da);
+  outline: 2px solid var(--focus-outlineColor, #1f6feb);
   outline-offset: 2px;
 }
 
@@ -102,44 +110,45 @@
 
 .filoz-status-select-arrow {
   position: absolute;
-  right: 7px;
+  right: 5px;
   pointer-events: none;
-  color: var(--fgColor-muted, #57606a);
+  color: var(--fgColor-muted, #9198a1);
   display: flex;
   align-items: center;
 }
 
-/* ─── Chevron button ─────────────────────────────────────────────────────── */
+/* ─── Chevron (invisible button variant, matches GitHub's IconButton invisible) */
 
 .filoz-foc-card-chevron {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   padding: 0;
+  border: none;
   border-radius: 6px;
-  border: 1px solid var(--borderColor-default, #d0d7de);
-  background: var(--button-default-bgColor-rest, var(--control-bgColor-rest, #f6f8fa));
-  color: var(--fgColor-muted, #57606a);
+  background: transparent;
+  color: var(--fgColor-muted, #9198a1);
   cursor: pointer;
 }
 
 .filoz-foc-card-chevron:hover {
-  background: var(--button-default-bgColor-hover, var(--control-bgColor-hover, #eaeef2));
+  background: var(--bgColor-neutral-muted, rgba(101,108,118,0.2));
+  color: var(--fgColor-default, #f0f6fc);
 }
 
 .filoz-foc-card-chevron:focus-visible {
-  outline: 2px solid var(--focus-outlineColor, #0969da);
+  outline: 2px solid var(--focus-outlineColor, #1f6feb);
   outline-offset: 2px;
 }
 
 /* ─── Collapsible body ───────────────────────────────────────────────────── */
 
 .filoz-foc-card-body {
-  background: var(--bgColor-default, #ffffff);
-  padding: 0 10px 4px;
+  padding: 0 12px;
+  background: transparent;
 }
 
 .filoz-foc-card-body[hidden] {
@@ -153,18 +162,14 @@
   grid-template-columns: minmax(0, 44%) minmax(0, 56%);
   gap: 4px 8px;
   align-items: center;
-  padding: 6px 0;
-  border-top: 1px solid var(--borderColor-muted, rgba(208,215,222,0.48));
-}
-
-.filoz-field-row:first-child {
-  border-top: none;
+  padding: 5px 0;
+  border-top: 1px solid var(--borderColor-muted, #3d444db3);
 }
 
 .filoz-field-label {
   font-size: 12px;
-  font-weight: 500;
-  color: var(--fgColor-muted, #57606a);
+  font-weight: 400;
+  color: var(--fgColor-muted, #9198a1);
   line-height: 1.4;
 }
 
@@ -172,34 +177,44 @@
   min-width: 0;
 }
 
+/* Field controls — borderless, transparent background to match GitHub's inline fields */
+
 .filoz-select,
 .filoz-input {
   width: 100%;
   box-sizing: border-box;
-  padding: 4px 8px;
+  padding: 3px 6px;
   font-size: 12px;
   font-family: inherit;
-  line-height: 1.25;
-  color: var(--fgColor-default, #1f2328);
-  background-color: var(--bgColor-default, #ffffff);
-  border: 1px solid var(--borderColor-default, #d0d7de);
+  line-height: 1.4;
+  color: var(--fgColor-default, #f0f6fc);
+  background: transparent;
+  border: 1px solid transparent;
   border-radius: 6px;
 }
 
 .filoz-input::placeholder {
-  color: var(--fgColor-muted, #57606a);
+  color: var(--fgColor-muted, #9198a1);
+}
+
+.filoz-select:hover,
+.filoz-input:hover {
+  border-color: var(--borderColor-default, #3d444d);
+  background: var(--bgColor-neutral-muted, rgba(101,108,118,0.1));
 }
 
 .filoz-select:focus-visible,
 .filoz-input:focus-visible {
-  outline: 2px solid var(--focus-outlineColor, #0969da);
+  outline: 2px solid var(--focus-outlineColor, #1f6feb);
   outline-offset: 2px;
+  border-color: var(--borderColor-default, #3d444d);
+  background: var(--bgColor-neutral-muted, rgba(101,108,118,0.1));
 }
 
 /* ─── Errors ─────────────────────────────────────────────────────────────── */
 
 .filoz-error {
-  color: var(--fgColor-danger, #cf222e);
+  color: var(--fgColor-danger, #f85149);
 }
 
 .filoz-field-err {
@@ -210,7 +225,7 @@
 /* ─── Misc ───────────────────────────────────────────────────────────────── */
 
 .filoz-muted {
-  color: var(--fgColor-muted, #57606a);
+  color: var(--fgColor-muted, #9198a1);
 }
 
 .filoz-btn {
@@ -221,17 +236,17 @@
   border-radius: 6px;
   cursor: pointer;
   appearance: none;
-  background-color: var(--button-default-bgColor-rest, var(--control-bgColor-rest, #f6f8fa));
-  color: var(--button-default-fgColor-rest, var(--fgColor-default, #24292f));
-  border: 1px solid var(--button-default-borderColor-rest, var(--borderColor-default, #d0d7de));
+  background-color: var(--control-bgColor-rest, #212830);
+  color: var(--fgColor-default, #f0f6fc);
+  border: 1px solid var(--borderColor-default, #3d444d);
 }
 
 .filoz-btn:hover {
-  background-color: var(--button-default-bgColor-hover, var(--control-bgColor-hover, #eaeef2));
+  background-color: var(--button-default-bgColor-hover, #262c36);
 }
 
 .filoz-btn:focus-visible {
-  outline: 2px solid var(--focus-outlineColor, #0969da);
+  outline: 2px solid var(--focus-outlineColor, #1f6feb);
   outline-offset: 2px;
 }
 

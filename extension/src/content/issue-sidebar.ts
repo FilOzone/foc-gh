@@ -157,7 +157,7 @@ async function render(
   }
 
   host.innerHTML = ''
-  const card = createFocProjectCard({ title: 'FOC' })
+  const card = createFocProjectCard({ title: 'FOC', boardUrl: cfg.crossOrgBoardUrls[0] })
   host.append(card.root)
 
   const bodySlot = card.body
@@ -211,9 +211,14 @@ async function render(
 
   const s = state as PanelStateOk
 
-  // Update title from actual project name
+  // Update title from actual project name and URL
   const titleEl = card.root.querySelector('.filoz-foc-card-title')
-  if (titleEl) titleEl.textContent = s.projectTitle
+  if (titleEl) {
+    titleEl.textContent = s.projectTitle
+    if (s.projectUrl && titleEl instanceof HTMLAnchorElement) {
+      titleEl.href = s.projectUrl
+    }
+  }
 
   const linkedItem = s.item
 
