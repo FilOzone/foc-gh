@@ -12,8 +12,9 @@ export type PageContext = {
  * Examples: /filecoin-project/curio/issues/42, /owner/repo/pull/99
  */
 export function parseGithubIssuePrPath(pathname: string): PageContext | null {
-  const p = pathname.replace(/\/+$/, '')
-  const issueMatch = p.match(/^\/([^/]+)\/([^/]+)\/issues\/(\d+)\/?$/i)
+  const p = pathname.replace(/\/+$/, '') || '/'
+  // Allow tab suffixes: /pull/99/files, /issues/42/timeline (GitHub SPA paths).
+  const issueMatch = p.match(/^\/([^/]+)\/([^/]+)\/issues\/(\d+)(?:\/|$)/i)
   if (issueMatch) {
     return {
       owner: issueMatch[1],
@@ -22,7 +23,7 @@ export function parseGithubIssuePrPath(pathname: string): PageContext | null {
       kind: 'issue',
     }
   }
-  const prMatch = p.match(/^\/([^/]+)\/([^/]+)\/pull\/(\d+)\/?$/i)
+  const prMatch = p.match(/^\/([^/]+)\/([^/]+)\/pull\/(\d+)(?:\/|$)/i)
   if (prMatch) {
     return {
       owner: prMatch[1],

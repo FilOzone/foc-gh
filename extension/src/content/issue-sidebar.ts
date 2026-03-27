@@ -33,13 +33,31 @@ function findSidebarContainer(): Element | null {
   if (legacy) return legacy
   const assignees = document.querySelector('[data-testid="sidebar-assignees-section"]')
   if (assignees?.parentElement) return assignees.parentElement
-  return document.querySelector('aside[aria-label="Issues"]')
+  const issuesAside = document.querySelector('aside[aria-label="Issues"]')
+  if (issuesAside) return issuesAside
+  // Pull request layout (conversation / files) uses a different landmark label.
+  const prAside = document.querySelector(
+    'aside[aria-label="Pull request"], aside[aria-label="Pull requests"]',
+  )
+  if (prAside) return prAside
+  // PR conversation layout (GitHub's current React layout uses this id).
+  const prConversation = document.querySelector('#pr-conversation-sidebar')
+  if (prConversation) return prConversation
+  return document.querySelector('[data-testid="conversation-sidebar"]')
 }
 
 function placeHostAfterProjects(sidebar: Element, host: HTMLDivElement): void {
+  // Issue layout
   const projects = sidebar.querySelector('[data-testid="sidebar-projects-section"]')
   if (projects) {
     projects.after(host)
+    return
+  }
+  // PR layout: projects is a form[aria-label="Select projects"] inside a .discussion-sidebar-item wrapper
+  const prProjectsForm = sidebar.querySelector('form[aria-label="Select projects"]')
+  const prProjectsItem = prProjectsForm?.closest('.discussion-sidebar-item') ?? prProjectsForm?.parentElement
+  if (prProjectsItem) {
+    prProjectsItem.after(host)
     return
   }
   sidebar.append(host)
