@@ -74,7 +74,7 @@ export function createFocProjectCard(opts: { title: string; boardUrl?: string })
 
   titleRow.append(iconWrap, titleEl, toggle)
 
-  // Row 2: "Status" label + status control slot
+  // Row 2: "Status" label + status control slot (no chevron — matches issue card layout)
   const statusRow = document.createElement('div')
   statusRow.className = 'filoz-foc-card-status-row'
 
