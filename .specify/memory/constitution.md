@@ -1,10 +1,11 @@
 <!--
 Sync Impact Report
-- Version: 1.0.0 (initial ratification)
-- Principles: I–V as in body; IV encodes internal velocity (manual verification OK)
-- Sections: Internal scope and velocity; Security, Privacy, and Permissions;
-  Development Workflow and Quality Gates; Governance
-- Templates aligned: plan-template, spec-template, tasks-template
+- Version change: 1.0.0 → 1.1.0 (MINOR: new principle VI; conventional commits elevated to MUST)
+- Modified principles: (none renamed)
+- Added: Principle VI — Native GitHub UI fidelity (light/dark, GitHub-like chrome)
+- Expanded: Development Workflow — Conventional Commits now mandatory (MUST)
+- Templates: plan-template.md ✅ | spec-template.md ✅ | tasks-template.md ✅
+  | commands/speckit.constitution.md — no content delta required (generic)
 - Follow-up TODOs: none
 -->
 
@@ -76,6 +77,25 @@ tracking table with a rejected simpler alternative.
 
 **Rationale**: Keeps permission and review load manageable.
 
+### VI. Native GitHub UI fidelity
+
+UI injected on github.com MUST read as native to the page: layout, typography,
+spacing, and control styling SHOULD align with adjacent GitHub UI. Implementations
+SHOULD prefer GitHub’s own styling signals (for example CSS custom properties /
+variables the host page already defines, or patterns consistent with GitHub’s
+Primer design language) over bespoke themes that visually conflict with the
+host.
+
+The extension MUST respect the user’s GitHub **light and dark** appearance.
+Features MUST behave legibly and intentionally in both modes (contrast,
+borders, focus states). If a technical constraint forces single-theme support
+only temporarily, the implementation plan MUST record the gap and manual
+verification MUST call out theme coverage; reviewers SHOULD treat unresolved
+dark/light defects as merge blocking for UI-affecting changes.
+
+**Rationale**: TPMs live in GitHub for long sessions; alien chrome and
+broken dark mode erode trust, tire eyes, and read as low quality.
+
 ## Internal scope and velocity
 
 - **Audience**: Primarily FilOzone TPMs and adjacent maintainers; not a public
@@ -100,9 +120,10 @@ tracking table with a rejected simpler alternative.
 
 ## Development Workflow and Quality Gates
 
-- Use [Conventional Commits](https://www.conventionalcommits.org/) for all
-  commits (`type: description`; common types: `feat`, `fix`, `docs`, `chore`,
-  `test`, `ci`).
+- All commits MUST follow [Conventional Commits](https://www.conventionalcommits.org/)
+  (`<type>(<optional scope>): <description>` is preferred; common types:
+  `feat`, `fix`, `docs`, `chore`, `test`, `ci`). Exceptions MUST be rare and
+  explained in the pull request.
 - Every implementation plan MUST pass the Constitution Check gates in
   `.specify/templates/plan-template.md` before Phase 0 research ends; violations
   require an approved row in the plan’s Complexity Tracking table.
@@ -128,4 +149,4 @@ Compliance expectation: reviewers treat security, permission, and
 credential-handling changes as blocking unless the amendment process was
 followed.
 
-**Version**: 1.0.0 | **Ratified**: 2026-03-26 | **Last Amended**: 2026-03-26
+**Version**: 1.1.0 | **Ratified**: 2026-03-26 | **Last Amended**: 2026-03-27

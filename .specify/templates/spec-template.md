@@ -110,6 +110,9 @@
   data persisted locally and its purpose.
 - **EXT-003**: Feature MUST NOT imply server-side storage of user tokens by this
   project unless covered by a separate, spec-linked design.
+- **EXT-UI-001**: For UI injected on github.com, feature MUST state how it
+  aligns with GitHub-native appearance and **light/dark** mode (or references
+  shared extension patterns that already satisfy Principle VI).
 
 ### Key Entities *(include if feature involves data)*
 

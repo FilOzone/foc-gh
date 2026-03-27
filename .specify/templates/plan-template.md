@@ -45,6 +45,9 @@ Gates derived from `.specify/memory/constitution.md` (TPM Utils GitHub Extension
   Manifest/auth/host-permission changes include a short **smoke checklist**.
 - **Incremental scope**: MVP slice is explicit; speculative features are cut or
   deferred with rationale.
+- **UI fidelity**: Injected UI matches GitHub-consistent styling (Principle VI);
+  plan states how light/dark mode is satisfied or defers with a Complexity
+  Tracking row; manual verification lists theme(s) exercised.
 
 ## Project Structure
 

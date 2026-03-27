@@ -10,6 +10,10 @@ description: "Task list template for feature implementation"
 
 **Tests**: The examples below include test tasks. Per `.specify/memory/constitution.md`, automated tests are optional unless the feature spec explicitly requires them; manual verification tasks are acceptable for merge.
 
+**UI**: Work that injects or restyles DOM on github.com MUST satisfy Principle VI
+(native GitHub UI fidelity, including light/dark). Include manual verification
+for both themes when practical, or document a tracked deferral per plan.
+
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
 ## Format: `[ID] [P?] [Story] Description`
