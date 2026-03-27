@@ -6,41 +6,19 @@
 # 1. Build
 npm run build
 
-# 2. Reload the FilOzone extension in Chrome (osascript, shadow-DOM aware)
-osascript -e 'tell application "Google Chrome"
-  repeat with w in windows
-    repeat with t in tabs of w
-      if URL of t starts with "chrome://extensions" then
-        return execute t javascript "(function() {
-          function findAndReload(root) {
-            var items = root.querySelectorAll(\"extensions-item\");
-            for (var i = 0; i < items.length; i++) {
-              var s = items[i].shadowRoot;
-              var name = s && s.querySelector(\"#name\");
-              if (name && name.textContent.indexOf(\"FilOzone\") !== -1) {
-                var btn = s.querySelector(\"#dev-reload-button\");
-                if (btn) { btn.click(); return \"reloaded\"; }
-              }
-            }
-            var all = root.querySelectorAll(\"*\");
-            for (var j = 0; j < all.length; j++) {
-              if (all[j].shadowRoot) { var r = findAndReload(all[j].shadowRoot); if (r) return r; }
-            }
-            return null;
-          }
-          return findAndReload(document) || \"not found\";
-        })()"
-      end if
-    end repeat
-  end repeat
-end tell'
+# 2. Reload the FilOzone extension in Chrome
+osascript scripts/reload-extension.applescript
 ```
 
 **Prerequisite**: Chrome must have "Allow JavaScript from Apple Events" enabled.
 Enable it: Chrome menu → View → Developer → Allow JavaScript from Apple Events.
 
-The `chrome://extensions` tab must already be open. The osascript recurses through
-shadow DOMs to find `#dev-reload-button` inside the FilOzone `extensions-item`.
+The `chrome://extensions` tab must already be open. The script (`scripts/reload-extension.applescript`)
+recurses through shadow DOMs to find `#dev-reload-button` inside the FilOzone `extensions-item`.
+
+**Why a script file, not inline `-e`**: The Claude Code permission pattern `Bash(osascript:*)`
+does not match multi-line inline AppleScript strings. Keeping the logic in a file means the
+Bash invocation stays on one line and matches the allow rule cleanly.
 
 ## Verify the reload landed
 
