@@ -23,6 +23,7 @@ lerna-debug.log*
 
 # Local env / OS
 .env
+.env.local
 .env.*
 !.env.example
 .DS_Store
