@@ -1,0 +1,241 @@
+/* FilOzone FOC panel — GitHub Primer tokens (light/dark follow host). */
+
+#filoz-foc-board-panel-host {
+  margin-bottom: 16px;
+}
+
+/* ─── Card shell ─────────────────────────────────────────────────────────── */
+
+.filoz-foc-card {
+  border: 1px solid var(--borderColor-default, #d0d7de);
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 12px;
+  color: var(--fgColor-default, #1f2328);
+}
+
+/* ─── Header ─────────────────────────────────────────────────────────────── */
+
+.filoz-foc-card-header {
+  padding: 8px 10px;
+  background: var(--bgColor-muted, #f6f8fa);
+}
+
+.filoz-foc-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.filoz-foc-card-icon-wrap {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--fgColor-muted, #57606a);
+}
+
+.filoz-foc-card-title {
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.25;
+  color: var(--fgColor-default, #1f2328);
+}
+
+/* ─── Status row (in header, always visible) ─────────────────────────────── */
+
+.filoz-foc-card-status-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--borderColor-muted, rgba(208,215,222,0.48));
+}
+
+.filoz-foc-card-status-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fgColor-muted, #57606a);
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 38px;
+}
+
+.filoz-foc-card-status-slot {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Status pill select */
+.filoz-status-select-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+}
+
+.filoz-status-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 3px 24px 3px 9px;
+  border-radius: 2em;
+  border: 1px solid var(--borderColor-default, #d0d7de);
+  background-color: var(--bgColor-default, #ffffff);
+  color: var(--fgColor-default, #1f2328);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filoz-status-select:focus-visible {
+  outline: 2px solid var(--focus-outlineColor, #0969da);
+  outline-offset: 2px;
+}
+
+.filoz-status-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.filoz-status-select-arrow {
+  position: absolute;
+  right: 7px;
+  pointer-events: none;
+  color: var(--fgColor-muted, #57606a);
+  display: flex;
+  align-items: center;
+}
+
+/* ─── Chevron button ─────────────────────────────────────────────────────── */
+
+.filoz-foc-card-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 6px;
+  border: 1px solid var(--borderColor-default, #d0d7de);
+  background: var(--button-default-bgColor-rest, var(--control-bgColor-rest, #f6f8fa));
+  color: var(--fgColor-muted, #57606a);
+  cursor: pointer;
+}
+
+.filoz-foc-card-chevron:hover {
+  background: var(--button-default-bgColor-hover, var(--control-bgColor-hover, #eaeef2));
+}
+
+.filoz-foc-card-chevron:focus-visible {
+  outline: 2px solid var(--focus-outlineColor, #0969da);
+  outline-offset: 2px;
+}
+
+/* ─── Collapsible body ───────────────────────────────────────────────────── */
+
+.filoz-foc-card-body {
+  background: var(--bgColor-default, #ffffff);
+  padding: 0 10px 4px;
+}
+
+.filoz-foc-card-body[hidden] {
+  display: none;
+}
+
+/* ─── Field rows ─────────────────────────────────────────────────────────── */
+
+.filoz-field-row {
+  display: grid;
+  grid-template-columns: minmax(0, 44%) minmax(0, 56%);
+  gap: 4px 8px;
+  align-items: center;
+  padding: 6px 0;
+  border-top: 1px solid var(--borderColor-muted, rgba(208,215,222,0.48));
+}
+
+.filoz-field-row:first-child {
+  border-top: none;
+}
+
+.filoz-field-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fgColor-muted, #57606a);
+  line-height: 1.4;
+}
+
+.filoz-field-control {
+  min-width: 0;
+}
+
+.filoz-select,
+.filoz-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  line-height: 1.25;
+  color: var(--fgColor-default, #1f2328);
+  background-color: var(--bgColor-default, #ffffff);
+  border: 1px solid var(--borderColor-default, #d0d7de);
+  border-radius: 6px;
+}
+
+.filoz-input::placeholder {
+  color: var(--fgColor-muted, #57606a);
+}
+
+.filoz-select:focus-visible,
+.filoz-input:focus-visible {
+  outline: 2px solid var(--focus-outlineColor, #0969da);
+  outline-offset: 2px;
+}
+
+/* ─── Errors ─────────────────────────────────────────────────────────────── */
+
+.filoz-error {
+  color: var(--fgColor-danger, #cf222e);
+}
+
+.filoz-field-err {
+  margin: 4px 0 0;
+  font-size: 11px;
+}
+
+/* ─── Misc ───────────────────────────────────────────────────────────────── */
+
+.filoz-muted {
+  color: var(--fgColor-muted, #57606a);
+}
+
+.filoz-btn {
+  margin-top: 10px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-family: inherit;
+  border-radius: 6px;
+  cursor: pointer;
+  appearance: none;
+  background-color: var(--button-default-bgColor-rest, var(--control-bgColor-rest, #f6f8fa));
+  color: var(--button-default-fgColor-rest, var(--fgColor-default, #24292f));
+  border: 1px solid var(--button-default-borderColor-rest, var(--borderColor-default, #d0d7de));
+}
+
+.filoz-btn:hover {
+  background-color: var(--button-default-bgColor-hover, var(--control-bgColor-hover, #eaeef2));
+}
+
+.filoz-btn:focus-visible {
+  outline: 2px solid var(--focus-outlineColor, #0969da);
+  outline-offset: 2px;
+}
+
+.filoz-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

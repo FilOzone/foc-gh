@@ -40,6 +40,6 @@ const manifest = JSON.parse(readFileSync(manifestSrc, 'utf8'))
 writeFileSync(path.join(dist, 'manifest.json'), JSON.stringify(manifest, null, 2))
 
 copyFileSync(path.join(root, 'extension', 'src', 'options', 'options.html'), path.join(dist, 'options.html'))
-copyFileSync(path.join(root, 'extension', 'styles', 'sidebar.css'), path.join(dist, 'sidebar.css'))
+copyFileSync(path.join(root, 'extension', 'src', 'styles', 'sidebar.css'), path.join(dist, 'sidebar.css'))
 
 console.log('Built extension → extension/dist/')

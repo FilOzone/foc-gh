@@ -437,3 +437,59 @@ export const MUTATION_UPDATE_SINGLE_SELECT = `
     }
   }
 `
+
+export const MUTATION_UPDATE_NUMBER = `
+  mutation UpdateProjectV2Number($projectId: ID!, $itemId: ID!, $fieldId: ID!, $number: Float!) {
+    updateProjectV2ItemFieldValue(
+      input: {
+        projectId: $projectId
+        itemId: $itemId
+        fieldId: $fieldId
+        value: { number: $number }
+      }
+    ) {
+      projectV2Item {
+        id
+      }
+    }
+  }
+`
+
+export const MUTATION_UPDATE_TEXT = `
+  mutation UpdateProjectV2Text($projectId: ID!, $itemId: ID!, $fieldId: ID!, $text: String!) {
+    updateProjectV2ItemFieldValue(
+      input: {
+        projectId: $projectId
+        itemId: $itemId
+        fieldId: $fieldId
+        value: { text: $text }
+      }
+    ) {
+      projectV2Item {
+        id
+      }
+    }
+  }
+`
+
+export const MUTATION_UPDATE_ITERATION = `
+  mutation UpdateProjectV2Iteration(
+    $projectId: ID!
+    $itemId: ID!
+    $fieldId: ID!
+    $iterationId: String!
+  ) {
+    updateProjectV2ItemFieldValue(
+      input: {
+        projectId: $projectId
+        itemId: $itemId
+        fieldId: $fieldId
+        value: { iterationId: $iterationId }
+      }
+    ) {
+      projectV2Item {
+        id
+      }
+    }
+  }
+`

@@ -9,7 +9,10 @@ import { parseGithubIssuePrInput } from '../lib/github-url.js'
 import { loadConfig, parseOrgProjectUrl } from '../lib/project-config.js'
 import {
   MUTATION_ADD_PROJECT_ITEM,
+  MUTATION_UPDATE_ITERATION,
+  MUTATION_UPDATE_NUMBER,
   MUTATION_UPDATE_SINGLE_SELECT,
+  MUTATION_UPDATE_TEXT,
   QUERY_ISSUE_NODE_ID,
   QUERY_NODE_PROJECT_ITEMS,
   QUERY_PR_NODE_ID,
@@ -1007,6 +1010,49 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
       ok: true as const,
       field: { id: field.id, name: field.name ?? message.payload.fieldName, options: field.options },
     }
+  }
+
+  if (message.type === 'UPDATE_ITEM_FIELD') {
+    const cfg = await loadConfig()
+    if (!cfg.githubApiToken) {
+      return { ok: false as const, error: 'Missing GitHub API token.' }
+    }
+    const { projectId, itemId, fieldId, value } = message.payload
+    const token = cfg.githubApiToken
+    const gql =
+      value.kind === 'single_select' ?
+        graphqlRequest(token, MUTATION_UPDATE_SINGLE_SELECT, {
+          projectId,
+          itemId,
+          fieldId,
+          optionId: value.optionId,
+        })
+      : value.kind === 'number' ?
+        graphqlRequest(token, MUTATION_UPDATE_NUMBER, {
+          projectId,
+          itemId,
+          fieldId,
+          number: value.number,
+        })
+      : value.kind === 'text' ?
+        graphqlRequest(token, MUTATION_UPDATE_TEXT, {
+          projectId,
+          itemId,
+          fieldId,
+          text: value.text,
+        })
+      : graphqlRequest(token, MUTATION_UPDATE_ITERATION, {
+          projectId,
+          itemId,
+          fieldId,
+          iterationId: value.iterationId,
+        })
+
+    const result = await gql
+    if (result.errors?.length) {
+      return { ok: false as const, error: firstError(result.errors) }
+    }
+    return { ok: true as const, data: result.data }
   }
 
   if (message.type === 'UPDATE_STATUS') {

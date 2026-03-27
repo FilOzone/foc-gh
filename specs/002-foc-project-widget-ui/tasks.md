@@ -19,10 +19,10 @@
 
 **Purpose**: Align repo layout and build outputs with [plan.md](./plan.md).
 
-- [ ] T001 Ensure `extension/src/content/`, `extension/src/lib/`, and `extension/src/styles/` exist and match plan.md structure
-- [ ] T002 Verify `extension/manifest.json` content scripts and `web_accessible_resources` reference built assets under `extension/dist/` after `scripts/build.mjs`
-- [ ] T003 [P] Restore or update root `package.json` with `build` script targeting `scripts/build.mjs` so `extension/dist/` is reproducible
-- [ ] T004 [P] Update `scripts/build.mjs` to bundle TypeScript entry(ies) and copy `extension/src/styles/sidebar.css` into `extension/dist/sidebar.css`
+- [x] T001 Ensure `extension/src/content/`, `extension/src/lib/`, and `extension/src/styles/` exist and match plan.md structure
+- [x] T002 Verify `extension/manifest.json` content scripts and `web_accessible_resources` reference built assets under `extension/dist/` after `scripts/build.mjs`
+- [x] T003 [P] Restore or update root `package.json` with `build` script targeting `scripts/build.mjs` so `extension/dist/` is reproducible
+- [x] T004 [P] Update `scripts/build.mjs` to bundle TypeScript entry(ies) and copy `extension/src/styles/sidebar.css` into `extension/dist/sidebar.css`
 
 ---
 
@@ -32,14 +32,14 @@
 
 **Checkpoint**: Native mount point resolves on a real issue + PR page; field types map from GraphQL; CSS uses host variables only.
 
-- [ ] T005 Implement `findProjectsSidebarMount()` returning an anchor **inside** Projects **after** native project cards and **before** Milestone in `extension/src/content/projects-sidebar-mount.ts` (see [contracts/sidebar-widget-ui.md](./contracts/sidebar-widget-ui.md))
-- [ ] T006 [P] Add Projects v2 field-definition + item snapshot parsing aligned with [data-model.md](./data-model.md) in `extension/src/lib/project-v2-fields.ts`
-- [ ] T007 [P] Add `normalizeFieldType()` and option-list helpers in `extension/src/lib/project-field-types.ts`
-- [ ] T008 Add debounced autosave (~300 ms idle, flush on `blur`) in `extension/src/lib/autosave.ts`
-- [ ] T009 Wrap `updateProjectV2ItemFieldValue` (or equivalent) with optimistic UI + user-safe errors in `extension/src/lib/project-item-mutations.ts`
-- [ ] T010 Rebuild `extension/src/styles/sidebar.css` to use GitHub CSS variables / inherited colors only (no fixed light-only palette) per [research.md](./research.md)
-- [ ] T011 Refactor `extension/src/content/issue-sidebar.ts` to consume `findProjectsSidebarMount()` from `extension/src/content/projects-sidebar-mount.ts` instead of ad-hoc sidebar roots
-- [ ] T012 Load unpacked `extension/dist/` on a GitHub issue in **light** mode; confirm script runs without console errors; note result in PR (see [quickstart.md](./quickstart.md))
+- [x] T005 Implement `findProjectsSidebarMount()` returning an anchor **inside** Projects **after** native project cards and **before** Milestone in `extension/src/content/projects-sidebar-mount.ts` (see [contracts/sidebar-widget-ui.md](./contracts/sidebar-widget-ui.md))
+- [x] T006 [P] Add Projects v2 field-definition + item snapshot parsing aligned with [data-model.md](./data-model.md) in `extension/src/lib/project-v2-fields.ts`
+- [x] T007 [P] Add `normalizeFieldType()` and option-list helpers in `extension/src/lib/project-field-types.ts`
+- [x] T008 Add debounced autosave (~300 ms idle, flush on `blur`) in `extension/src/lib/autosave.ts`
+- [x] T009 Wrap `updateProjectV2ItemFieldValue` (or equivalent) with optimistic UI + user-safe errors in `extension/src/lib/project-item-mutations.ts`
+- [x] T010 Rebuild `extension/src/styles/sidebar.css` to use GitHub CSS variables / inherited colors only (no fixed light-only palette) per [research.md](./research.md)
+- [x] T011 Refactor `extension/src/content/issue-sidebar.ts` to consume `findProjectsSidebarMount()` from `extension/src/content/projects-sidebar-mount.ts` instead of ad-hoc sidebar roots
+- [ ] T012 Load unpacked `extension/dist/` on a GitHub issue in **light** mode; confirm script runs without console errors; note result in PR (see [quickstart.md](./quickstart.md)) — **manual**
 
 ---
 
@@ -51,12 +51,12 @@
 
 ### Implementation
 
-- [ ] T013 [US1] Insert panel host at Projects mount from T005/T011 in `extension/src/content/issue-sidebar.ts`
-- [ ] T014 [US1] Implement bordered card shell + header (Projects icon + configured title) in `extension/src/content/foc-project-card.ts`
-- [ ] T015 [US1] Add chevron **button** with `aria-expanded` and accessible name in `extension/src/content/foc-project-card.ts` per [contracts/sidebar-widget-ui.md](./contracts/sidebar-widget-ui.md)
-- [ ] T016 [US1] Toggle visibility of collapsible body (field rows container) with session-scoped expanded state in `extension/src/content/foc-project-card.ts`
-- [ ] T017 [US1] Apply spacing/typography tokens for card + header in `extension/src/styles/sidebar.css` to match reference screenshots
-- [ ] T018 [US1] Manual QA: issue + PR (conversation), **light + dark**, Milestone visible vs absent—record URLs in [quickstart.md](./quickstart.md) matrix
+- [x] T013 [US1] Insert panel host at Projects mount from T005/T011 in `extension/src/content/issue-sidebar.ts`
+- [x] T014 [US1] Implement bordered card shell + header (Projects icon + configured title) in `extension/src/content/foc-project-card.ts`
+- [x] T015 [US1] Add chevron **button** with `aria-expanded` and accessible name in `extension/src/content/foc-project-card.ts` per [contracts/sidebar-widget-ui.md](./contracts/sidebar-widget-ui.md)
+- [x] T016 [US1] Toggle visibility of collapsible body (field rows container) with session-scoped expanded state in `extension/src/content/foc-project-card.ts`
+- [x] T017 [US1] Apply spacing/typography tokens for card + header in `extension/src/styles/sidebar.css` to match reference screenshots
+- [ ] T018 [US1] Manual QA: issue + PR (conversation), **light + dark**, Milestone visible vs absent—record URLs in [quickstart.md](./quickstart.md) matrix — **manual**
 
 **Checkpoint**: US1 demoable without full field editing (placeholder body OK until US2).
 
@@ -70,14 +70,14 @@
 
 ### Implementation
 
-- [ ] T019 [P] [US2] Render **Status** / single-select pill + choice list in `extension/src/content/foc-field-renderer.ts`
-- [ ] T020 [P] [US2] Render **TEXT** / **NUMBER** labeled inputs in `extension/src/content/foc-field-renderer.ts`
-- [ ] T021 [P] [US2] Render **ITERATION** (and date-shaped fields) as select-style UI in `extension/src/content/foc-field-renderer.ts`
-- [ ] T022 [US2] Persist select/status on change via `extension/src/lib/project-item-mutations.ts`
-- [ ] T023 [US2] Persist text/number via `extension/src/lib/autosave.ts` + `extension/src/lib/project-item-mutations.ts`
-- [ ] T024 [US2] Remove any Save/Cancel affordances from panel markup in `extension/src/content/issue-sidebar.ts` and `extension/src/content/foc-project-card.ts`
-- [ ] T025 [US2] Render **UNSUPPORTED** fields as read-only text or omit with muted label in `extension/src/content/foc-field-renderer.ts` per [data-model.md](./data-model.md)
-- [ ] T026 [US2] Show inline mutation errors next to controls; refetch item on hard failure per [research.md](./research.md) in `extension/src/content/foc-field-renderer.ts` or `extension/src/lib/project-item-mutations.ts`
+- [x] T019 [P] [US2] Render **Status** / single-select pill + choice list in `extension/src/content/foc-field-renderer.ts`
+- [x] T020 [P] [US2] Render **TEXT** / **NUMBER** labeled inputs in `extension/src/content/foc-field-renderer.ts`
+- [x] T021 [P] [US2] Render **ITERATION** (and date-shaped fields) as select-style UI in `extension/src/content/foc-field-renderer.ts`
+- [x] T022 [US2] Persist select/status on change via `extension/src/lib/project-item-mutations.ts`
+- [x] T023 [US2] Persist text/number via `extension/src/lib/autosave.ts` + `extension/src/lib/project-item-mutations.ts`
+- [x] T024 [US2] Remove any Save/Cancel affordances from panel markup in `extension/src/content/issue-sidebar.ts` and `extension/src/content/foc-project-card.ts`
+- [x] T025 [US2] Render **UNSUPPORTED** fields as read-only text or omit with muted label in `extension/src/content/foc-field-renderer.ts` per [data-model.md](./data-model.md)
+- [x] T026 [US2] Show inline mutation errors next to controls; refetch item on hard failure per [research.md](./research.md) in `extension/src/content/foc-field-renderer.ts` or `extension/src/lib/project-item-mutations.ts`
 
 **Checkpoint**: US2 independently testable on FilOzone / FOC-configured items.
 
@@ -91,9 +91,9 @@
 
 ### Implementation
 
-- [ ] T027 [US3] Verify insertion runs **after** last native `.discussion-sidebar-item` project entry (or host-equivalent) without removing siblings in `extension/src/content/projects-sidebar-mount.ts`
-- [ ] T028 [US3] Manual QA multi-project PR (e.g. filecoin-project) using [quickstart.md](./quickstart.md); attach screenshots light+dark
-- [ ] T029 [US3] Confirm `extension/src/lib/github-url.ts` still resolves issue/PR context on `/pull/{n}/files` and conversation tabs so panel syncs (extend if gap found)
+- [x] T027 [US3] Verify insertion runs **after** last native `.discussion-sidebar-item` project entry (or host-equivalent) without removing siblings in `extension/src/content/projects-sidebar-mount.ts`
+- [ ] T028 [US3] Manual QA multi-project PR (e.g. filecoin-project) using [quickstart.md](./quickstart.md); attach screenshots light+dark — **manual**
+- [x] T029 [US3] Confirm `extension/src/lib/github-url.ts` still resolves issue/PR context on `/pull/{n}/files` and conversation tabs so panel syncs (extend if gap found)
 
 **Checkpoint**: US3 passes cross-org/multi-card scenario.
 
@@ -103,10 +103,10 @@
 
 **Purpose**: Docs, optional tests, build hygiene.
 
-- [ ] T030 [P] Fill PR manual QA matrix with **real URLs** and pass/fail in `specs/002-foc-project-widget-ui/quickstart.md`
-- [ ] T031 Add or update root `README.md` with install, build (`npm run build`), unpacked load path `extension/dist/`, and PAT/scopes pointer
+- [ ] T030 [P] Fill PR manual QA matrix with **real URLs** and pass/fail in `specs/002-foc-project-widget-ui/quickstart.md` — **manual**
+- [x] T031 Add or update root `README.md` with install, build (`npm run build`), unpacked load path `extension/dist/`, and PAT/scopes pointer
 - [ ] T032 [P] Optional: add `extension/tests/project-field-types.test.ts` for `extension/src/lib/project-field-types.ts` if Vitest/Jest exists; **skip** if no test runner wired
-- [ ] T033 Run `npm run build` and resolve type/lint issues for touched files under `extension/src/`
+- [x] T033 Run `npm run build` and resolve type/lint issues for touched files under `extension/src/`
 
 ---
 

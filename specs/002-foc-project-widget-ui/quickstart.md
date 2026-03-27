@@ -3,6 +3,10 @@
 **Feature**: [spec.md](./spec.md)  
 **Date**: 2026-03-27
 
+**Implementation**: Panel uses `extension/src/content/projects-sidebar-mount.ts` (before Milestone),
+`foc-project-card.ts` (expand/collapse), `foc-field-renderer.ts` (autosave editors), and
+`UPDATE_ITEM_FIELD` in the service worker. Styles: `extension/src/styles/sidebar.css`.
+
 ## Build and load
 
 1. From repository root (where `package.json` lives): install deps and build

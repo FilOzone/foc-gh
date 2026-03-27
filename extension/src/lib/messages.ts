@@ -37,6 +37,23 @@ export type UpdateStatusMessage = {
   }
 }
 
+export type ItemFieldValue =
+  | { kind: 'single_select'; optionId: string }
+  | { kind: 'number'; number: number }
+  | { kind: 'text'; text: string }
+  | { kind: 'iteration'; iterationId: string }
+
+export type UpdateItemFieldMessage = {
+  type: 'UPDATE_ITEM_FIELD'
+  payload: {
+    projectId: string
+    itemId: string
+    fieldId: string
+    fieldName: string
+    value: ItemFieldValue
+  }
+}
+
 export type StatusFieldMessage = {
   type: 'GET_STATUS_FIELD'
   payload: {
@@ -67,6 +84,7 @@ export type ExtensionMessage =
   | GetPanelStateMessage
   | AddToProjectMessage
   | UpdateStatusMessage
+  | UpdateItemFieldMessage
   | StatusFieldMessage
   | GetPrimaryBoardFieldDefinitionsMessage
   | DebugDiagnosticsMessage

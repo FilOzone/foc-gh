@@ -1,16 +1,14 @@
 /**
- * Injects a FilOzone FOC Projects v2 panel beside GitHub's layout sidebar.
- * Selectors: current issue UI uses `[data-testid="sticky-sidebar"]`; older layouts
- * use `.Layout-sidebar`, `[data-testid="issue-viewer-sidebar"]`, or
- * `aside[aria-label="Issues"]`. Panel mounts after `[data-testid="sidebar-projects-section"]`
- * when present (else appends to the sidebar container).
+ * FilOzone FOC Projects v2 panel: GitHub-native card in Projects region (spec 002).
  */
 import { pageContextFromLocation } from '../lib/github-url.js'
 import type { GetPanelStateMessage, ExtensionMessage } from '../lib/messages.js'
 import type { SerializableProjectField } from '../lib/project-board-fields.js'
 import { isTargetRepo, loadConfig } from '../lib/project-config.js'
-
-const PANEL_HOST_ID = 'filoz-foc-board-panel-host'
+import { getOrCreatePanelHost, placePanelHost } from './projects-sidebar-mount.js'
+import { createFocProjectCard } from './foc-project-card.js'
+import { renderEditableProjectFields } from './foc-field-renderer.js'
+import { updateProjectItemField } from '../lib/project-item-mutations.js'
 
 let loadToken = 0
 
@@ -24,59 +22,15 @@ function injectStylesheet(): void {
   document.documentElement.appendChild(link)
 }
 
-function findSidebarContainer(): Element | null {
-  const sticky = document.querySelector('[data-testid="sticky-sidebar"]')
-  if (sticky) return sticky
-  const layout = document.querySelector('.Layout-sidebar')
-  if (layout) return layout
-  const legacy = document.querySelector('[data-testid="issue-viewer-sidebar"]')
-  if (legacy) return legacy
-  const assignees = document.querySelector('[data-testid="sidebar-assignees-section"]')
-  if (assignees?.parentElement) return assignees.parentElement
-  const issuesAside = document.querySelector('aside[aria-label="Issues"]')
-  if (issuesAside) return issuesAside
-  // Pull request layout (conversation / files) uses a different landmark label.
-  const prAside = document.querySelector(
-    'aside[aria-label="Pull request"], aside[aria-label="Pull requests"]',
-  )
-  if (prAside) return prAside
-  // PR conversation layout (GitHub's current React layout uses this id).
-  const prConversation = document.querySelector('#pr-conversation-sidebar')
-  if (prConversation) return prConversation
-  return document.querySelector('[data-testid="conversation-sidebar"]')
-}
-
-function placeHostAfterProjects(sidebar: Element, host: HTMLDivElement): void {
-  // Issue layout
-  const projects = sidebar.querySelector('[data-testid="sidebar-projects-section"]')
-  if (projects) {
-    projects.after(host)
-    return
-  }
-  // PR layout: projects is a form[aria-label="Select projects"] inside a .discussion-sidebar-item wrapper
-  const prProjectsForm = sidebar.querySelector('form[aria-label="Select projects"]')
-  const prProjectsItem = prProjectsForm?.closest('.discussion-sidebar-item') ?? prProjectsForm?.parentElement
-  if (prProjectsItem) {
-    prProjectsItem.after(host)
-    return
-  }
-  sidebar.append(host)
-}
-
 function ensureHost(): HTMLDivElement | null {
-  const sidebar = findSidebarContainer()
-  if (!sidebar) return null
-  let host = document.getElementById(PANEL_HOST_ID) as HTMLDivElement | null
-  if (!host) {
-    host = document.createElement('div')
-    host.id = PANEL_HOST_ID
-  }
-  placeHostAfterProjects(sidebar, host)
+  const host = getOrCreatePanelHost()
+  const ok = placePanelHost(host)
+  if (!ok) return null
   return host
 }
 
 function clearHost(): void {
-  document.getElementById(PANEL_HOST_ID)?.remove()
+  document.getElementById('filoz-foc-board-panel-host')?.remove()
 }
 
 async function sendMessage<T>(msg: ExtensionMessage): Promise<T> {
@@ -111,17 +65,89 @@ type PanelStateErr = {
 
 type PanelState = PanelStateOk | PanelStateErr
 
-function el(html: string): HTMLElement {
-  const t = document.createElement('template')
-  t.innerHTML = html.trim()
-  const n = t.content.firstElementChild
-  if (!n || !(n instanceof HTMLElement)) {
-    throw new Error('invalid template')
-  }
-  return n
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
 }
 
-async function render(host: HTMLDivElement, ctx: NonNullable<ReturnType<typeof pageContextFromLocation>>): Promise<void> {
+/** Render the Status single-select pill into the card header slot. */
+function renderStatusInSlot(
+  slot: HTMLElement,
+  opts: {
+    projectId: string
+    itemId: string
+    statusField: Extract<SerializableProjectField, { kind: 'single_select' }>
+    currentValue: string
+    stale: () => boolean
+    onReload: () => void | Promise<void>
+  },
+): void {
+  slot.innerHTML = ''
+  const { projectId, itemId, statusField, currentValue, stale, onReload } = opts
+
+  const wrap = document.createElement('div')
+  wrap.className = 'filoz-status-select-wrap'
+
+  const sel = document.createElement('select')
+  sel.className = 'filoz-status-select'
+  sel.setAttribute('aria-label', statusField.name)
+
+  const empty = document.createElement('option')
+  empty.value = ''
+  empty.textContent = '—'
+  sel.append(empty)
+
+  for (const o of statusField.options) {
+    const opt = document.createElement('option')
+    opt.value = o.id
+    opt.textContent = o.name
+    if (o.name === currentValue || o.id === currentValue) opt.selected = true
+    sel.append(opt)
+  }
+
+  const errEl = document.createElement('p')
+  errEl.className = 'filoz-field-err filoz-error'
+  errEl.hidden = true
+
+  sel.addEventListener('change', async () => {
+    if (stale()) return
+    const optionId = sel.value
+    if (!optionId) return
+    errEl.hidden = true
+    sel.disabled = true
+    const res = await updateProjectItemField({
+      projectId,
+      itemId,
+      fieldId: statusField.id,
+      fieldName: statusField.name,
+      value: { kind: 'single_select', optionId },
+    })
+    sel.disabled = false
+    if (!res.ok) {
+      errEl.textContent = res.error ?? 'Update failed'
+      errEl.hidden = false
+      return
+    }
+    await onReload()
+  })
+
+  const chevronSvg = document.createElement('span')
+  chevronSvg.className = 'filoz-status-select-arrow'
+  chevronSvg.setAttribute('aria-hidden', 'true')
+  chevronSvg.innerHTML =
+    '<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.94l3.72-3.72a.749.749 0 0 1 1.06 0Z"/></svg>'
+
+  wrap.append(sel, chevronSvg)
+  slot.append(wrap, errEl)
+}
+
+async function render(
+  host: HTMLDivElement,
+  ctx: NonNullable<ReturnType<typeof pageContextFromLocation>>,
+): Promise<void> {
   const myToken = ++loadToken
   const cfg = await loadConfig()
 
@@ -131,29 +157,23 @@ async function render(host: HTMLDivElement, ctx: NonNullable<ReturnType<typeof p
   }
 
   host.innerHTML = ''
-  const panel = el(`
-    <div class="filoz-foc-panel">
-      <h3>FOC program project</h3>
-      <p class="filoz-muted">Cross-org panel — see <a href="${cfg.crossOrgBoardUrls[0] ?? '#'}" target="_blank" rel="noopener">board</a></p>
-      <div class="filoz-body">Loading…</div>
-    </div>
-  `) as HTMLDivElement
+  const card = createFocProjectCard({ title: 'FOC' })
+  host.append(card.root)
 
-  const body = panel.querySelector('.filoz-body') as HTMLDivElement
+  const bodySlot = card.body
+  bodySlot.innerHTML = '<p class="filoz-muted" style="padding:8px 0;margin:0">Loading…</p>'
 
   if (!cfg.githubApiToken) {
-    body.innerHTML = `
+    card.statusSlot.innerHTML = ''
+    bodySlot.innerHTML = `
       <p class="filoz-error">No API token configured.</p>
-      <button type="button" class="filoz-open-options">Open options</button>
+      <button type="button" class="filoz-btn filoz-open-options">Open options</button>
     `
-    body.querySelector('.filoz-open-options')?.addEventListener('click', () => {
+    bodySlot.querySelector('.filoz-open-options')?.addEventListener('click', () => {
       void chrome.runtime.openOptionsPage()
     })
-    host.append(panel)
     return
   }
-
-  host.append(panel)
 
   let state: PanelState
   try {
@@ -168,7 +188,7 @@ async function render(host: HTMLDivElement, ctx: NonNullable<ReturnType<typeof p
     } satisfies GetPanelStateMessage)
   } catch (e) {
     if (myToken !== loadToken) return
-    body.innerHTML = `<p class="filoz-error">${String(e)}</p>`
+    bodySlot.innerHTML = `<p class="filoz-error">${escapeHtml(String(e))}</p>`
     return
   }
 
@@ -176,30 +196,35 @@ async function render(host: HTMLDivElement, ctx: NonNullable<ReturnType<typeof p
 
   if (!state.ok) {
     if (state.code === 'NO_TOKEN') {
-      body.innerHTML = `
-        <p class="filoz-error">${state.error}</p>
-        <button type="button" class="filoz-open-options">Open options</button>
+      bodySlot.innerHTML = `
+        <p class="filoz-error">${escapeHtml(state.error)}</p>
+        <button type="button" class="filoz-btn filoz-open-options">Open options</button>
       `
-      body.querySelector('.filoz-open-options')?.addEventListener('click', () => {
+      bodySlot.querySelector('.filoz-open-options')?.addEventListener('click', () => {
         void chrome.runtime.openOptionsPage()
       })
       return
     }
-    body.innerHTML = `<p class="filoz-error">${state.error}</p>`
+    bodySlot.innerHTML = `<p class="filoz-error">${escapeHtml(state.error)}</p>`
     return
   }
 
   const s = state as PanelStateOk
+
+  // Update title from actual project name
+  const titleEl = card.root.querySelector('.filoz-foc-card-title')
+  if (titleEl) titleEl.textContent = s.projectTitle
+
   const linkedItem = s.item
 
   if (!linkedItem) {
-    body.innerHTML = `
-      <p><strong>${escapeHtml(s.projectTitle)}</strong> — not linked.</p>
-      <button type="button" class="filoz-add-btn">Add to FOC project</button>
+    bodySlot.innerHTML = `
+      <p>Not linked to <strong>${escapeHtml(s.projectTitle)}</strong>.</p>
+      <button type="button" class="filoz-btn filoz-add-btn">Add to project</button>
       <p class="filoz-add-err filoz-error" hidden></p>
     `
-    const addBtn = body.querySelector('.filoz-add-btn') as HTMLButtonElement
-    const addErr = body.querySelector('.filoz-add-err') as HTMLParagraphElement
+    const addBtn = bodySlot.querySelector('.filoz-add-btn') as HTMLButtonElement
+    const addErr = bodySlot.querySelector('.filoz-add-err') as HTMLParagraphElement
     addBtn.addEventListener('click', async () => {
       addErr.hidden = true
       addBtn.disabled = true
@@ -224,141 +249,35 @@ async function render(host: HTMLDivElement, ctx: NonNullable<ReturnType<typeof p
     return
   }
 
-  const fields = linkedItem.fieldLabels
-  const rowsHtml = Object.keys(fields)
-    .sort()
-    .map((k) => `<dt>${escapeHtml(k)}</dt><dd>${escapeHtml(fields[k] ?? '')}</dd>`)
-    .join('')
+  const statusName = (cfg.statusFieldName || 'Status').trim()
 
-  const catalogRows = s.boardFields
-    .map((f) => {
-      if (f.kind === 'single_select') {
-        return `<dt>${escapeHtml(f.name)}</dt><dd>${escapeHtml(f.dataType)} — ${String(f.options.length)} option(s)</dd>`
-      }
-      if (f.kind === 'iteration') {
-        return `<dt>${escapeHtml(f.name)}</dt><dd>${escapeHtml(f.dataType)} — ${String(f.iterations.length)} active, ${String(f.completedIterations.length)} completed (sample)</dd>`
-      }
-      return `<dt>${escapeHtml(f.name)}</dt><dd>${escapeHtml(f.dataType)}</dd>`
+  // Render Status in header slot
+  const statusField = s.boardFields.find(
+    (f): f is Extract<SerializableProjectField, { kind: 'single_select' }> =>
+      f.kind === 'single_select' && f.name.trim().toLowerCase() === statusName.toLowerCase(),
+  )
+  if (statusField) {
+    renderStatusInSlot(card.statusSlot, {
+      projectId: s.projectId,
+      itemId: linkedItem.itemId,
+      statusField,
+      currentValue: linkedItem.fieldLabels[statusField.name] ?? '',
+      stale: () => myToken !== loadToken,
+      onReload: async () => { await render(host, ctx) },
     })
-    .join('')
-
-  body.innerHTML = `
-    <p>On <strong>${escapeHtml(s.projectTitle)}</strong></p>
-    <details class="filoz-board-catalog"><summary>Board columns (${s.boardFields.length})</summary><dl>${catalogRows}</dl></details>
-    <p class="filoz-values-heading">Values on this card</p>
-    <dl>${rowsHtml}</dl>
-    <div class="filoz-status-wrap"></div>
-    <p class="filoz-status-msg filoz-success" hidden></p>
-  `
-
-  const statusWrap = body.querySelector('.filoz-status-wrap') as HTMLDivElement
-  const statusMsg = body.querySelector('.filoz-status-msg') as HTMLParagraphElement
-
-  if (ctx.kind === 'pull_request') {
-    const p = document.createElement('p')
-    p.className = 'filoz-muted'
-    p.textContent =
-      'Updating single-select fields on pull requests may be limited by GitHub; if a mutation fails, edit on the board.'
-    statusWrap.append(p)
   }
 
-  const singleSelects = s.boardFields.filter((f) => f.kind === 'single_select')
-  if (singleSelects.length === 0) {
-    statusWrap.append(
-      el(`<p class="filoz-muted">No single-select columns on this board (nothing to update from the panel).</p>`),
-    )
-    return
-  }
-
-  const primaryName = (cfg.statusFieldName || 'Status').trim().toLowerCase()
-  singleSelects.sort((a, b) => {
-    const an = a.name.trim().toLowerCase()
-    const bn = b.name.trim().toLowerCase()
-    const ap = an === primaryName ? 0 : 1
-    const bp = bn === primaryName ? 0 : 1
-    if (ap !== bp) return ap - bp
-    return a.name.localeCompare(b.name)
+  // Render remaining editable fields in body
+  bodySlot.innerHTML = ''
+  renderEditableProjectFields(bodySlot, {
+    projectId: s.projectId,
+    itemId: linkedItem.itemId,
+    boardFields: s.boardFields,
+    fieldLabels: linkedItem.fieldLabels,
+    statusFieldName: statusName,
+    stale: () => myToken !== loadToken,
+    onReload: async () => { await render(host, ctx) },
   })
-
-  for (const fld of singleSelects) {
-    const row = document.createElement('div')
-    row.className = 'filoz-sel-row'
-
-    const lab = document.createElement('label')
-    lab.textContent = fld.name
-    lab.setAttribute('for', `filoz-sel-${fld.id.replace(/[^a-z0-9_-]/gi, '-')}`)
-
-    const sel = document.createElement('select')
-    sel.id = `filoz-sel-${fld.id.replace(/[^a-z0-9_-]/gi, '-')}`
-    sel.setAttribute('aria-label', fld.name)
-
-    const currentVal = fields[fld.name] ?? ''
-    const opt0 = document.createElement('option')
-    opt0.value = ''
-    opt0.textContent = '(choose)'
-    sel.append(opt0)
-    for (const o of fld.options) {
-      const opt = document.createElement('option')
-      opt.value = o.id
-      opt.textContent = o.name
-      if (o.name === currentVal) opt.selected = true
-      sel.append(opt)
-    }
-
-    const updateBtn = document.createElement('button')
-    updateBtn.type = 'button'
-    updateBtn.textContent = 'Update'
-
-    updateBtn.addEventListener('click', async () => {
-      if (myToken !== loadToken) return
-      statusMsg.hidden = true
-      const optionId = sel.value
-      if (!optionId) return
-      updateBtn.disabled = true
-      try {
-        const res = await sendMessage<{ ok: boolean; error?: string }>({
-          type: 'UPDATE_STATUS',
-          payload: {
-            projectId: s.projectId,
-            itemId: linkedItem.itemId,
-            fieldId: fld.id,
-            optionId,
-            fieldName: fld.name,
-          },
-        })
-        if (!res.ok) {
-          statusMsg.textContent = res.error ?? 'Update failed'
-          statusMsg.classList.remove('filoz-success')
-          statusMsg.classList.add('filoz-error')
-          statusMsg.hidden = false
-          updateBtn.disabled = false
-          return
-        }
-        statusMsg.textContent = `Updated ${fld.name}.`
-        statusMsg.classList.add('filoz-success')
-        statusMsg.classList.remove('filoz-error')
-        statusMsg.hidden = false
-        await render(host, ctx)
-      } catch (e) {
-        statusMsg.textContent = String(e)
-        statusMsg.classList.remove('filoz-success')
-        statusMsg.classList.add('filoz-error')
-        statusMsg.hidden = false
-        updateBtn.disabled = false
-      }
-    })
-
-    row.append(lab, sel, updateBtn)
-    statusWrap.append(row)
-  }
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
 }
 
 async function sync(): Promise<void> {
@@ -381,9 +300,7 @@ async function sync(): Promise<void> {
 }
 
 function bindNavigation(): void {
-  const run = (): void => {
-    void sync()
-  }
+  const run = (): void => { void sync() }
   for (const ev of ['turbo:load', 'turbo:render', 'pjax:end', 'soft-nav:end', 'pjax:success']) {
     document.addEventListener(ev, run)
   }

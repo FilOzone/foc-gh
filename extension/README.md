@@ -4,7 +4,8 @@ Chromium **Manifest V3** extension: on configured repos (default `filecoin-proje
 `filecoin-project/filecoin-pin`), adds a sidebar panel that shows whether the current
 issue or PR is on the FilOzone FOC Projects v2 board (default
 [orgs/FilOzone/projects/14](https://github.com/orgs/FilOzone/projects/14)),
-lets you **add** the item, and update **Status** (single-select) when the API allows.
+lets you **add** the item, and edit board fields (**single select**, **number**, **text**,
+**iteration**) with **autosave** (no per-field Save button) when the API allows.
 
 ## Build
 
