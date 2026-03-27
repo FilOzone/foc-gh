@@ -27,6 +27,15 @@ await esbuild.build({
 })
 
 await esbuild.build({
+  entryPoints: [path.join(root, 'extension', 'src', 'content', 'pr-expand-main-world.ts')],
+  bundle: true,
+  format: 'iife',
+  platform: 'browser',
+  target: 'es2022',
+  outfile: path.join(dist, 'pr-expand-main-world.js'),
+})
+
+await esbuild.build({
   entryPoints: [path.join(root, 'extension', 'src', 'options', 'options.ts')],
   bundle: true,
   format: 'esm',

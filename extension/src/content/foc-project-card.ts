@@ -11,25 +11,11 @@ export type FocProjectCard = {
   isExpanded: () => boolean
 }
 
-const EXPANDED_KEY = 'filoz-foc-card-expanded'
-
-function sessionExpandedDefault(): boolean {
-  try {
-    const v = sessionStorage.getItem(EXPANDED_KEY)
-    if (v === '0') return false
-    if (v === '1') return true
-  } catch {
-    /* ignore */
-  }
-  return true
-}
-
-function persistExpanded(expanded: boolean): void {
-  try {
-    sessionStorage.setItem(EXPANDED_KEY, expanded ? '1' : '0')
-  } catch {
-    /* ignore */
-  }
+export type CreateFocProjectCardOpts = {
+  title: string
+  boardUrl?: string
+  /** From extension options: expand field body on load. Global setting always wins. */
+  initialExpanded: boolean
 }
 
 function projectsIconSvg(): string {
@@ -41,14 +27,14 @@ const CHEVRON_DOWN =
 const CHEVRON_UP =
   '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M3.22 10.72a.749.749 0 0 1 0-1.06l4.25-4.25a.749.749 0 0 1 1.06 0l4.25 4.25a.749.749 0 1 1-1.06 1.06L8 6.06 4.28 9.78a.749.749 0 0 1-1.06 0Z"/></svg>'
 
-export function createFocProjectCard(opts: { title: string; boardUrl?: string }): FocProjectCard {
+export function createFocProjectCard(opts: CreateFocProjectCardOpts): FocProjectCard {
   const root = document.createElement('div')
   root.className = 'filoz-foc-card'
 
   const header = document.createElement('div')
   header.className = 'filoz-foc-card-header'
 
-  // Row 1: icon + title
+  // Row 1: icon + title + chevron
   const titleRow = document.createElement('div')
   titleRow.className = 'filoz-foc-card-title-row'
 
@@ -74,7 +60,7 @@ export function createFocProjectCard(opts: { title: string; boardUrl?: string })
 
   titleRow.append(iconWrap, titleEl, toggle)
 
-  // Row 2: "Status" label + status control slot (no chevron — matches issue card layout)
+  // Row 2: "Status" label + status control slot
   const statusRow = document.createElement('div')
   statusRow.className = 'filoz-foc-card-status-row'
 
@@ -91,13 +77,12 @@ export function createFocProjectCard(opts: { title: string; boardUrl?: string })
   const body = document.createElement('div')
   body.className = 'filoz-foc-card-body'
 
-  let expanded = sessionExpandedDefault()
+  let expanded = opts.initialExpanded
 
   const applyExpanded = (): void => {
     toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false')
     toggle.innerHTML = expanded ? CHEVRON_UP : CHEVRON_DOWN
     body.hidden = !expanded
-    persistExpanded(expanded)
   }
 
   const setExpanded = (v: boolean): void => {

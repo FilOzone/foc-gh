@@ -19,6 +19,7 @@ const diagOutEl = document.querySelector<HTMLPreElement>('#diag-out')
 const sampleUrlEl = document.querySelector<HTMLInputElement>('#sample-url')
 const sampleRunBtn = document.querySelector<HTMLButtonElement>('#sample-run')
 const sampleOutEl = document.querySelector<HTMLPreElement>('#sample-out')
+const issuePrProjectsAutoExpandEl = document.querySelector<HTMLInputElement>('#issuePrProjectsAutoExpand')
 
 function linesToList(s: string): string[] {
   return s
@@ -116,6 +117,7 @@ async function load(): Promise<void> {
     STORAGE_KEYS.crossOrgBoardUrls,
     STORAGE_KEYS.crossOrgTargetRepos,
     STORAGE_KEYS.statusFieldName,
+    STORAGE_KEYS.issuePrProjectsAutoExpand,
   ])
 
   if (tokenEl) tokenEl.value = String(raw[STORAGE_KEYS.githubApiToken] ?? '')
@@ -137,6 +139,9 @@ async function load(): Promise<void> {
   }
   const savedStatus = String(raw[STORAGE_KEYS.statusFieldName] ?? DEFAULT_STATUS_FIELD_NAME)
   populateStatusSelect([], savedStatus)
+  if (issuePrProjectsAutoExpandEl) {
+    issuePrProjectsAutoExpandEl.checked = raw[STORAGE_KEYS.issuePrProjectsAutoExpand] !== false
+  }
   if (tokenEl?.value?.trim()) {
     await refreshBoardColumns()
   }
@@ -153,6 +158,7 @@ async function save(): Promise<void> {
     [STORAGE_KEYS.statusFieldName]: statusFieldEl?.value?.trim()
       ? statusFieldEl.value.trim()
       : DEFAULT_STATUS_FIELD_NAME,
+    [STORAGE_KEYS.issuePrProjectsAutoExpand]: issuePrProjectsAutoExpandEl?.checked !== false,
   })
   if (statusEl) statusEl.textContent = 'Saved.'
 }

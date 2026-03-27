@@ -30,7 +30,7 @@ Browser extension sources: `extension/src/` (content scripts, lib, options); bui
 
 **Purpose**: Confirm the workspace builds before touching feature code.
 
-- [ ] T001 Run `npm install` (if needed) and `npm run build` in `extension/` to verify the TypeScript pipeline passes on branch `003-auto-expand-panels`
+- [x] T001 Run `npm install` (if needed) and `npm run build` in `extension/` to verify the TypeScript pipeline passes on branch `003-auto-expand-panels`
 
 ---
 
@@ -40,7 +40,7 @@ Browser extension sources: `extension/src/` (content scripts, lib, options); bui
 
 **⚠️ CRITICAL**: Complete this phase before User Story implementation.
 
-- [ ] T002 Add `issuePrProjectsAutoExpand` to `STORAGE_KEYS`, extend `StoredConfig`, and return default `true` when key missing in `loadConfig()` in `extension/src/lib/project-config.ts` (align key string with [data-model.md](./data-model.md))
+- [x] T002 Add `issuePrProjectsAutoExpand` to `STORAGE_KEYS`, extend `StoredConfig`, and return default `true` when key missing in `loadConfig()` in `extension/src/lib/project-config.ts` (align key string with [data-model.md](./data-model.md))
 
 **Checkpoint**: `loadConfig()` exposes a boolean suitable for `issue-sidebar.ts` without `undefined`.
 
@@ -54,10 +54,10 @@ Browser extension sources: `extension/src/` (content scripts, lib, options); bui
 
 ### Implementation for User Story 1
 
-- [ ] T003 [P] [US1] Implement `createFocProjectCard` options (`initialExpanded`, `sessionStorageKey`), per-item `sessionStorage` read/write on chevron toggle, and removal of the global-only key behavior in `extension/src/content/foc-project-card.ts` per [research.md](./research.md)
-- [ ] T004 [US1] Derive session key from `ctx` (`owner`, `name`, `number`, `kind`), pass `cfg.issuePrProjectsAutoExpand` into `createFocProjectCard`, and after successful `GET_PANEL_STATE` apply `setExpanded(true)` when preference is true and session does not record an explicit collapse for this item in `extension/src/content/issue-sidebar.ts`
-- [ ] T005 [P] [US1] Add checkbox + helper paragraph (initial copy) bound to the new storage key in `extension/src/options/options.html`
-- [ ] T006 [US1] Load and persist the new key in `extension/src/options/options.ts` using `STORAGE_KEYS` from `extension/src/lib/project-config.ts` (mirror existing `load()` / `save()` patterns)
+- [x] T003 [P] [US1] Implement `createFocProjectCard` options (`initialExpanded`, `sessionStorageKey`), per-item `sessionStorage` read/write on chevron toggle, and removal of the global-only key behavior in `extension/src/content/foc-project-card.ts` per [research.md](./research.md)
+- [x] T004 [US1] Derive session key from `ctx` (`owner`, `name`, `number`, `kind`), pass `cfg.issuePrProjectsAutoExpand` into `createFocProjectCard`, and after successful `GET_PANEL_STATE` apply `setExpanded(true)` when preference is true and session does not record an explicit collapse for this item in `extension/src/content/issue-sidebar.ts`
+- [x] T005 [P] [US1] Add checkbox + helper paragraph (initial copy) bound to the new storage key in `extension/src/options/options.html`
+- [x] T006 [US1] Load and persist the new key in `extension/src/options/options.ts` using `STORAGE_KEYS` from `extension/src/lib/project-config.ts` (mirror existing `load()` / `save()` patterns)
 
 **Checkpoint**: User Story 1 acceptance scenarios (spec §US1) satisfied on issues and PRs for extension-managed card.
 
@@ -71,7 +71,7 @@ Browser extension sources: `extension/src/` (content scripts, lib, options); bui
 
 ### Implementation for User Story 2
 
-- [ ] T007 [US2] Run the manual matrix in [quickstart.md](./quickstart.md) for cross-org vs same-org; confirm no org-specific branches are required—if gaps exist, fix only in `extension/src/content/issue-sidebar.ts` / `extension/src/content/foc-project-card.ts` without adding GitHub API calls; record verification notes in the PR
+- [x] T007 [US2] Run the manual matrix in [quickstart.md](./quickstart.md) for cross-org vs same-org; confirm no org-specific branches are required—if gaps exist, fix only in `extension/src/content/issue-sidebar.ts` / `extension/src/content/foc-project-card.ts` without adding GitHub API calls; record verification notes in the PR
 
 **Checkpoint**: User Story 2 acceptance scenarios satisfied without per-org settings.
 
@@ -85,7 +85,7 @@ Browser extension sources: `extension/src/` (content scripts, lib, options); bui
 
 ### Implementation for User Story 3
 
-- [ ] T008 [US3] Refine checkbox `label`, helper text, and any `aria` strings in `extension/src/options/options.html` to match FR-006 and [contracts/issue-pr-panel-expansion.md](./contracts/issue-pr-panel-expansion.md); keep tone consistent with existing options page
+- [x] T008 [US3] Refine checkbox `label`, helper text, and any `aria` strings in `extension/src/options/options.html` to match FR-006 and [contracts/issue-pr-panel-expansion.md](./contracts/issue-pr-panel-expansion.md); keep tone consistent with existing options page
 
 **Checkpoint**: User Story 3 acceptance scenarios satisfied.
 
@@ -95,8 +95,8 @@ Browser extension sources: `extension/src/` (content scripts, lib, options); bui
 
 **Purpose**: Type safety, docs drift, merge readiness.
 
-- [ ] T009 [P] Run `npm run typecheck` and `npm run build` in `extension/`; fix any TypeScript or bundler issues introduced by the feature
-- [ ] T010 [P] Reconcile [quickstart.md](./quickstart.md) with final options labels and session-key behavior; update that file only if instructions or filenames drifted during implementation
+- [x] T009 [P] Run `npm run typecheck` and `npm run build` in `extension/`; fix any TypeScript or bundler issues introduced by the feature
+- [x] T010 [P] Reconcile [quickstart.md](./quickstart.md) with final options labels and session-key behavior; update that file only if instructions or filenames drifted during implementation
 
 ---
 

@@ -6,6 +6,8 @@ export const STORAGE_KEYS = {
   crossOrgBoardUrls: 'cross_org_board_urls',
   crossOrgTargetRepos: 'cross_org_target_repos',
   statusFieldName: 'status_field_name',
+  /** When true (default), FOC sidebar card field body loads expanded on issues/PRs. */
+  issuePrProjectsAutoExpand: 'issue_pr_projects_auto_expand',
 } as const
 
 export const DEFAULT_BOARD_URLS = ['https://github.com/orgs/FilOzone/projects/14'] as const
@@ -23,6 +25,7 @@ export type StoredConfig = {
   crossOrgBoardUrls: string[]
   crossOrgTargetRepos: string[]
   statusFieldName: string
+  issuePrProjectsAutoExpand: boolean
 }
 
 export function normalizeRepoKey(owner: string, name: string): string {
@@ -44,10 +47,13 @@ export async function loadConfig(): Promise<StoredConfig> {
     STORAGE_KEYS.crossOrgBoardUrls,
     STORAGE_KEYS.crossOrgTargetRepos,
     STORAGE_KEYS.statusFieldName,
+    STORAGE_KEYS.issuePrProjectsAutoExpand,
   ])
 
   const urls = raw[STORAGE_KEYS.crossOrgBoardUrls] as string[] | undefined
   const repos = raw[STORAGE_KEYS.crossOrgTargetRepos] as string[] | undefined
+  const autoRaw = raw[STORAGE_KEYS.issuePrProjectsAutoExpand]
+  const issuePrProjectsAutoExpand = autoRaw === false ? false : true
 
   return {
     githubApiToken: String(raw[STORAGE_KEYS.githubApiToken] ?? ''),
@@ -57,6 +63,7 @@ export async function loadConfig(): Promise<StoredConfig> {
     crossOrgTargetRepos:
       Array.isArray(repos) && repos.length > 0 ? repos : [...DEFAULT_TARGET_REPOS],
     statusFieldName: String(raw[STORAGE_KEYS.statusFieldName] ?? DEFAULT_STATUS_FIELD_NAME),
+    issuePrProjectsAutoExpand,
   }
 }
 

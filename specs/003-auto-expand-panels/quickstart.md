@@ -15,8 +15,8 @@ Load **unpacked** from `extension/` (or `extension/dist` per your manifest) in C
 ## Configure
 
 1. Open extension **Options**.
-2. Set the new **“Expand project field sections…”** (final copy TBD) checkbox as needed.
-3. Save if the page uses an explicit Save control (current options use **Save** for all fields).
+2. Toggle **“Sidebar: expand project field sections on issues & pull requests”** (checkbox above **Primary single-select column**).
+3. Click **Save** (options page persists token, boards, repos, status column, and this preference together).
 
 ## Manual QA (happy paths)
 
@@ -24,7 +24,11 @@ Load **unpacked** from `extension/` (or `extension/dist` per your manifest) in C
 2. **Preference off**: same URL → body **collapsed**; chevron opens fields.
 3. **Cross-org**: use an issue under `filecoin-project/…` linked to configured FilOzone board → same expand/collapse behavior as in-org (no API difference).
 4. **Pull request**: repeat on a specific **PR** URL for the same repo.
-5. **Session**: with preference **on**, collapse card on issue A; open issue B in same tab → B should **start expanded** (per-item session key).
+5. **Session**: with preference **on**, collapse card on issue A; open issue B in same tab → B should **start expanded** (per-item session key; session key includes issue/PR kind, owner, repo, and number).
+
+## PR verification (US2)
+
+Cross-org (`filecoin-project/…` + FilOzone board) and same-org scenarios MUST show the same expand/collapse behavior: logic uses only `issuePrProjectsAutoExpand` and per-item `sessionStorage`, not repo/board org. No extra GitHub API calls.
 
 ## Themes
 

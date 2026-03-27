@@ -29,6 +29,10 @@
         font-family: ui-monospace, monospace;
         font-size: 0.9rem;
       }
+      input[type='checkbox'] {
+        margin-top: 0.5rem;
+        width: auto;
+      }
       button {
         margin-top: 1.25rem;
         padding: 0.5rem 1rem;
@@ -91,6 +95,23 @@
 
     <label for="repos">Target repos (owner/repo, one per line)</label>
     <textarea id="repos"></textarea>
+
+    <label for="issuePrProjectsAutoExpand"
+      >All issues &amp; PRs: expand native Projects sidebar + extension panel</label>
+    <input
+      id="issuePrProjectsAutoExpand"
+      name="issuePrProjectsAutoExpand"
+      type="checkbox"
+      checked
+      aria-describedby="issuePrProjectsAutoExpand-hint"
+    />
+    <p id="issuePrProjectsAutoExpand-hint" class="hint">
+      <strong>Global on github.com</strong> (every repo’s issues &amp; pull requests): expands GitHub’s own
+      <strong>Projects</strong> blocks in the right sidebar (for example “Show more project fields” / collapsible
+      rows). Additionally, on <strong>target repos</strong> only, the extension’s FOC card field section starts
+      expanded the same way. Uncheck to leave initial collapse state to GitHub / the extension default. Status rows
+      stay visible; this mainly opens detail sections.
+    </p>
 
     <label for="statusField">Primary single-select column (for panel ordering)</label>
     <select id="statusField"></select>

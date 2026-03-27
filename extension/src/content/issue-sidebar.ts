@@ -9,6 +9,11 @@ import { getOrCreatePanelHost, placePanelHost } from './projects-sidebar-mount.j
 import { createFocProjectCard } from './foc-project-card.js'
 import { renderEditableProjectFields } from './foc-field-renderer.js'
 import { updateProjectItemField } from '../lib/project-item-mutations.js'
+import { syncNativeProjectsExpand } from './native-projects-expand.js'
+
+// Build marker — update this string after each rebuild to confirm reloads land in console.
+const BUILD_MARKER = 'filoz-2026-03-27-C'
+console.log('[FilOzone] content script loaded:', BUILD_MARKER)
 
 let loadToken = 0
 
@@ -157,7 +162,11 @@ async function render(
   }
 
   host.innerHTML = ''
-  const card = createFocProjectCard({ title: 'FOC', boardUrl: cfg.crossOrgBoardUrls[0] })
+  const card = createFocProjectCard({
+    title: 'FOC',
+    boardUrl: cfg.crossOrgBoardUrls[0],
+    initialExpanded: cfg.issuePrProjectsAutoExpand,
+  })
   host.append(card.root)
 
   const bodySlot = card.body
@@ -289,10 +298,13 @@ async function sync(): Promise<void> {
   const ctx = pageContextFromLocation(window.location)
   if (!ctx) {
     clearHost()
+    syncNativeProjectsExpand(false)
     return
   }
 
   const cfg = await loadConfig()
+  syncNativeProjectsExpand(cfg.issuePrProjectsAutoExpand)
+
   if (!isTargetRepo(cfg, ctx.owner, ctx.name)) {
     clearHost()
     return
