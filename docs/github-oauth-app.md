@@ -9,13 +9,25 @@ together. The secret is injected only into `service-worker.js` at build time; tr
 built extension as **holding a confidential credential** (do not publish the bundle if the
 secret must stay private).
 
-## 1. Create an OAuth App
+## 1. Create an OAuth App (prefer organization-owned for team use)
 
-1. GitHub → **Settings** → **Developer settings** → **OAuth Apps** → **New OAuth App**.
-2. **Application name**: e.g. `FilOzone FOC board extension (dev)`.
-3. **Homepage URL**: your org or repo URL.
-4. **Authorization callback URL**: the value returned by
-   `chrome.identity.getRedirectURL()` for your extension.
+**Recommended for org-wide use (e.g. FilOzone):** register the OAuth App **under the
+GitHub organization**, not under a personal account. That keeps Client ID/secret and app
+settings with the org, makes **OAuth app access restrictions** reviews clearer (“our
+extension”), and avoids coupling credentials to one person’s account.
+
+1. Open **`https://github.com/organizations/<ORG>/settings/applications`** (replace
+   `<ORG>`; you need permission to manage OAuth Apps for that org).
+2. Under **Developer settings** → **OAuth Apps** → **New OAuth App**.
+3. **Application name**, **Homepage URL**, and **Authorization callback URL** (below).
+
+**Alternative (personal OAuth App):** **Settings** (your profile) → **Developer settings**
+→ **OAuth Apps** → **New OAuth App**. Same callback URL rules apply; orgs that enforce
+**third-party OAuth restrictions** may still have to **approve** the app for org data—see
+[Restricting access to your organization’s data](https://docs.github.com/articles/restricting-access-to-your-organization-s-data/).
+
+After registration, copy the **Client ID** and generate a **Client secret** for
+`.env.local` / your build environment (see §2).
 
 ### Callback URL and extension ID
 

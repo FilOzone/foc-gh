@@ -45,7 +45,10 @@ and disconnecting—without mandating internal function names.
 
 - MUST use **`chrome.identity.launchWebAuthFlow`** (or successor API) with
   redirect from `chrome.identity.getRedirectURL()`.
-- MUST complete PKCE code exchange without exposing `client_secret`.
+- MUST complete PKCE code exchange using **`client_id`** and **`client_secret`**
+  supplied only from **build-time** injection into the service worker (not from
+  the options page or storage). The secret is part of the shipped bundle risk
+  model; see [`docs/github-oauth-app.md`](../../docs/github-oauth-app.md).
 - MUST NOT persist `code_verifier`.
 
 ---

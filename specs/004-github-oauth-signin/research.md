@@ -11,12 +11,19 @@ GitHub’s **web application** OAuth flow traditionally exchanges an authorizati
 code for tokens using **`client_id` + `client_secret`**. Browser extensions must
 **not** ship a client secret (recoverable from the package).
 
-### Option A — Authorization code + PKCE (chosen)
+### Option A — Authorization code + PKCE + classic OAuth App token exchange (chosen)
 
-GitHub supports **OAuth 2.0 PKCE** for public OAuth apps: the extension performs
-the authorize step with a **code challenge**, then exchanges the code using the
-matching **code verifier** and **`client_id` only** (no secret). This matches
-how many MV3 extensions integrate with GitHub.
+The extension performs the authorize step with **PKCE** (**code challenge** /
+**code verifier**). For **classic GitHub OAuth Apps**, GitHub’s
+`POST /login/oauth/access_token` step still expects **`client_secret`** alongside
+`client_id`, `code`, `redirect_uri`, and `code_verifier` in practice. We inject
+**`GITHUB_OAUTH_CLIENT_SECRET`** at **build time** into the service worker bundle
+only (not from the options UI), with body **`application/x-www-form-urlencoded`**.
+
+**OAuth App registration:** Prefer an **organization-owned** OAuth App for team
+deployments (`https://github.com/organizations/<org>/settings/applications`) so
+credentials and policy reviews stay with the org; document in
+[`docs/github-oauth-app.md`](../../docs/github-oauth-app.md).
 
 - **User UX**: One or two browser tabs/windows during consent; familiar “Authorize
   application” on github.com.
@@ -95,8 +102,12 @@ only.
 
 ## Open items for implementation (not spec blockers)
 
-- **OAuth App registration**: FilOzone (or deployer) creates the GitHub OAuth App,
-  records **Client ID** in extension build config (e.g. env at build time—**never**
-  commit unused secrets; Client ID is public).
+- **OAuth App registration**: FilOzone (or deployer) creates a **GitHub OAuth App**
+  (prefer **org-owned** under `organizations/<org>/settings/applications`), registers
+  the callback URL, and sets **`GITHUB_OAUTH_CLIENT_ID`** and
+  **`GITHUB_OAUTH_CLIENT_SECRET`** at build time via env / `.env.local` (**never**
+  commit secrets; Client ID alone is not secret).
+- **Org policy**: Organizations with **OAuth app access restrictions** must **approve**
+  the app (org-owned apps are still subject to policy; approval is usually smoother).
 - **Callback URL**: Each unpacked vs store build may use different extension IDs;
   document dev vs release callback registration (common extension maintenance cost).

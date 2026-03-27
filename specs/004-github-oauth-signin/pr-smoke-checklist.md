@@ -9,7 +9,7 @@ Copy into the PR description when landing this feature.
 
 ## Auth
 
-- [ ] **Connect GitHub** completes when `GITHUB_OAUTH_CLIENT_ID` was set at build time and the OAuth App callback matches `chrome.identity.getRedirectURL()`.
+- [ ] **Connect GitHub** completes when **`GITHUB_OAUTH_CLIENT_ID`** and **`GITHUB_OAUTH_CLIENT_SECRET`** were set at build time and the OAuth App callback matches `chrome.identity.getRedirectURL()` (org-owned app documented in [`docs/github-oauth-app.md`](../../docs/github-oauth-app.md) when applicable).
 - [ ] Cancel / close auth tab leaves options in a **not connected** state with a clear message.
 - [ ] **Disconnect** clears OAuth session; **Run API checks** fails until re-auth or PAT save.
 - [ ] **PAT** path: paste PAT, Save, API checks succeed.

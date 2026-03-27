@@ -12,12 +12,20 @@ authorize **`api.github.com/graphql`** without creating a PAT first, while **kee
 the existing **PAT paste** path and making **active credential mode** explicit
 (**`pat` | `oauth` | none**). Technical approach (see [research.md](./research.md)):
 **OAuth 2.0 authorization code + PKCE** via **`chrome.identity.launchWebAuthFlow`**
-and `chrome.identity.getRedirectURL()`, token exchange to GitHub **without**
-`client_secret`, persist access token in **`chrome.storage.local`** with the
-same key shape the service worker already uses for Bearer auth. Introduce
+and `chrome.identity.getRedirectURL()`, then **form-encoded** token exchange to
+GitHub including **`client_id` + `client_secret` + `code` + `redirect_uri` +
+`code_verifier`** (GitHub’s **classic OAuth App** web flow requires the secret at
+exchange time). **`GITHUB_OAUTH_CLIENT_SECRET`** is injected at **build time**
+into `service-worker.js` only (same pattern as Client ID); it is not a runtime
+secret from the options page. Persist access token in **`chrome.storage.local`**
+with the same key shape the service worker already uses for Bearer auth. Introduce
 **`identity`** manifest permission. Centralize bearer resolution in one helper
 so GraphQL, diagnostics, and board column refresh behave identically for PAT or
 OAuth.
+
+**OAuth App ownership:** FilOzone (and similar orgs) should register the OAuth App
+under **`https://github.com/organizations/<org>/settings/applications`** when
+possible—see [`docs/github-oauth-app.md`](../../docs/github-oauth-app.md).
 
 ## Technical Context
 
@@ -36,9 +44,11 @@ for OAuth callback registration
 **Performance Goals**: OAuth flow completes within spec **SC-001** (~3 minutes
 budget includes user reading consent); token exchange &lt; few seconds on normal
 networks  
-**Constraints**: No `client_secret` in extension; no new project-hosted token
-backend (**EXT-003**); scopes ≤ existing PAT capability documentation  
-**Scale/Scope**: One OAuth App Client ID per deployment channel; single-user
+**Constraints**: No **project-hosted** token broker (**EXT-003**); token exchange runs
+in the extension service worker using build-injected `GITHUB_OAUTH_CLIENT_ID` /
+`GITHUB_OAUTH_CLIENT_SECRET` (classic OAuth App requirement). Scopes ≤ existing PAT
+capability documentation.  
+**Scale/Scope**: One OAuth App (Client ID + secret) per deployment channel; single-user
 browser profile storage
 
 ## Constitution Check

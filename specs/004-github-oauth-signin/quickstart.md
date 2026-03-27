@@ -5,12 +5,15 @@
 ## Prereqs
 
 - Chromium with **Developer mode** extensions.
-- This repo built: from repository root, `npm install && npm run build` (set `GITHUB_OAUTH_CLIENT_ID` for OAuth tests).
+- This repo built: from repository root, `npm install && npm run build`. For OAuth
+  tests, set **`GITHUB_OAUTH_CLIENT_ID`** and **`GITHUB_OAUTH_CLIENT_SECRET`**
+  (e.g. `set -a && source .env.local && npm run build`). Prefer an **organization
+  OAuth App** when testing org Projects—see [`docs/github-oauth-app.md`](../../docs/github-oauth-app.md).
 - For PRs, copy the checklist in [pr-smoke-checklist.md](./pr-smoke-checklist.md) into the PR description.
 - A **GitHub OAuth App** registered for development (after implementation):  
   **Authorization callback URL** = `chrome.identity.getRedirectURL()` for your
   **unpacked** extension ID (shown on `chrome://extensions` → extension details).
-- **Client ID** available at build/runtime per implementation (see [research.md](./research.md)).
+- **Client ID** and **Client secret** from the same OAuth App (see [research.md](./research.md)).
 
 ## Load unpacked
 

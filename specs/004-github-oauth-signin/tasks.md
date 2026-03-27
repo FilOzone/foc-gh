@@ -13,10 +13,11 @@
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-**Purpose**: OAuth app registration story and build-time **Client ID** (public) wiring.
+**Purpose**: OAuth app registration story (prefer **org-owned** app when using org data)
+and build-time **Client ID** + **Client secret** wiring for the service worker.
 
-- [x] T001 Document GitHub OAuth App creation, callback `https://<extension-id>.chromiumapp.org/` alignment with `chrome.identity.getRedirectURL()`, and dev/prod extension ID notes in `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/docs/github-oauth-app.md`
-- [x] T002 [P] Inject `GITHUB_OAUTH_CLIENT_ID` at build time via `process.env` + esbuild `define` (or equivalent) in `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/scripts/build.mjs` and read-only module `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/extension/src/lib/github-oauth-client-id.ts` (no secrets; fail build or show clear options-page error if missing in dev)
+- [x] T001 Document GitHub OAuth App creation (including org path `organizations/<org>/settings/applications`), callback `https://<extension-id>.chromiumapp.org/` alignment with `chrome.identity.getRedirectURL()`, and dev/prod extension ID notes in `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/docs/github-oauth-app.md`
+- [x] T002 [P] Inject `GITHUB_OAUTH_CLIENT_ID` and `GITHUB_OAUTH_CLIENT_SECRET` at build time via `process.env` + esbuild `define` in `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/scripts/build.mjs` and modules `github-oauth-client-id.ts` / `github-oauth-client-secret.ts` (**never** commit secrets; clear error if secret missing when starting Connect)
 
 ---
 
@@ -28,7 +29,7 @@
 
 - [x] T003 Add `"identity"` to `"permissions"` in `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/extension/manifest.json` (justify in PR with constitution least-privilege note)
 - [x] T004 Extend `STORAGE_KEYS`, `StoredConfig`, and `loadConfig()` with `auth_method` (`pat` | `oauth` | `none`), optional `oauth_token_expires_at`, and legacy migration rules in `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/extension/src/lib/project-config.ts` per `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/specs/004-github-oauth-signin/data-model.md`
-- [x] T005 [P] Implement PKCE (`code_verifier` / `code_challenge`), GitHub authorize URL builder, and token exchange (`grant_type=authorization_code` + PKCE) in `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/extension/src/lib/github-oauth-pkce.ts` using scopes aligned with `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/docs/github-pat-permissions.md` capability
+- [x] T005 [P] Implement PKCE (`code_verifier` / `code_challenge`), GitHub authorize URL builder, and **form-urlencoded** token exchange (PKCE + **`client_secret`**) in `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/extension/src/lib/github-oauth-pkce.ts` using scopes aligned with `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/docs/github-pat-permissions.md` capability
 - [x] T006 [P] Add outbound message types (`GITHUB_OAUTH_START`, `GITHUB_OAUTH_DISCONNECT`, `GET_AUTH_STATUS`) and response shapes to `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/extension/src/lib/messages.ts` per `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/specs/004-github-oauth-signin/contracts/options-github-auth.md`
 - [x] T007 Implement `chrome.identity.launchWebAuthFlow` orchestration, storage writes for OAuth success, and handlers for `GITHUB_OAUTH_START` / `GITHUB_OAUTH_DISCONNECT` / `GET_AUTH_STATUS` in `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/extension/src/background/service-worker.ts` (depends on T003–T006; **never** persist `code_verifier`)
 
@@ -164,5 +165,5 @@ T006  Extend extension/src/lib/messages.ts with OAuth message types
 ## Notes
 
 - **Single bearer field**: `github_api_token` holds PAT **or** OAuth access token; `auth_method` disambiguates (see data model).
-- **Do not** commit OAuth Client Secret; PKCE only.
+- **Do not** commit OAuth Client Secret to git; it is **build-injected** into `service-worker.js` only (see [research.md](./research.md)). Prefer an **organization-owned** OAuth App for org workflows.
 - Commit in small groups per phase; conventional commits per repository constitution.

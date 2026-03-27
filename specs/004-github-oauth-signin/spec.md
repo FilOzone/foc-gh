@@ -174,9 +174,12 @@ connect again.
   deterministic rule (e.g. “PAT overrides if both present” or “last saved
   wins”) and surfaces it clearly in the plan and UI copy; details belong in
   planning, not end-user marketing language.
-- Exact **OAuth app registration** (client id, redirect or extension callback
-  handling) is an implementation concern but MUST respect least privilege and
-  review gates in the constitution.
+- Exact **OAuth app registration** (client id, client secret at build time, redirect
+  or extension callback handling) is an implementation concern but MUST respect
+  least privilege and review gates in the constitution. **Organization-owned OAuth
+  Apps** (registered under `github.com/organizations/<org>/settings/applications`)
+  are recommended when the extension is used with org data and third-party access
+  policies.
 - **Mobile browsers** and non-Chromium stores are out of scope unless a later
   spec amends distribution.
 - Existing features that already read or write GitHub data continue to use the
