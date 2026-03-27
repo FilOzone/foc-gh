@@ -1,5 +1,184 @@
 /** GraphQL documents for [contracts/github-graphql.md](../../specs/001-cross-org-board-ui/contracts/github-graphql.md) */
 
+/**
+ * Inline fragments for `fieldValues.nodes` on ProjectV2Item / project item nodes.
+ * Covers all `ProjectV2ItemField*` value types from GitHub’s schema (iteration, people, reviewers, etc.).
+ */
+export const PROJECT_V2_ITEM_FIELD_VALUE_NODE_FRAGMENTS = `
+            ... on ProjectV2ItemFieldSingleSelectValue {
+              name
+              field {
+                ... on ProjectV2SingleSelectField {
+                  name
+                }
+              }
+            }
+            ... on ProjectV2ItemFieldNumberValue {
+              number
+              field {
+                ... on ProjectV2Field {
+                  name
+                }
+              }
+            }
+            ... on ProjectV2ItemFieldTextValue {
+              text
+              field {
+                ... on ProjectV2Field {
+                  name
+                }
+              }
+            }
+            ... on ProjectV2ItemFieldDateValue {
+              date
+              field {
+                ... on ProjectV2Field {
+                  name
+                }
+              }
+            }
+            ... on ProjectV2ItemFieldIterationValue {
+              title
+              iterationId
+              startDate
+              duration
+              field {
+                ... on ProjectV2Field {
+                  name
+                }
+                ... on ProjectV2IterationField {
+                  name
+                }
+                ... on ProjectV2SingleSelectField {
+                  name
+                }
+              }
+            }
+            ... on ProjectV2ItemFieldMilestoneValue {
+              field {
+                ... on ProjectV2Field {
+                  name
+                }
+                ... on ProjectV2IterationField {
+                  name
+                }
+                ... on ProjectV2SingleSelectField {
+                  name
+                }
+              }
+              milestone {
+                title
+                url
+                number
+              }
+            }
+            ... on ProjectV2ItemFieldLabelValue {
+              field {
+                ... on ProjectV2Field {
+                  name
+                }
+                ... on ProjectV2IterationField {
+                  name
+                }
+                ... on ProjectV2SingleSelectField {
+                  name
+                }
+              }
+              labels(first: 20) {
+                nodes {
+                  name
+                }
+              }
+            }
+            ... on ProjectV2ItemFieldRepositoryValue {
+              field {
+                ... on ProjectV2Field {
+                  name
+                }
+                ... on ProjectV2IterationField {
+                  name
+                }
+                ... on ProjectV2SingleSelectField {
+                  name
+                }
+              }
+              repository {
+                nameWithOwner
+                url
+              }
+            }
+            ... on ProjectV2ItemFieldPullRequestValue {
+              field {
+                ... on ProjectV2Field {
+                  name
+                }
+                ... on ProjectV2IterationField {
+                  name
+                }
+                ... on ProjectV2SingleSelectField {
+                  name
+                }
+              }
+              pullRequests(first: 10) {
+                nodes {
+                  title
+                  url
+                  number
+                }
+              }
+            }
+            ... on ProjectV2ItemFieldUserValue {
+              field {
+                ... on ProjectV2Field {
+                  name
+                }
+                ... on ProjectV2IterationField {
+                  name
+                }
+                ... on ProjectV2SingleSelectField {
+                  name
+                }
+              }
+              users(first: 10) {
+                nodes {
+                  login
+                }
+              }
+            }
+            ... on ProjectV2ItemFieldReviewerValue {
+              field {
+                ... on ProjectV2Field {
+                  name
+                }
+                ... on ProjectV2IterationField {
+                  name
+                }
+                ... on ProjectV2SingleSelectField {
+                  name
+                }
+              }
+              reviewers(first: 10) {
+                nodes {
+                  ... on User {
+                    login
+                  }
+                  ... on Bot {
+                    login
+                  }
+                  ... on Team {
+                    name
+                    organization {
+                      login
+                    }
+                  }
+                  ... on Mannequin {
+                    login
+                  }
+                }
+              }
+            }
+`
+
 export const QUERY_VIEWER = `
   query Viewer {
     viewer {
@@ -15,6 +194,61 @@ export const QUERY_PROJECT_V2 = `
         id
         title
         url
+      }
+    }
+  }
+`
+
+/** Discover board column definitions (names, data types, single-select options, iteration catalog). */
+export const QUERY_PROJECT_V2_FIELD_DEFINITIONS = `
+  query ProjectV2FieldDefinitions($projectId: ID!) {
+    node(id: $projectId) {
+      ... on ProjectV2 {
+        id
+        title
+        fields(first: 100) {
+          totalCount
+          nodes {
+            __typename
+            ... on ProjectV2Field {
+              id
+              name
+              dataType
+            }
+            ... on ProjectV2SingleSelectField {
+              id
+              name
+              dataType
+              options {
+                id
+                name
+                color
+                description
+              }
+            }
+            ... on ProjectV2IterationField {
+              id
+              name
+              dataType
+              configuration {
+                duration
+                startDay
+                iterations {
+                  id
+                  title
+                  startDate
+                  duration
+                }
+                completedIterations {
+                  id
+                  title
+                  startDate
+                  duration
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -60,32 +294,9 @@ export const QUERY_NODE_PROJECT_ITEMS = `
                 }
               }
             }
-            fieldValues(first: 40) {
+            fieldValues(first: 50) {
               nodes {
-                ... on ProjectV2ItemFieldSingleSelectValue {
-                  name
-                  field {
-                    ... on ProjectV2SingleSelectField {
-                      name
-                    }
-                  }
-                }
-                ... on ProjectV2ItemFieldNumberValue {
-                  number
-                  field {
-                    ... on ProjectV2Field {
-                      name
-                    }
-                  }
-                }
-                ... on ProjectV2ItemFieldTextValue {
-                  text
-                  field {
-                    ... on ProjectV2Field {
-                      name
-                    }
-                  }
-                }
+${PROJECT_V2_ITEM_FIELD_VALUE_NODE_FRAGMENTS}
               }
             }
           }
@@ -108,32 +319,9 @@ export const QUERY_NODE_PROJECT_ITEMS = `
                 }
               }
             }
-            fieldValues(first: 40) {
+            fieldValues(first: 50) {
               nodes {
-                ... on ProjectV2ItemFieldSingleSelectValue {
-                  name
-                  field {
-                    ... on ProjectV2SingleSelectField {
-                      name
-                    }
-                  }
-                }
-                ... on ProjectV2ItemFieldNumberValue {
-                  number
-                  field {
-                    ... on ProjectV2Field {
-                      name
-                    }
-                  }
-                }
-                ... on ProjectV2ItemFieldTextValue {
-                  text
-                  field {
-                    ... on ProjectV2Field {
-                      name
-                    }
-                  }
-                }
+${PROJECT_V2_ITEM_FIELD_VALUE_NODE_FRAGMENTS}
               }
             }
           }
@@ -170,32 +358,9 @@ export const QUERY_PROJECT_V2_ITEMS_PAGE = `
                 id
               }
             }
-            fieldValues(first: 40) {
+            fieldValues(first: 50) {
               nodes {
-                ... on ProjectV2ItemFieldSingleSelectValue {
-                  name
-                  field {
-                    ... on ProjectV2SingleSelectField {
-                      name
-                    }
-                  }
-                }
-                ... on ProjectV2ItemFieldNumberValue {
-                  number
-                  field {
-                    ... on ProjectV2Field {
-                      name
-                    }
-                  }
-                }
-                ... on ProjectV2ItemFieldTextValue {
-                  text
-                  field {
-                    ... on ProjectV2Field {
-                      name
-                    }
-                  }
-                }
+${PROJECT_V2_ITEM_FIELD_VALUE_NODE_FRAGMENTS}
               }
             }
           }
@@ -210,6 +375,22 @@ export const MUTATION_ADD_PROJECT_ITEM = `
     addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) {
       item {
         id
+      }
+    }
+  }
+`
+
+/** Load field values for a ProjectV2Item node id (after resolving item via REST or scan). */
+export const QUERY_PROJECT_V2_ITEM_FIELD_VALUES = `
+  query ProjectV2ItemFieldValues($itemId: ID!) {
+    node(id: $itemId) {
+      ... on ProjectV2Item {
+        id
+        fieldValues(first: 50) {
+          nodes {
+${PROJECT_V2_ITEM_FIELD_VALUE_NODE_FRAGMENTS}
+          }
+        }
       }
     }
   }

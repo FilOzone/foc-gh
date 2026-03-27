@@ -7,6 +7,7 @@
  */
 import { pageContextFromLocation } from '../lib/github-url.js'
 import type { GetPanelStateMessage, ExtensionMessage } from '../lib/messages.js'
+import type { SerializableProjectField } from '../lib/project-board-fields.js'
 import { isTargetRepo, loadConfig } from '../lib/project-config.js'
 
 const PANEL_HOST_ID = 'filoz-foc-board-panel-host'
@@ -80,6 +81,7 @@ type PanelStateOk = {
   projectUrl?: string
   primaryBoardUrl: string
   contentNodeId: string
+  boardFields: SerializableProjectField[]
   item: { itemId: string; fieldLabels: Record<string, string> } | null
 }
 
@@ -90,13 +92,6 @@ type PanelStateErr = {
 }
 
 type PanelState = PanelStateOk | PanelStateErr
-
-type StatusFieldOk = {
-  ok: true
-  field: { id: string; name: string; options: { id: string; name: string }[] }
-}
-
-type StatusFieldResult = StatusFieldOk | { ok: false; error: string }
 
 function el(html: string): HTMLElement {
   const t = document.createElement('template')
@@ -217,8 +212,22 @@ async function render(host: HTMLDivElement, ctx: NonNullable<ReturnType<typeof p
     .map((k) => `<dt>${escapeHtml(k)}</dt><dd>${escapeHtml(fields[k] ?? '')}</dd>`)
     .join('')
 
+  const catalogRows = s.boardFields
+    .map((f) => {
+      if (f.kind === 'single_select') {
+        return `<dt>${escapeHtml(f.name)}</dt><dd>${escapeHtml(f.dataType)} — ${String(f.options.length)} option(s)</dd>`
+      }
+      if (f.kind === 'iteration') {
+        return `<dt>${escapeHtml(f.name)}</dt><dd>${escapeHtml(f.dataType)} — ${String(f.iterations.length)} active, ${String(f.completedIterations.length)} completed (sample)</dd>`
+      }
+      return `<dt>${escapeHtml(f.name)}</dt><dd>${escapeHtml(f.dataType)}</dd>`
+    })
+    .join('')
+
   body.innerHTML = `
     <p>On <strong>${escapeHtml(s.projectTitle)}</strong></p>
+    <details class="filoz-board-catalog"><summary>Board columns (${s.boardFields.length})</summary><dl>${catalogRows}</dl></details>
+    <p class="filoz-values-heading">Values on this card</p>
     <dl>${rowsHtml}</dl>
     <div class="filoz-status-wrap"></div>
     <p class="filoz-status-msg filoz-success" hidden></p>
@@ -227,88 +236,103 @@ async function render(host: HTMLDivElement, ctx: NonNullable<ReturnType<typeof p
   const statusWrap = body.querySelector('.filoz-status-wrap') as HTMLDivElement
   const statusMsg = body.querySelector('.filoz-status-msg') as HTMLParagraphElement
 
-  const statusName = cfg.statusFieldName || 'Status'
-  const currentStatus = fields[statusName] ?? ''
-
-  let statusMeta: StatusFieldResult
-  try {
-    statusMeta = await sendMessage<StatusFieldResult>({
-      type: 'GET_STATUS_FIELD',
-      payload: { projectId: s.projectId, fieldName: statusName },
-    })
-  } catch (e) {
-    statusWrap.innerHTML = `<p class="filoz-muted">Status editor: ${escapeHtml(String(e))}</p>`
-    return
-  }
-
-  if (myToken !== loadToken) return
-
-  if (!statusMeta.ok) {
-    statusWrap.innerHTML = `<p class="filoz-muted">Cannot edit ${escapeHtml(statusName)}: ${escapeHtml(statusMeta.error)}</p>`
-    return
-  }
-
   if (ctx.kind === 'pull_request') {
-    statusWrap.innerHTML = `<p class="filoz-muted">Status dropdown for pull requests may be limited by GitHub; if updates fail, edit on the board.</p>`
+    const p = document.createElement('p')
+    p.className = 'filoz-muted'
+    p.textContent =
+      'Updating single-select fields on pull requests may be limited by GitHub; if a mutation fails, edit on the board.'
+    statusWrap.append(p)
   }
 
-  const sel = document.createElement('select')
-  sel.setAttribute('aria-label', statusName)
-  const opt0 = document.createElement('option')
-  opt0.value = ''
-  opt0.textContent = '(choose)'
-  sel.append(opt0)
-  for (const o of statusMeta.field.options) {
-    const opt = document.createElement('option')
-    opt.value = o.id
-    opt.textContent = o.name
-    if (o.name === currentStatus) opt.selected = true
-    sel.append(opt)
+  const singleSelects = s.boardFields.filter((f) => f.kind === 'single_select')
+  if (singleSelects.length === 0) {
+    statusWrap.append(
+      el(`<p class="filoz-muted">No single-select columns on this board (nothing to update from the panel).</p>`),
+    )
+    return
   }
 
-  const updateBtn = document.createElement('button')
-  updateBtn.type = 'button'
-  updateBtn.textContent = `Update ${statusName}`
+  const primaryName = (cfg.statusFieldName || 'Status').trim().toLowerCase()
+  singleSelects.sort((a, b) => {
+    const an = a.name.trim().toLowerCase()
+    const bn = b.name.trim().toLowerCase()
+    const ap = an === primaryName ? 0 : 1
+    const bp = bn === primaryName ? 0 : 1
+    if (ap !== bp) return ap - bp
+    return a.name.localeCompare(b.name)
+  })
 
-  updateBtn.addEventListener('click', async () => {
-    statusMsg.hidden = true
-    const optionId = sel.value
-    if (!optionId) return
-    updateBtn.disabled = true
-    try {
-      const res = await sendMessage<{ ok: boolean; error?: string }>({
-        type: 'UPDATE_STATUS',
-        payload: {
-          projectId: s.projectId,
-          itemId: linkedItem.itemId,
-          fieldId: statusMeta.field.id,
-          optionId,
-          fieldName: statusName,
-        },
-      })
-      if (!res.ok) {
-        statusMsg.textContent = res.error ?? 'Update failed'
+  for (const fld of singleSelects) {
+    const row = document.createElement('div')
+    row.className = 'filoz-sel-row'
+
+    const lab = document.createElement('label')
+    lab.textContent = fld.name
+    lab.setAttribute('for', `filoz-sel-${fld.id.replace(/[^a-z0-9_-]/gi, '-')}`)
+
+    const sel = document.createElement('select')
+    sel.id = `filoz-sel-${fld.id.replace(/[^a-z0-9_-]/gi, '-')}`
+    sel.setAttribute('aria-label', fld.name)
+
+    const currentVal = fields[fld.name] ?? ''
+    const opt0 = document.createElement('option')
+    opt0.value = ''
+    opt0.textContent = '(choose)'
+    sel.append(opt0)
+    for (const o of fld.options) {
+      const opt = document.createElement('option')
+      opt.value = o.id
+      opt.textContent = o.name
+      if (o.name === currentVal) opt.selected = true
+      sel.append(opt)
+    }
+
+    const updateBtn = document.createElement('button')
+    updateBtn.type = 'button'
+    updateBtn.textContent = 'Update'
+
+    updateBtn.addEventListener('click', async () => {
+      if (myToken !== loadToken) return
+      statusMsg.hidden = true
+      const optionId = sel.value
+      if (!optionId) return
+      updateBtn.disabled = true
+      try {
+        const res = await sendMessage<{ ok: boolean; error?: string }>({
+          type: 'UPDATE_STATUS',
+          payload: {
+            projectId: s.projectId,
+            itemId: linkedItem.itemId,
+            fieldId: fld.id,
+            optionId,
+            fieldName: fld.name,
+          },
+        })
+        if (!res.ok) {
+          statusMsg.textContent = res.error ?? 'Update failed'
+          statusMsg.classList.remove('filoz-success')
+          statusMsg.classList.add('filoz-error')
+          statusMsg.hidden = false
+          updateBtn.disabled = false
+          return
+        }
+        statusMsg.textContent = `Updated ${fld.name}.`
+        statusMsg.classList.add('filoz-success')
+        statusMsg.classList.remove('filoz-error')
+        statusMsg.hidden = false
+        await render(host, ctx)
+      } catch (e) {
+        statusMsg.textContent = String(e)
         statusMsg.classList.remove('filoz-success')
         statusMsg.classList.add('filoz-error')
         statusMsg.hidden = false
         updateBtn.disabled = false
-        return
       }
-      statusMsg.textContent = 'Updated.'
-      statusMsg.classList.add('filoz-success')
-      statusMsg.classList.remove('filoz-error')
-      statusMsg.hidden = false
-      await render(host, ctx)
-    } catch (e) {
-      statusMsg.textContent = String(e)
-      statusMsg.classList.remove('filoz-success')
-      statusMsg.classList.add('filoz-error')
-      statusMsg.hidden = false
-      updateBtn.disabled = false
-    }
-  })
+    })
 
-  statusWrap.append(sel, updateBtn)
+    row.append(lab, sel, updateBtn)
+    statusWrap.append(row)
+  }
 }
 
 function escapeHtml(s: string): string {

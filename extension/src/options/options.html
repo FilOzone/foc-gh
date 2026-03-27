@@ -43,7 +43,7 @@
         padding-top: 1.5rem;
         border-top: 1px solid #d0d7de;
       }
-      #diag-out {
+      .diag-pre {
         margin-top: 0.75rem;
         padding: 12px;
         font-family: ui-monospace, monospace;
@@ -92,9 +92,14 @@
     <label for="repos">Target repos (owner/repo, one per line)</label>
     <textarea id="repos"></textarea>
 
-    <label for="statusField">Status column name on the board</label>
-    <input id="statusField" type="text" />
-    <p class="hint">Default: <code>Status</code></p>
+    <label for="statusField">Primary single-select column (for panel ordering)</label>
+    <select id="statusField"></select>
+    <button id="status-refresh" type="button">Load columns from primary board</button>
+    <p class="hint">
+      Uses saved token and the <strong>first</strong> board URL. Populates the list with
+      <code>SINGLE_SELECT</code> fields only; the chosen name is listed first in the sidebar. Default:
+      <code>Status</code>.
+    </p>
 
     <button id="save" type="button">Save</button>
     <p id="status" role="status"></p>
@@ -105,7 +110,17 @@
         Runs GraphQL using the <strong>saved</strong> token and board URL (save first after changing the PAT).
       </p>
       <button id="diag-run" type="button">Run API checks</button>
-      <pre id="diag-out" aria-live="polite"></pre>
+      <pre id="diag-out" class="diag-pre" aria-live="polite"></pre>
+
+      <h3 style="font-size: 1rem; margin: 1.5rem 0 0">Sample issue / pull request</h3>
+      <p class="hint" style="margin-top: 0.35rem">
+        Checks whether this issue or PR appears on your <strong>primary</strong> configured board and lists
+        field values the API returns (saved token + first board URL).
+      </p>
+      <label for="sample-url">Issue or PR URL (or <code>owner/repo/issues/1</code>)</label>
+      <input id="sample-url" type="text" placeholder="https://github.com/owner/repo/issues/123" autocomplete="off" />
+      <button id="sample-run" type="button">Check board link &amp; fields</button>
+      <pre id="sample-out" class="diag-pre" aria-live="polite"></pre>
     </div>
 
     <script type="module" src="./options.js"></script>

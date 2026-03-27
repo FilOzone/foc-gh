@@ -45,8 +45,21 @@ export type StatusFieldMessage = {
   }
 }
 
+/** Resolve primary board URL from storage and return parsed column definitions. */
+export type GetPrimaryBoardFieldDefinitionsMessage = {
+  type: 'GET_PRIMARY_BOARD_FIELD_DEFINITIONS'
+}
+
 export type DebugDiagnosticsMessage = {
   type: 'DEBUG_DIAGNOSTICS'
+}
+
+export type DebugSampleBoardLinkMessage = {
+  type: 'DEBUG_SAMPLE_BOARD_LINK'
+  payload: {
+    /** Full URL or path, e.g. https://github.com/o/r/issues/1 */
+    url: string
+  }
 }
 
 export type ExtensionMessage =
@@ -55,4 +68,6 @@ export type ExtensionMessage =
   | AddToProjectMessage
   | UpdateStatusMessage
   | StatusFieldMessage
+  | GetPrimaryBoardFieldDefinitionsMessage
   | DebugDiagnosticsMessage
+  | DebugSampleBoardLinkMessage

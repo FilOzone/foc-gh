@@ -37,3 +37,43 @@ export function parseGithubIssuePrPath(pathname: string): PageContext | null {
 export function pageContextFromLocation(loc: Location): PageContext | null {
   return parseGithubIssuePrPath(loc.pathname)
 }
+
+/**
+ * Parse a full GitHub URL or a path-like string into issue / PR context.
+ * Accepts e.g. https://github.com/o/r/issues/1, /o/r/pull/2, o/r/issues/1
+ */
+export function parseGithubIssuePrInput(raw: string): PageContext | null {
+  const s = raw.trim()
+  if (!s) return null
+
+  let pathname = s
+  if (/^https?:\/\//i.test(s)) {
+    try {
+      pathname = new URL(s).pathname
+    } catch {
+      return null
+    }
+  } else if (!s.startsWith('/')) {
+    const issueShorthand = s.match(/^([^/\s]+)\/([^/\s]+)\/issues\/(\d+)\s*$/i)
+    if (issueShorthand) {
+      return {
+        owner: issueShorthand[1],
+        name: issueShorthand[2],
+        number: Number(issueShorthand[3]),
+        kind: 'issue',
+      }
+    }
+    const prShorthand = s.match(/^([^/\s]+)\/([^/\s]+)\/pull\/(\d+)\s*$/i)
+    if (prShorthand) {
+      return {
+        owner: prShorthand[1],
+        name: prShorthand[2],
+        number: Number(prShorthand[3]),
+        kind: 'pull_request',
+      }
+    }
+    pathname = s.startsWith('/') ? s : `/${s}`
+  }
+
+  return parseGithubIssuePrPath(pathname)
+}

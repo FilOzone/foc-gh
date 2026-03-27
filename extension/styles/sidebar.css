@@ -94,3 +94,47 @@
   color: var(--fgColor-success, #1a7f37);
   margin-top: 8px;
 }
+
+.filoz-foc-panel .filoz-board-catalog {
+  margin-top: 8px;
+  font-size: 11px;
+}
+
+.filoz-foc-panel .filoz-board-catalog summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--fgColor-default, #1f2328);
+}
+
+.filoz-foc-panel .filoz-values-heading {
+  margin: 12px 0 0;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.filoz-foc-panel .filoz-sel-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--borderColor-muted, #d0d7de);
+}
+
+.filoz-foc-panel .filoz-sel-row:first-of-type {
+  border-top: none;
+  padding-top: 4px;
+}
+
+.filoz-foc-panel .filoz-sel-row label {
+  font-weight: 600;
+}
+
+.filoz-foc-panel .filoz-sel-row select {
+  margin-top: 0;
+}
+
+.filoz-foc-panel .filoz-sel-row button {
+  margin-top: 6px;
+  align-self: flex-start;
+}
