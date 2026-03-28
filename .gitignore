@@ -27,3 +27,9 @@ lerna-debug.log*
 .env.*
 !.env.example
 .DS_Store
+
+# Chrome Web Store upload artifact (rebuild with `npm run build:zip`)
+foc-gh-webstore.zip
+
+# Optional local copy if you regenerate the ID key pair (public stays committed as manifest-id-public.b64)
+extension/manifest-id-private.pem

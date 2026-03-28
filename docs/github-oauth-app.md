@@ -37,13 +37,23 @@ For Chromium, the redirect is:
 https://<extension-id>.chromiumapp.org/
 ```
 
-- **Unpacked** development: open `chrome://extensions`, find this extension, copy
-  **ID**. The callback is `https://<that-id>.chromiumapp.org/` (trailing slash
-  optional; match exactly what you register on GitHub vs what Chrome sends).
-- **Packed / Web Store** builds use a **different** extension ID. Register a
-  **separate** OAuth app (or add a second callback URL on the same app if GitHub
-  allows multiple callbacks—GitHub OAuth Apps support **one** callback URL per
-  app; use **one app per extension ID** or recreate the app when the ID changes).
+**Stable ID (this repo):** `npm run build` embeds **`manifest.key`** from the committed file
+**`extension/manifest-id-public.b64`**. That pins the **extension ID** for **unpacked**
+loads of **`extension/dist/`** (same ID on every machine/path). The build logs the ID and
+full **`OAuth redirect` URL**—register **that** URL on your GitHub OAuth app (GitHub allows
+**one** callback per OAuth app).
+
+**Chrome Web Store:** Google **rejects** packages whose manifest includes **`key`**. This
+repo’s **`npm run build:zip`** writes **`foc-gh-webstore.zip`** with **`manifest.key`**
+**removed** from a copy of the manifest. The **listing extension ID** is therefore assigned
+by Google and **does not match** the unpacked/stable ID from
+**`manifest-id-public.b64`**. Register a **second** GitHub OAuth app whose callback is
+`https://<webstore-extension-id>.chromiumapp.org/` (ID from the [Developer
+Dashboard](https://chrome.google.com/webstore/devconsole)); GitHub still allows only **one**
+callback URL per app.
+
+**Rotating the key:** Replacing **`manifest-id-public.b64`** changes the extension ID and
+invalidates the GitHub callback—avoid unless you intend to re-register OAuth.
 
 After changing the callback on GitHub, wait a minute and retry if authorize
 fails with `redirect_uri` mismatch.

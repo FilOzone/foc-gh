@@ -10,26 +10,48 @@ From the **repository root**:
 
 ```bash
 npm install
-export GITHUB_OAUTH_CLIENT_ID="…"
-export GITHUB_OAUTH_CLIENT_SECRET="…"
 npm run build
 ```
 
-Or use `.env.local` + `set -a && source .env.local && npm run build` (see [`.env.example`](../.env.example)).
+**OAuth at build time:** If **`.env.local`** exists at the repo root (see [`.env.example`](../.env.example)), `npm run build` loads it automatically. Variables already set in your shell (or CI) are **not** overwritten. You can still `export GITHUB_OAUTH_CLIENT_ID=…` manually when you prefer.
+
+**Chrome Web Store:** `extension/manifest.json` **`description`** must be **at most 132 characters** (Google rejects longer values). **`npm run build`** exits with an error if it is too long.
+
+**Stable extension ID (OAuth):** The committed file **`extension/manifest-id-public.b64`** holds the **RSA public key** (DER, base64) that **`npm run build`** copies into **`manifest.key`** in **`extension/dist/manifest.json`**. Everyone who loads **that** folder as **Load unpacked** gets the **same** extension ID (not path-dependent). The build prints **`Stable extension ID`** and **`OAuth redirect:`** — register that `https://….chromiumapp.org/` URL on your GitHub OAuth app. **Do not change** `manifest-id-public.b64` without coordinating a new OAuth callback.
 
 - **Connect GitHub** only works if **both** variables were set at build time; they are compiled into `dist/service-worker.js`. Do not commit real secrets.
-- Load **unpacked** from `extension/dist/` in `chrome://extensions` (Developer mode).
+- **Load unpacked** from **`extension/dist/`** in **`chrome://extensions`** (**Developer mode** on) → **Load unpacked**.
+
+### Chrome Web Store ZIP and upload
+
+Build a **Store-ready ZIP** (manifest and assets at the **root** of the archive — required by Google):
+
+```bash
+npm run build:zip
+```
+
+Writes **`foc-gh-webstore.zip`** at the repo root (gitignored). The zip script **drops `manifest.key`** from **`manifest.json`** — the Store **rejects** uploads that include **`key`**. Your **Web Store extension ID** will **not** match the **unpacked `dist/`** ID; use a **separate** GitHub OAuth app/callback for production installs (see below).
+
+Upload that file in the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole), or use the CLI (after [OAuth setup](https://github.com/fregante/chrome-webstore-upload-keys)):
+
+| Script | What it does |
+|--------|----------------|
+| **`npm run build:zip`** | `npm run build` + write **`foc-gh-webstore.zip`**. |
+| **`npm run upload:chrome`** | Upload **`foc-gh-webstore.zip`** only (no publish). Requires an existing zip and env: **`CLIENT_ID`**, **`CLIENT_SECRET`**, **`REFRESH_TOKEN`**, **`EXTENSION_ID`** ([`.env.example`](../.env.example)). |
+| **`npm run publish:chrome`** | **`build:zip`**, then **upload + publish** (default CLI behavior — teammates with the listing URL see the new version after review). |
+
+**Note:** `CLIENT_ID` / `CLIENT_SECRET` here are **Google Cloud OAuth** credentials for the Publish API, **not** your GitHub OAuth app. Put them in **`.env.local`** (or CI secrets): **`scripts/chrome-webstore.mjs`** loads **`.env.local`** before calling the CLI, same idea as `npm run build`.
 
 ### FilOzone OAuth apps (development and production)
 
-**FilOzone** maintains **separate GitHub OAuth Apps** for **development** and **production** (under the org’s developer settings). Each Chromium profile/extension packaging gets a **different extension ID**, and GitHub OAuth Apps allow **one authorization callback URL per app**, so dev and release builds use **different** registrations:
+**Unpacked `extension/dist/`** uses a **stable** extension ID (see **Stable extension ID** above). **Chrome Web Store** packages **cannot** include **`manifest.key`**, so the **Store listing ID** is **different** from the dev ID—plan for **two** GitHub OAuth apps (one callback each): dev uses the build log **unpacked** redirect; production uses `https://<id-from-dashboard>.chromiumapp.org/` after you create or open the listing.
 
 | Channel        | Typical use              | Credentials / callback |
 |----------------|--------------------------|-------------------------|
-| **Development** | Unpacked load from `extension/dist/`, org TPMs hacking locally | OAuth App registered for your **dev** `https://<dev-extension-id>.chromiumapp.org/` — get **Client ID** and **Client secret** from org admins or internal docs |
-| **Production**  | Packaged / Web Store ID for wider rollouts                    | **Production** OAuth App with that extension’s callback URL |
+| **Development** | Unpacked load from `extension/dist/` after `npm run build` | OAuth app callback = **`OAuth redirect`** from build log (same ID for all paths). |
+| **Production**  | **Chrome Web Store** (e.g. unlisted)              | **Second** OAuth app: callback `https://<webstore-extension-id>.chromiumapp.org/` from the [dashboard](https://chrome.google.com/webstore/devconsole). Build releases with **that** app’s Client ID + secret. |
 
-Use the **development** app’s ID and secret in `.env.local` for local builds; use the **production** app only for shipped builds. Full setup (org URL, restrictions): [`docs/github-oauth-app.md`](../docs/github-oauth-app.md).
+Use the matching app’s **Client ID** and **Client secret** in `.env.local` (or release CI) for each channel. Full setup: [`docs/github-oauth-app.md`](../docs/github-oauth-app.md).
 
 ## Configure
 

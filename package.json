@@ -5,10 +5,16 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
+    "build:zip": "npm run build && node scripts/zip-dist.mjs",
+    "upload:chrome": "node scripts/chrome-webstore.mjs upload",
+    "publish:chrome": "npm run build:zip && node scripts/chrome-webstore.mjs",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.287",
+    "archiver": "^7.0.1",
+    "chrome-webstore-upload-cli": "^3.5.0",
+    "dotenv": "^17.3.1",
     "esbuild": "^0.25.0",
     "typescript": "^5.7.3"
   }

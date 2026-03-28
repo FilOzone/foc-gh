@@ -11,7 +11,7 @@ Chromium **Manifest V3** extension that connects day-to-day issue and PR work to
 
 ## For developers
 
-Install from source, build, OAuth credentials, and the **Options** page are documented in **[extension/README.md](extension/README.md)** (build from the **repository root**, not from `extension/` alone).
+Install from source, build (`npm run build`), **Chrome Web Store** ZIP (`npm run build:zip`), OAuth credentials, and the **Options** page are documented in **[extension/README.md](extension/README.md)** (from the **repository root**, not from `extension/` alone).
 
 ## Documentation
 
