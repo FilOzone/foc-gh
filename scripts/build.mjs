@@ -23,6 +23,64 @@ if (existsSync(envLocal)) {
   loadEnv({ path: envLocal, quiet: true })
 }
 
+/** @param {string[]} argv */
+function oauthProfileFromArgv(argv) {
+  const prefix = '--oauth-profile='
+  for (const a of argv) {
+    if (a.startsWith(prefix)) {
+      const v = a.slice(prefix.length).trim().toLowerCase()
+      if (v === 'development' || v === 'production') return v
+      console.error(`build: invalid --oauth-profile=${a.slice(prefix.length)} (use development or production)`)
+      process.exit(1)
+    }
+  }
+  return null
+}
+
+const oauthProfile =
+  oauthProfileFromArgv(process.argv.slice(2)) ??
+  (process.env.FOC_GH_OAUTH_PROFILE ?? 'development').trim().toLowerCase()
+
+if (oauthProfile !== 'development' && oauthProfile !== 'production') {
+  console.error(`build: FOC_GH_OAUTH_PROFILE must be development or production (got ${oauthProfile})`)
+  process.exit(1)
+}
+
+/**
+ * development: GITHUB_OAUTH_*_DEVELOPMENT or plain GITHUB_OAUTH_*.
+ * production: GITHUB_OAUTH_*_PRODUCTION or plain GITHUB_OAUTH_* (CI / single-app); warns if only plain.
+ */
+function resolveGithubOAuthForEmbed() {
+  const trim = (s) => (s ?? '').trim()
+  if (oauthProfile === 'production') {
+    const idP = trim(process.env.GITHUB_OAUTH_CLIENT_ID_PRODUCTION)
+    const secP = trim(process.env.GITHUB_OAUTH_CLIENT_SECRET_PRODUCTION)
+    if (idP && secP) return { clientId: idP, clientSecret: secP, source: 'GITHUB_OAUTH_*_PRODUCTION' }
+    const id = trim(process.env.GITHUB_OAUTH_CLIENT_ID)
+    const sec = trim(process.env.GITHUB_OAUTH_CLIENT_SECRET)
+    if (id && sec) {
+      if (process.env.CI !== 'true' && process.env.GITHUB_ACTIONS !== 'true') {
+        console.warn(
+          'build: production profile using GITHUB_OAUTH_CLIENT_ID / GITHUB_OAUTH_CLIENT_SECRET (set GITHUB_OAUTH_CLIENT_ID_PRODUCTION and GITHUB_OAUTH_CLIENT_SECRET_PRODUCTION in .env.local to keep dev and prod separate).',
+        )
+      }
+      return { clientId: id, clientSecret: sec, source: 'GITHUB_OAUTH_* (fallback)' }
+    }
+    console.error(
+      'build: production OAuth — set GITHUB_OAUTH_CLIENT_ID_PRODUCTION and GITHUB_OAUTH_CLIENT_SECRET_PRODUCTION, or GITHUB_OAUTH_CLIENT_ID and GITHUB_OAUTH_CLIENT_SECRET (e.g. CI).',
+    )
+    process.exit(1)
+  }
+
+  const idD = trim(process.env.GITHUB_OAUTH_CLIENT_ID_DEVELOPMENT)
+  const secD = trim(process.env.GITHUB_OAUTH_CLIENT_SECRET_DEVELOPMENT)
+  if (idD && secD) return { clientId: idD, clientSecret: secD, source: 'GITHUB_OAUTH_*_DEVELOPMENT' }
+  const id = trim(process.env.GITHUB_OAUTH_CLIENT_ID)
+  const sec = trim(process.env.GITHUB_OAUTH_CLIENT_SECRET)
+  if (id && sec) return { clientId: id, clientSecret: sec, source: 'GITHUB_OAUTH_*' }
+  return { clientId: '', clientSecret: '', source: 'none' }
+}
+
 const dist = path.join(root, 'extension', 'dist')
 const manifestSrc = path.join(root, 'extension', 'manifest.json')
 const manifest = JSON.parse(readFileSync(manifestSrc, 'utf8'))
@@ -62,8 +120,9 @@ if (existsSync(iconsSrc)) {
   }
 }
 
-const oauthClientId = process.env.GITHUB_OAUTH_CLIENT_ID ?? ''
-const oauthClientSecret = process.env.GITHUB_OAUTH_CLIENT_SECRET ?? ''
+const oauth = resolveGithubOAuthForEmbed()
+const oauthClientId = oauth.clientId
+const oauthClientSecret = oauth.clientSecret
 
 await esbuild.build({
   entryPoints: [path.join(root, 'extension', 'src', 'background', 'service-worker.ts')],
@@ -112,5 +171,6 @@ copyFileSync(path.join(root, 'extension', 'src', 'styles', 'sidebar.css'), path.
 
 const derivedId = extensionIdFromManifestKeyBase64(manifestKeyB64)
 console.log('Built extension → extension/dist/')
+console.log(`OAuth profile (embedded): ${oauthProfile} (from ${oauth.source})`)
 console.log(`Stable extension ID (manifest key): ${derivedId}`)
 console.log(`OAuth redirect: https://${derivedId}.chromiumapp.org/`)

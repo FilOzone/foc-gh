@@ -55,6 +55,19 @@ callback URL per app.
 **Rotating the key:** Replacing **`manifest-id-public.b64`** changes the extension ID and
 invalidates the GitHub callback—avoid unless you intend to re-register OAuth.
 
+### FilOzone reference (two org OAuth apps)
+
+FilOzone uses **two** GitHub OAuth Apps registered under the organization—**one per extension ID** (GitHub allows **one** callback URL per app):
+
+| Channel | Extension ID | Authorization callback URL | Manage app (org admins) |
+|---------|--------------|----------------------------|---------------------------|
+| **Development** — unpacked `extension/dist/` (pinned via `manifest.key` from `extension/manifest-id-public.b64`) | `akbchnphednohmffplmejpefockadcbg` | `https://akbchnphednohmffplmejpefockadcbg.chromiumapp.org/` | [FOC GH dev — OAuth app settings](https://github.com/organizations/FilOzone/settings/applications/3490509) |
+| **Production** — [Chrome Web Store](https://chrome.google.com/webstore/devconsole) listing | `haicdejjcnecapheflpdpdngflffejpf` | `https://haicdejjcnecapheflpdpdngflffejpf.chromiumapp.org/` | [FOC GH prod — OAuth app settings](https://github.com/organizations/FilOzone/settings/applications/3491974) |
+
+**Forks and external contributors** still create their **own** OAuth apps; the committed public key only pins the **team** local ID when using this repository’s `manifest-id-public.b64`.
+
+**CI:** [`.github/workflows/extension-ci.yml`](../.github/workflows/extension-ci.yml) can pass **`GITHUB_OAUTH_CLIENT_ID`** / **`GITHUB_OAUTH_CLIENT_SECRET`** from repository **Actions** secrets into `npm run build`; fork PRs do not receive those secrets (compile-only). See [`extension/README.md`](../extension/README.md) → *Continuous integration*.
+
 After changing the callback on GitHub, wait a minute and retry if authorize
 fails with `redirect_uri` mismatch.
 
