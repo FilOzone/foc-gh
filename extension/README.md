@@ -1,6 +1,6 @@
 # FOC GH — developer guide
 
-This directory is the **extension source**; builds and loads are driven from the **repository root** (parent of `extension/`).
+This directory is the extension **source tree** ([manifest.json](manifest.json), [src/](src/), [icons/](icons/)); builds and loads are driven from the **repository root** (see [../README.md](../README.md)).
 
 For **what the extension does** and the feature bullets, see the [project README](../README.md).
 
@@ -15,7 +15,7 @@ npm run build
 
 ### Switching development vs production GitHub OAuth (local)
 
-You maintain **two** GitHub OAuth apps (dev vs Store). The build **embeds** one pair into `service-worker.js` per run:
+You maintain **two** GitHub OAuth apps (dev vs Store). The build **embeds** one pair into [dist/service-worker.js](dist/service-worker.js) per run:
 
 | Command | OAuth **profile** | Which env vars (first match wins) |
 |---------|-------------------|-------------------------------------|
@@ -24,7 +24,7 @@ You maintain **two** GitHub OAuth apps (dev vs Store). The build **embeds** one 
 
 **Recommended:** Put **all four** suffixed variables in **`.env.local`** ([`.env.example`](../.env.example)) so you never comment lines—`npm run build` vs **`npm run build:zip`** picks the profile automatically.
 
-Override: **`node scripts/build.mjs --oauth-profile=production`** or env **`FOC_GH_OAUTH_PROFILE=production`**.
+Override: from the repository root, **`node scripts/build.mjs --oauth-profile=production`** ([scripts/build.mjs](../scripts/build.mjs)), or env **`FOC_GH_OAUTH_PROFILE=production`**.
 
 A production build that falls back to plain **`GITHUB_OAUTH_*`** prints a **warning**—use **`…_PRODUCTION`** when you also keep dev shorthand in the same file.
 
@@ -33,26 +33,26 @@ A production build that falls back to plain **`GITHUB_OAUTH_*`** prints a **warn
 1. From the **repository root**: `npm install`.
 2. Add **`.env.local`** with dev credentials (**`GITHUB_OAUTH_*_DEVELOPMENT`** or plain **`GITHUB_OAUTH_*`** — see table above). FilOzone dev app: [FilOzone OAuth apps](#filozone-oauth-apps-development-and-production).
 3. Run **`npm run build`**. Console shows **`OAuth profile (embedded): development`** and **Stable extension ID** / **OAuth redirect** for the unpacked ID.
-4. Open **`chrome://extensions`**, enable **Developer mode**, **Load unpacked**, choose **`extension/dist/`**.
+4. Open **`chrome://extensions`**, enable **Developer mode**, **Load unpacked**, choose **[dist/](dist/)** (build output under this directory).
 5. **Options** → **Connect GitHub** — callback must match the **dev** OAuth app.
 
 **OAuth at build time:** **`.env.local`** is loaded automatically; shell vars already set are **not** overwritten by dotenv.
 
-**Chrome Web Store:** `extension/manifest.json` **`description`** must be **at most 132 characters** (Google rejects longer values). **`npm run build`** exits with an error if it is too long.
+**Chrome Web Store:** [manifest.json](manifest.json) **`description`** must be **at most 132 characters** (Google rejects longer values). **`npm run build`** exits with an error if it is too long.
 
 ### Extension IDs: local (unpacked) vs Chrome Web Store
 
 | Channel | Extension ID | How the ID is determined | OAuth redirect URL (register on GitHub) |
 |--------|---------------|---------------------------|----------------------------------------|
-| **Local unpacked** (`extension/dist/` after `npm run build`) | **`akbchnphednohmffplmejpefockadcbg`** | Pinned by **`manifest.key`**, which **`npm run build`** sets from the committed public key **`extension/manifest-id-public.b64`** (RSA public key, DER as base64). Same folder → same ID on every machine; not derived from the directory path. | `https://akbchnphednohmffplmejpefockadcbg.chromiumapp.org/` |
+| **Local unpacked** ([dist/](dist/) after `npm run build`) | **`akbchnphednohmffplmejpefockadcbg`** | Pinned by **`manifest.key`**, which **`npm run build`** sets from the committed public key [manifest-id-public.b64](manifest-id-public.b64) (RSA public key, DER as base64). Same folder → same ID on every machine; not derived from the directory path. | `https://akbchnphednohmffplmejpefockadcbg.chromiumapp.org/` |
 | **Chrome Web Store** (this listing) | **`haicdejjcnecapheflpdpdngflffejpf`** | Assigned by Google for the listing. The store **forbids** `manifest.key` in uploaded `manifest.json`, so **`npm run build:zip`** strips **`key`** before zipping—local and store IDs **cannot** match while using this workflow. | `https://haicdejjcnecapheflpdpdngflffejpf.chromiumapp.org/` |
 
-**Rebuild check:** After `npm run build`, the console must still print **`Stable extension ID (manifest key): akbchnphednohmffplmejpefockadcbg`**. If you replace **`manifest-id-public.b64`**, this ID and the dev OAuth callback change—coordinate with the team.
+**Rebuild check:** After `npm run build`, the console must still print **`Stable extension ID (manifest key): akbchnphednohmffplmejpefockadcbg`**. If you replace [manifest-id-public.b64](manifest-id-public.b64), this ID and the dev OAuth callback change—coordinate with the team.
 
-**Stable extension ID (OAuth) — detail:** The committed **`extension/manifest-id-public.b64`** is the **public** half of a key pair. Only that file is in git (private key is not kept). Chromium derives the **local** extension ID from that public key material when it appears as **`manifest.key`** in **`extension/dist/manifest.json`**.
+**Stable extension ID (OAuth) — detail:** The committed [manifest-id-public.b64](manifest-id-public.b64) is the **public** half of a key pair. Only that file is in git (private key is not kept). Chromium derives the **local** extension ID from that public key material when it appears as **`manifest.key`** in [dist/manifest.json](dist/manifest.json).
 
-- **Connect GitHub** only works if **both** variables were set at build time; they are compiled into `dist/service-worker.js`. Do not commit real secrets.
-- **Load unpacked** from **`extension/dist/`** in **`chrome://extensions`** (**Developer mode** on) → **Load unpacked**.
+- **Connect GitHub** only works if **both** variables were set at build time; they are compiled into [dist/service-worker.js](dist/service-worker.js). Do not commit real secrets.
+- **Load unpacked** from **[dist/](dist/)** in **`chrome://extensions`** (**Developer mode** on) → **Load unpacked**.
 
 ### Chrome Web Store ZIP and upload
 
@@ -64,7 +64,7 @@ npm run build:zip
 
 **`npm run build:zip`** runs a **production** OAuth profile (embeds **`…_PRODUCTION`** or plain **`GITHUB_OAUTH_*`**). Use the FilOzone **production** app whose callback matches the **Store** extension ID (see [Extension IDs](#extension-ids-local-unpacked-vs-chrome-web-store)). A zip built with **dev** credentials still uploads, but **Connect GitHub** breaks for Store installs.
 
-Writes **`foc-gh-webstore.zip`** at the repo root (gitignored). The zip script **drops `manifest.key`** from **`manifest.json`** — the Store **rejects** uploads that include **`key`**. Your **Web Store extension ID** will **not** match the **unpacked `dist/`** ID; use the **production** GitHub OAuth app/callback (see below).
+Writes **[foc-gh-webstore.zip](../foc-gh-webstore.zip)** at the repo root (gitignored). [scripts/zip-dist.mjs](../scripts/zip-dist.mjs) **drops `manifest.key`** from packaged **`manifest.json`** — the Store **rejects** uploads that include **`key`**. Your **Web Store extension ID** will **not** match the unpacked [dist/](dist/) ID; use the **production** GitHub OAuth app/callback (see below).
 
 Upload that file in the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole), or use the CLI (after [OAuth setup](https://github.com/fregante/chrome-webstore-upload-keys)):
 
@@ -74,7 +74,7 @@ Upload that file in the [Chrome Web Store Developer Dashboard](https://chrome.go
 | **`npm run upload:chrome`** | Upload **`foc-gh-webstore.zip`** only (no publish). Requires **`CHROME_WEBSTORE_CLIENT_ID`**, **`CHROME_WEBSTORE_CLIENT_SECRET`**, **`CHROME_WEBSTORE_REFRESH_TOKEN`**, **`CHROME_WEBSTORE_EXTENSION_ID`** in **`.env.local`** or the environment ([`.env.example`](../.env.example)). |
 | **`npm run publish:chrome`** | **`build:zip`**, then **upload + publish** (default CLI behavior — teammates with the listing URL see the new version after review). |
 
-**Note:** Those four names are **Google Cloud OAuth** credentials for the [Chrome Web Store Publish API](https://developer.chrome.com/docs/webstore/api), **not** your GitHub OAuth app. **`scripts/chrome-webstore.mjs`** maps them to the names the upload CLI expects; this repo does **not** read unprefixed `CLIENT_ID` / `CLIENT_SECRET`. Put values in **`.env.local`** (loaded by the script) or in GitHub Actions secrets (see **Publish from CI** below).
+**Note:** Those four names are **Google Cloud OAuth** credentials for the [Chrome Web Store Publish API](https://developer.chrome.com/docs/webstore/api), **not** your GitHub OAuth app. [scripts/chrome-webstore.mjs](../scripts/chrome-webstore.mjs) maps them to the names the upload CLI expects; this repo does **not** read unprefixed `CLIENT_ID` / `CLIENT_SECRET`. Put values in **`.env.local`** (loaded by the script) or in GitHub Actions secrets (see **Publish from CI** below).
 
 **Service account?** The usual Chrome Web Store flow is a **Google OAuth client** (Desktop / “Chrome app” / installed app) plus a **refresh token** for the **publisher Google account** that owns the listing—see [chrome-webstore-upload-keys](https://github.com/fregante/chrome-webstore-upload-keys) and Google’s [Publish API](https://developer.chrome.com/docs/webstore/api) docs. That is **not** the same as dropping a GCP **service account JSON** into CI; if Google adds or changes machine-to-store auth, update this repo’s env docs when you adopt it.
 
@@ -84,14 +84,14 @@ FilOzone maintains **two** organization-owned **GitHub OAuth Apps**—**one per 
 
 | Channel | OAuth app (org admin links — requires FilOzone permission) | Extension ID | Authorization callback URL |
 |--------|------------------------------------------------------------|----------------|----------------------------|
-| **Development** (unpacked `extension/dist/`) | [FilOzone OAuth App — FOC GH dev](https://github.com/organizations/FilOzone/settings/applications/3490509) | `akbchnphednohmffplmejpefockadcbg` | `https://akbchnphednohmffplmejpefockadcbg.chromiumapp.org/` |
+| **Development** (unpacked [dist/](dist/)) | [FilOzone OAuth App — FOC GH dev](https://github.com/organizations/FilOzone/settings/applications/3490509) | `akbchnphednohmffplmejpefockadcbg` | `https://akbchnphednohmffplmejpefockadcbg.chromiumapp.org/` |
 | **Production** (Chrome Web Store install) | [FilOzone OAuth App — FOC GH prod](https://github.com/organizations/FilOzone/settings/applications/3491974) | `haicdejjcnecapheflpdpdngflffejpf` | `https://haicdejjcnecapheflpdpdngflffejpf.chromiumapp.org/` |
 
 Use the **development** app’s Client ID + secret in `.env.local` when building for **Load unpacked**; use the **production** app’s credentials when building **`foc-gh-webstore.zip`** for release. Full setup: [`docs/github-oauth-app.md`](../docs/github-oauth-app.md).
 
 ### Continuous integration
 
-Workflow: **`.github/workflows/extension-ci.yml`**.
+Workflow: [.github/workflows/extension-ci.yml](../.github/workflows/extension-ci.yml).
 
 | Trigger | What runs |
 |---------|-----------|
@@ -104,7 +104,7 @@ Do **not** print OAuth values in workflow logs.
 
 ### Publish to Chrome Web Store (manual CI)
 
-Workflow: **`.github/workflows/chrome-webstore-publish.yml`**.
+Workflow: [.github/workflows/chrome-webstore-publish.yml](../.github/workflows/chrome-webstore-publish.yml).
 
 | Trigger | What runs |
 |---------|-----------|
@@ -119,7 +119,7 @@ Workflow: **`.github/workflows/chrome-webstore-publish.yml`**.
 | **`CHROME_WEBSTORE_REFRESH_TOKEN`** | **Refresh token** for the **Google account** that owns the Store listing (obtain via [chrome-webstore-upload-keys](https://github.com/fregante/chrome-webstore-upload-keys) flow) |
 | **`CHROME_WEBSTORE_EXTENSION_ID`** | Store item ID (this repo: `haicdejjcnecapheflpdpdngflffejpf`) |
 | **`EXTENSION_PRODUCTION_GITHUB_OAUTH_CLIENT_ID`** | FilOzone **production** GitHub OAuth app Client ID (Store callback: `haicdejj…chromiumapp.org`) |
-| **`EXTENSION_PRODUCTION_GITHUB_OAUTH_CLIENT_SECRET`** | Same GitHub app’s **client secret** — compiled into the zip’s `service-worker.js` for **Connect GitHub** |
+| **`EXTENSION_PRODUCTION_GITHUB_OAUTH_CLIENT_SECRET`** | Same GitHub app’s **client secret** — compiled into the zip’s [dist/service-worker.js](dist/service-worker.js) for **Connect GitHub** |
 
 The **Google** four authenticate **Google’s API** to upload your package. The **GitHub** pair are the same **production** values you use locally when running **`npm run build:zip`** for release—they are **not** the Chrome API credentials.
 

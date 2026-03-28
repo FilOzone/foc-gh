@@ -1,5 +1,7 @@
 # FOC GH
 
+[![FOC GH logo](assets/logo-256.png)](assets/logo-full-res.png)
+
 Browser extension for **FOC TPMs and team members** working in **GitHub**.
 
 Chromium **Manifest V3** extension that connects day-to-day issue and PR work to the **FilOzone FOC** Projects v2 board—without living only inside the project UI.
@@ -11,7 +13,7 @@ Chromium **Manifest V3** extension that connects day-to-day issue and PR work to
 
 ## For developers
 
-Install from source, build (`npm run build`), **Chrome Web Store** ZIP (`npm run build:zip`), OAuth credentials, and the **Options** page are documented in **[extension/README.md](extension/README.md)** (from the **repository root**, not from `extension/` alone). That guide lists the **local** extension ID (stable via committed `extension/manifest-id-public.b64`) vs the **Chrome Web Store** listing ID, and links to FilOzone’s **two** GitHub OAuth apps (dev vs prod).
+Install from source, build (`npm run build`), **Chrome Web Store** ZIP (`npm run build:zip`), OAuth credentials, and the **Options** page are documented in **[extension/README.md](extension/README.md)** (from the **repository root**, not from [extension/](extension/) alone). That guide lists the **local** extension ID (stable via committed [extension/manifest-id-public.b64](extension/manifest-id-public.b64)) vs the **Chrome Web Store** listing ID, and links to FilOzone’s **two** GitHub OAuth apps (dev vs prod).
 
 ## Build & distribution
 
@@ -23,7 +25,7 @@ Install from source, build (`npm run build`), **Chrome Web Store** ZIP (`npm run
 | Env vars, Actions secret names | [.env.example](.env.example) |
 | Manual smoke checklist (CI, zip, local) | [specs/005-build-distribution-workflows/quickstart.md](specs/005-build-distribution-workflows/quickstart.md) |
 
-CI: **`.github/workflows/extension-ci.yml`** runs on push/PR (see developer guide).
+CI: [.github/workflows/extension-ci.yml](.github/workflows/extension-ci.yml) runs on push/PR (see [extension/README.md](extension/README.md)).
 
 ## Documentation
 

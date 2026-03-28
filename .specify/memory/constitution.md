@@ -1,7 +1,8 @@
 <!--
 Sync Impact Report
+- Version change: 1.1.1 → 1.1.2 (PATCH: README / documentation linking — relative Markdown links for repo paths)
 - Version change: 1.1.0 → 1.1.1 (PATCH: clarify Principle VI — ban hashed GitHub CSS class names, mandate CSS custom properties)
-- Modified principles: (none renamed)
+- Modified principles: (none renamed); Development Workflow expanded (markdown path linking rule)
 - Added: Principle VI — Native GitHub UI fidelity (light/dark, GitHub-like chrome)
 - Expanded: Development Workflow — Conventional Commits now mandatory (MUST)
 - Templates: plan-template.md ✅ | spec-template.md ✅ | tasks-template.md ✅
@@ -138,21 +139,28 @@ broken dark mode erode trust, tire eyes, and read as low quality.
   `feat`, `fix`, `docs`, `chore`, `test`, `ci`). Exceptions MUST be rare and
   explained in the pull request.
 - Every implementation plan MUST pass the Constitution Check gates in
-  `.specify/templates/plan-template.md` before Phase 0 research ends; violations
+  [plan-template.md](../templates/plan-template.md) before Phase 0 research ends; violations
   require an approved row in the plan’s Complexity Tracking table.
 - Pull requests that touch auth, `manifest.json`, network code, or storage MUST
   be reviewed with the Core Principles checklist above.
 - README MUST document: install (including unpacked loading for development),
   required GitHub scopes, and how to revoke access.
+- **README and Markdown documentation:** When referencing a file or directory in
+  this repository (not an external URL), authors MUST use a **relative Markdown
+  link** (e.g. `[scripts/build.mjs](scripts/build.mjs)`,
+  `[extension/README.md](extension/README.md)`) so readers can navigate from the
+  GitHub web UI and from local previews. Applies to root `README.md`,
+  `extension/README.md`, `docs/*.md`, and spec markdown unless a template
+  forbids links.
 - The local build → reload → verify loop for Chrome extension development is
-  documented in `.specify/memory/dev-debug-loop.md`.
+  documented in [dev-debug-loop.md](dev-debug-loop.md).
 
 ## Governance
 
 This constitution supersedes conflicting informal practices for this repository.
 Amendments require:
 
-1. A pull request that updates `.specify/memory/constitution.md` with version
+1. A pull request that updates [constitution.md](constitution.md) with version
    and date metadata.
 2. Semantic version bump for this document: **MAJOR** — principle removed or
    redefined incompatibly; **MINOR** — new principle or materially expanded
@@ -164,4 +172,4 @@ Compliance expectation: reviewers treat security, permission, and
 credential-handling changes as blocking unless the amendment process was
 followed.
 
-**Version**: 1.1.1 | **Ratified**: 2026-03-26 | **Last Amended**: 2026-03-27
+**Version**: 1.1.2 | **Ratified**: 2026-03-26 | **Last Amended**: 2026-03-27
