@@ -179,4 +179,4 @@ Task: "T006 project-config.ts"
 | **Suggested MVP scope** | Complete through **T017** (US1) |
 | **Format** | All tasks use `- [ ]`, sequential `Tnnn`, file paths in descriptions |
 
-**Generated path**: `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/specs/001-cross-org-board-ui/tasks.md`
+**Generated path**: `/Users/sal/Documents/Code/FilOz Projects/foc-gh/specs/001-cross-org-board-ui/tasks.md`

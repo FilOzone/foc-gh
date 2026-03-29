@@ -142,7 +142,7 @@ and [New Feature Request](https://github.com/refined-github/refined-github/wiki/
 
 **Decision for this plan**:
 
-- **Primary delivery**: **Standalone** `tpm-utils-github-extension` (this repo),
+- **Primary delivery**: **Standalone** `foc-gh` (this repo),
   aligned with [internal constitution](../../.specify/memory/constitution.md).
 - **Refined GitHub path** (optional, weekly idea): Open a **discussion issue**
   proposing a **generic** pattern; **do not block** FilOzone MVP on upstream

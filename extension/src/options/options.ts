@@ -1,7 +1,5 @@
-import type { SerializableProjectField } from '../lib/project-board-fields.js'
 import {
   DEFAULT_BOARD_URLS,
-  DEFAULT_STATUS_FIELD_NAME,
   DEFAULT_TARGET_REPOS,
   STORAGE_KEYS,
 } from '../lib/project-config.js'
@@ -17,8 +15,6 @@ const disconnectGithubBtn = document.querySelector<HTMLButtonElement>('#disconne
 const tokenEl = document.querySelector<HTMLInputElement>('#token')
 const boardsEl = document.querySelector<HTMLTextAreaElement>('#boards')
 const reposEl = document.querySelector<HTMLTextAreaElement>('#repos')
-const statusFieldEl = document.querySelector<HTMLSelectElement>('#statusField')
-const statusRefreshBtn = document.querySelector<HTMLButtonElement>('#status-refresh')
 const saveBtn = document.querySelector<HTMLButtonElement>('#save')
 const statusEl = document.querySelector<HTMLParagraphElement>('#status')
 const diagRunBtn = document.querySelector<HTMLButtonElement>('#diag-run')
@@ -48,15 +44,6 @@ function linesToList(s: string): string[] {
 function listToLines(list: string[]): string {
   return list.join('\n')
 }
-
-type PrimaryBoardFieldsResponse =
-  | {
-      ok: true
-      projectTitle?: string
-      fields: SerializableProjectField[]
-      totalCount?: number
-    }
-  | { ok: false; error?: string }
 
 type GetAuthStatusResponse = {
   ok: true
@@ -101,75 +88,6 @@ async function refreshAuthUi(): Promise<void> {
   disconnectGithubBtn?.classList.toggle('hidden', !(method === 'oauth' && has))
 }
 
-function populateStatusSelect(singleSelectNames: string[], saved: string): void {
-  if (!statusFieldEl) return
-  const want = saved.trim() || DEFAULT_STATUS_FIELD_NAME
-  statusFieldEl.innerHTML = ''
-
-  const oPlaceholder = document.createElement('option')
-  oPlaceholder.value = ''
-  oPlaceholder.textContent = singleSelectNames.length ? '— Select column —' : '— Click “Load columns” —'
-  statusFieldEl.append(oPlaceholder)
-
-  const seen = new Set<string>()
-  for (const n of singleSelectNames) {
-    if (seen.has(n)) continue
-    seen.add(n)
-    const o = document.createElement('option')
-    o.value = n
-    o.textContent = n
-    statusFieldEl.append(o)
-  }
-
-  if (want && !seen.has(want)) {
-    const o = document.createElement('option')
-    o.value = want
-    o.textContent = `${want} (custom / saved)`
-    statusFieldEl.append(o)
-  }
-
-  if (want) {
-    const has = Array.from(statusFieldEl.options).some((o) => o.value === want)
-    statusFieldEl.value = has ? want : ''
-  }
-}
-
-async function refreshBoardColumns(): Promise<void> {
-  if (!statusFieldEl || !statusRefreshBtn) return
-  const prev = statusFieldEl.value || DEFAULT_STATUS_FIELD_NAME
-  statusRefreshBtn.disabled = true
-  try {
-    const res = await new Promise<PrimaryBoardFieldsResponse>((resolve) => {
-      chrome.runtime.sendMessage({ type: 'GET_PRIMARY_BOARD_FIELD_DEFINITIONS' }, (r) => {
-        const err = chrome.runtime.lastError
-        if (err) {
-          resolve({ ok: false, error: err.message })
-          return
-        }
-        resolve(r as PrimaryBoardFieldsResponse)
-      })
-    })
-    if (!res.ok) {
-      populateStatusSelect([], prev)
-      if (statusEl) statusEl.textContent = res.error ?? 'Could not load board columns.'
-      return
-    }
-    const names = res.fields
-      .filter((f): f is SerializableProjectField & { kind: 'single_select' } => f.kind === 'single_select')
-      .map((f) => f.name)
-    populateStatusSelect(names, prev)
-    const extra =
-      typeof res.totalCount === 'number' && res.totalCount > names.length ?
-        ` (${res.totalCount} columns on board; showing ${names.length} single-select).`
-      : ''
-    if (statusEl) {
-      statusEl.textContent = `Loaded ${names.length} single-select column(s) from ${res.projectTitle ?? 'project'}.${extra}`
-    }
-  } finally {
-    statusRefreshBtn.disabled = false
-  }
-}
-
 async function load(): Promise<void> {
   const raw = await chrome.storage.local.get([
     STORAGE_KEYS.githubApiToken,
@@ -177,7 +95,6 @@ async function load(): Promise<void> {
     STORAGE_KEYS.authMethod,
     STORAGE_KEYS.crossOrgBoardUrls,
     STORAGE_KEYS.crossOrgTargetRepos,
-    STORAGE_KEYS.statusFieldName,
     STORAGE_KEYS.issuePrProjectsAutoExpand,
   ])
 
@@ -223,18 +140,11 @@ async function load(): Promise<void> {
       Array.isArray(repos) && repos.length > 0 ? repos : [...DEFAULT_TARGET_REPOS],
     )
   }
-  const savedStatus = String(raw[STORAGE_KEYS.statusFieldName] ?? DEFAULT_STATUS_FIELD_NAME)
-  populateStatusSelect([], savedStatus)
   if (issuePrProjectsAutoExpandEl) {
     issuePrProjectsAutoExpandEl.checked = raw[STORAGE_KEYS.issuePrProjectsAutoExpand] !== false
   }
 
   await refreshAuthUi()
-
-  const st = await fetchAuthStatus()
-  if (st.ok && st.hasToken) {
-    await refreshBoardColumns()
-  }
 }
 
 async function save(): Promise<void> {
@@ -244,9 +154,6 @@ async function save(): Promise<void> {
   const common: Record<string, unknown> = {
     [STORAGE_KEYS.crossOrgBoardUrls]: urls.length ? urls : [...DEFAULT_BOARD_URLS],
     [STORAGE_KEYS.crossOrgTargetRepos]: repos.length ? repos : [...DEFAULT_TARGET_REPOS],
-    [STORAGE_KEYS.statusFieldName]: statusFieldEl?.value?.trim()
-      ? statusFieldEl.value.trim()
-      : DEFAULT_STATUS_FIELD_NAME,
     [STORAGE_KEYS.issuePrProjectsAutoExpand]: issuePrProjectsAutoExpandEl?.checked !== false,
   }
 
@@ -285,7 +192,6 @@ function renderStreamingDiag(
 
 void load()
 saveBtn?.addEventListener('click', () => void save())
-statusRefreshBtn?.addEventListener('click', () => void refreshBoardColumns())
 
 authModeGithubEl?.addEventListener('change', () => {
   syncAuthPanels()
@@ -335,7 +241,6 @@ connectGithubBtn?.addEventListener('click', () => {
       if (authModeGithubEl) authModeGithubEl.checked = true
       syncAuthPanels()
       await refreshAuthUi()
-      await refreshBoardColumns()
     } finally {
       connectGithubBtn.disabled = false
     }

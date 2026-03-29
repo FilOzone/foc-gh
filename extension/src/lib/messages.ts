@@ -92,11 +92,6 @@ export type StatusFieldMessage = {
   }
 }
 
-/** Resolve primary board URL from storage and return parsed column definitions. */
-export type GetPrimaryBoardFieldDefinitionsMessage = {
-  type: 'GET_PRIMARY_BOARD_FIELD_DEFINITIONS'
-}
-
 export type DebugDiagnosticsMessage = {
   type: 'DEBUG_DIAGNOSTICS'
 }
@@ -141,7 +136,6 @@ export type ExtensionMessage =
   | UpdateStatusMessage
   | UpdateItemFieldMessage
   | StatusFieldMessage
-  | GetPrimaryBoardFieldDefinitionsMessage
   | DebugDiagnosticsMessage
   | DebugSampleBoardLinkMessage
   | GithubOauthStartMessage

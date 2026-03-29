@@ -8,7 +8,13 @@ import {
   destroyGlobalBoardsPicker,
   initGlobalBoardsPicker,
 } from './global-boards-picker.js'
-import { isTargetRepo, loadConfig, resolveGithubBearer, showGlobalBoardsSection } from '../lib/project-config.js'
+import {
+  DEFAULT_STATUS_FIELD_NAME,
+  isTargetRepo,
+  loadConfig,
+  resolveGithubBearer,
+  showGlobalBoardsSection,
+} from '../lib/project-config.js'
 import { getOrCreatePanelHost, placePanelHost } from './projects-sidebar-mount.js'
 import { createFocProjectCard } from './foc-project-card.js'
 import { renderEditableProjectFields } from './foc-field-renderer.js'
@@ -238,7 +244,7 @@ async function render(
     return
   }
 
-  const statusName = (cfg.statusFieldName || 'Status').trim()
+  const statusName = DEFAULT_STATUS_FIELD_NAME.trim()
 
   // Render Status in header slot
   const statusField = s.boardFields.find(

@@ -1,6 +1,6 @@
 # Tasks: GitHub OAuth sign-in on options (PAT optional)
 
-**Input**: Design documents from `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/specs/004-github-oauth-signin/`  
+**Input**: Design documents from `/Users/sal/Documents/Code/FilOz Projects/foc-gh/specs/004-github-oauth-signin/`  
 **Prerequisites**: [plan.md](./plan.md), [spec.md](./spec.md), [research.md](./research.md), [data-model.md](./data-model.md), [contracts/options-github-auth.md](./contracts/options-github-auth.md), [quickstart.md](./quickstart.md)
 
 **Tests**: Per constitution, automated tests are optional; validation is **manual** via [quickstart.md](./quickstart.md).
@@ -16,8 +16,8 @@
 **Purpose**: OAuth app registration story (prefer **org-owned** app when using org data)
 and build-time **Client ID** + **Client secret** wiring for the service worker.
 
-- [x] T001 Document GitHub OAuth App creation (including org path `organizations/<org>/settings/applications`), callback `https://<extension-id>.chromiumapp.org/` alignment with `chrome.identity.getRedirectURL()`, and dev/prod extension ID notes in `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/docs/github-oauth-app.md`
-- [x] T002 [P] Inject `GITHUB_OAUTH_CLIENT_ID` and `GITHUB_OAUTH_CLIENT_SECRET` at build time via `process.env` + esbuild `define` in `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/scripts/build.mjs` and modules `github-oauth-client-id.ts` / `github-oauth-client-secret.ts` (**never** commit secrets; clear error if secret missing when starting Connect)
+- [x] T001 Document GitHub OAuth App creation (including org path `organizations/<org>/settings/applications`), callback `https://<extension-id>.chromiumapp.org/` alignment with `chrome.identity.getRedirectURL()`, and dev/prod extension ID notes in `/Users/sal/Documents/Code/FilOz Projects/foc-gh/docs/github-oauth-app.md`
+- [x] T002 [P] Inject `GITHUB_OAUTH_CLIENT_ID` and `GITHUB_OAUTH_CLIENT_SECRET` at build time via `process.env` + esbuild `define` in `/Users/sal/Documents/Code/FilOz Projects/foc-gh/scripts/build.mjs` and modules `github-oauth-client-id.ts` / `github-oauth-client-secret.ts` (**never** commit secrets; clear error if secret missing when starting Connect)
 
 ---
 
@@ -27,11 +27,11 @@ and build-time **Client ID** + **Client secret** wiring for the service worker.
 
 **⚠️ CRITICAL**: No user story UI work until PKCE + `service-worker` handlers exist.
 
-- [x] T003 Add `"identity"` to `"permissions"` in `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/extension/manifest.json` (justify in PR with constitution least-privilege note)
-- [x] T004 Extend `STORAGE_KEYS`, `StoredConfig`, and `loadConfig()` with `auth_method` (`pat` | `oauth` | `none`), optional `oauth_token_expires_at`, and legacy migration rules in `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/extension/src/lib/project-config.ts` per `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/specs/004-github-oauth-signin/data-model.md`
-- [x] T005 [P] Implement PKCE (`code_verifier` / `code_challenge`), GitHub authorize URL builder, and **form-urlencoded** token exchange (PKCE + **`client_secret`**) in `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/extension/src/lib/github-oauth-pkce.ts` using scopes aligned with `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/docs/github-pat-permissions.md` capability
-- [x] T006 [P] Add outbound message types (`GITHUB_OAUTH_START`, `GITHUB_OAUTH_DISCONNECT`, `GET_AUTH_STATUS`) and response shapes to `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/extension/src/lib/messages.ts` per `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/specs/004-github-oauth-signin/contracts/options-github-auth.md`
-- [x] T007 Implement `chrome.identity.launchWebAuthFlow` orchestration, storage writes for OAuth success, and handlers for `GITHUB_OAUTH_START` / `GITHUB_OAUTH_DISCONNECT` / `GET_AUTH_STATUS` in `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/extension/src/background/service-worker.ts` (depends on T003–T006; **never** persist `code_verifier`)
+- [x] T003 Add `"identity"` to `"permissions"` in `/Users/sal/Documents/Code/FilOz Projects/foc-gh/extension/manifest.json` (justify in PR with constitution least-privilege note)
+- [x] T004 Extend `STORAGE_KEYS`, `StoredConfig`, and `loadConfig()` with `auth_method` (`pat` | `oauth` | `none`), optional `oauth_token_expires_at`, and legacy migration rules in `/Users/sal/Documents/Code/FilOz Projects/foc-gh/extension/src/lib/project-config.ts` per `/Users/sal/Documents/Code/FilOz Projects/foc-gh/specs/004-github-oauth-signin/data-model.md`
+- [x] T005 [P] Implement PKCE (`code_verifier` / `code_challenge`), GitHub authorize URL builder, and **form-urlencoded** token exchange (PKCE + **`client_secret`**) in `/Users/sal/Documents/Code/FilOz Projects/foc-gh/extension/src/lib/github-oauth-pkce.ts` using scopes aligned with `/Users/sal/Documents/Code/FilOz Projects/foc-gh/docs/github-pat-permissions.md` capability
+- [x] T006 [P] Add outbound message types (`GITHUB_OAUTH_START`, `GITHUB_OAUTH_DISCONNECT`, `GET_AUTH_STATUS`) and response shapes to `/Users/sal/Documents/Code/FilOz Projects/foc-gh/extension/src/lib/messages.ts` per `/Users/sal/Documents/Code/FilOz Projects/foc-gh/specs/004-github-oauth-signin/contracts/options-github-auth.md`
+- [x] T007 Implement `chrome.identity.launchWebAuthFlow` orchestration, storage writes for OAuth success, and handlers for `GITHUB_OAUTH_START` / `GITHUB_OAUTH_DISCONNECT` / `GET_AUTH_STATUS` in `/Users/sal/Documents/Code/FilOz Projects/foc-gh/extension/src/background/service-worker.ts` (depends on T003–T006; **never** persist `code_verifier`)
 
 **Checkpoint**: From a temporary options debug, messages complete OAuth without UI polish.
 
@@ -45,8 +45,8 @@ and build-time **Client ID** + **Client secret** wiring for the service worker.
 
 ### Implementation for User Story 1
 
-- [x] T008 [US1] Add **Connect GitHub** control, short consent/scopes explanation, and link to PAT docs in `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/extension/src/options/options.html`
-- [x] T009 [US1] Wire **Connect GitHub** to `GITHUB_OAUTH_START`, handle `{ ok: false, error }` vs success, and refresh visible status from storage or `GET_AUTH_STATUS` in `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/extension/src/options/options.ts`
+- [x] T008 [US1] Add **Connect GitHub** control, short consent/scopes explanation, and link to PAT docs in `/Users/sal/Documents/Code/FilOz Projects/foc-gh/extension/src/options/options.html`
+- [x] T009 [US1] Wire **Connect GitHub** to `GITHUB_OAUTH_START`, handle `{ ok: false, error }` vs success, and refresh visible status from storage or `GET_AUTH_STATUS` in `/Users/sal/Documents/Code/FilOz Projects/foc-gh/extension/src/options/options.ts`
 
 **Checkpoint**: MVP — OAuth path works end-to-end with minimal UI.
 
@@ -60,8 +60,8 @@ and build-time **Client ID** + **Client secret** wiring for the service worker.
 
 ### Implementation for User Story 2
 
-- [x] T010 [US2] Add clear **auth mode** UX (radio group or tabs: **GitHub sign-in** vs **Personal access token**) and copy for mutual exclusivity in `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/extension/src/options/options.html`
-- [x] T011 [US2] On Save, set `auth_method` to `pat`, `github_token_kind` appropriately, persist PAT to `github_api_token`, and **clear** conflicting OAuth fields when switching from OAuth → PAT per `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/specs/004-github-oauth-signin/data-model.md` in `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/extension/src/options/options.ts`
+- [x] T010 [US2] Add clear **auth mode** UX (radio group or tabs: **GitHub sign-in** vs **Personal access token**) and copy for mutual exclusivity in `/Users/sal/Documents/Code/FilOz Projects/foc-gh/extension/src/options/options.html`
+- [x] T011 [US2] On Save, set `auth_method` to `pat`, `github_token_kind` appropriately, persist PAT to `github_api_token`, and **clear** conflicting OAuth fields when switching from OAuth → PAT per `/Users/sal/Documents/Code/FilOz Projects/foc-gh/specs/004-github-oauth-signin/data-model.md` in `/Users/sal/Documents/Code/FilOz Projects/foc-gh/extension/src/options/options.ts`
 
 **Checkpoint**: PAT-only and OAuth-only paths both work; switch does not leave dual credentials.
 
@@ -75,8 +75,8 @@ and build-time **Client ID** + **Client secret** wiring for the service worker.
 
 ### Implementation for User Story 3
 
-- [x] T012 [US3] Add **connection status** summary (`auth_method`, masked “connected” hint if desired) and **Disconnect** control for OAuth in `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/extension/src/options/options.html`
-- [x] T013 [US3] Load status on `options` open; call `GITHUB_OAUTH_DISCONNECT` when Disconnect clicked; ensure content scripts / messaging paths show actionable “configure in options” when `auth_method` is `none` or token empty in `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/extension/src/options/options.ts` and adjust call sites in `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/extension/src/content/issue-sidebar.ts` only if current UX silently fails without token
+- [x] T012 [US3] Add **connection status** summary (`auth_method`, masked “connected” hint if desired) and **Disconnect** control for OAuth in `/Users/sal/Documents/Code/FilOz Projects/foc-gh/extension/src/options/options.html`
+- [x] T013 [US3] Load status on `options` open; call `GITHUB_OAUTH_DISCONNECT` when Disconnect clicked; ensure content scripts / messaging paths show actionable “configure in options” when `auth_method` is `none` or token empty in `/Users/sal/Documents/Code/FilOz Projects/foc-gh/extension/src/options/options.ts` and adjust call sites in `/Users/sal/Documents/Code/FilOz Projects/foc-gh/extension/src/content/issue-sidebar.ts` only if current UX silently fails without token
 
 **Checkpoint**: All three user stories independently verifiable.
 
@@ -86,9 +86,9 @@ and build-time **Client ID** + **Client secret** wiring for the service worker.
 
 **Purpose**: Docs, theming, PR smoke checklist.
 
-- [x] T014 [P] Update `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/extension/README.md` and add OAuth scopes summary (mirror PAT capability) in `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/docs/github-pat-permissions.md` or sibling section per [plan.md](./plan.md)
-- [x] T015 [P] Add `prefers-color-scheme` / CSS variables for options page contrast in `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/extension/src/options/options.html`
-- [x] T016 Run manual scenarios in `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/specs/004-github-oauth-signin/quickstart.md` and paste results + PR smoke checklist (manifest + auth) in the PR description
+- [x] T014 [P] Update `/Users/sal/Documents/Code/FilOz Projects/foc-gh/extension/README.md` and add OAuth scopes summary (mirror PAT capability) in `/Users/sal/Documents/Code/FilOz Projects/foc-gh/docs/github-pat-permissions.md` or sibling section per [plan.md](./plan.md)
+- [x] T015 [P] Add `prefers-color-scheme` / CSS variables for options page contrast in `/Users/sal/Documents/Code/FilOz Projects/foc-gh/extension/src/options/options.html`
+- [x] T016 Run manual scenarios in `/Users/sal/Documents/Code/FilOz Projects/foc-gh/specs/004-github-oauth-signin/quickstart.md` and paste results + PR smoke checklist (manifest + auth) in the PR description
 
 ---
 

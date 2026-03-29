@@ -31,7 +31,7 @@ tokens.
 
 ## One-time setup
 
-1. Clone [tpm-utils-github-extension](https://github.com/FilOzone/tpm-utils-github-extension)
+1. Clone [foc-gh](https://github.com/FilOzone/foc-gh)
    (or use this working tree).
 2. Implement or generate the extension skeleton per [plan.md](./plan.md) (MV3).
 3. In the browser, open **Extensions** → **Load unpacked** → select the build

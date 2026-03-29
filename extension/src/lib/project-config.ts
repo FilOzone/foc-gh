@@ -9,7 +9,6 @@ export const STORAGE_KEYS = {
   oauthTokenExpiresAt: 'oauth_token_expires_at',
   crossOrgBoardUrls: 'cross_org_board_urls',
   crossOrgTargetRepos: 'cross_org_target_repos',
-  statusFieldName: 'status_field_name',
   /** When true (default), FOC sidebar card field body loads expanded on issues/PRs. */
   issuePrProjectsAutoExpand: 'issue_pr_projects_auto_expand',
 } as const
@@ -35,7 +34,6 @@ export type StoredConfig = {
   oauthTokenExpiresAt: number | null
   crossOrgBoardUrls: string[]
   crossOrgTargetRepos: string[]
-  statusFieldName: string
   issuePrProjectsAutoExpand: boolean
 }
 
@@ -90,7 +88,6 @@ export async function loadConfig(): Promise<StoredConfig> {
     STORAGE_KEYS.oauthTokenExpiresAt,
     STORAGE_KEYS.crossOrgBoardUrls,
     STORAGE_KEYS.crossOrgTargetRepos,
-    STORAGE_KEYS.statusFieldName,
     STORAGE_KEYS.issuePrProjectsAutoExpand,
   ])
 
@@ -130,7 +127,6 @@ export async function loadConfig(): Promise<StoredConfig> {
       Array.isArray(urls) && urls.length > 0 ? urls : [...DEFAULT_BOARD_URLS],
     crossOrgTargetRepos:
       Array.isArray(repos) && repos.length > 0 ? repos : [...DEFAULT_TARGET_REPOS],
-    statusFieldName: String(raw[STORAGE_KEYS.statusFieldName] ?? DEFAULT_STATUS_FIELD_NAME),
     issuePrProjectsAutoExpand,
   }
 }

@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>FilOzone FOC board extension</title>
+    <title>FOC GH — Options</title>
     <style>
       :root {
         color-scheme: light dark;
@@ -34,8 +34,8 @@
       body {
         font-family: system-ui, sans-serif;
         max-width: 48rem;
-        margin: 2rem auto;
-        padding: 0 1rem;
+        margin: 0 auto;
+        padding: 1.5rem 1rem 2.5rem;
         line-height: 1.45;
         background: var(--page-bg);
         color: var(--page-fg);
@@ -43,10 +43,52 @@
       a {
         color: var(--link);
       }
-      label {
+      .options-hero {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        margin: 0 0 1.75rem;
+      }
+      .options-logo {
+        width: 128px;
+        height: 128px;
+        flex-shrink: 0;
+        border-radius: 16px;
+        object-fit: contain;
+      }
+      .options-hero-text h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0 0 0.35rem;
+        line-height: 1.2;
+      }
+      .options-hero-text .tagline {
+        margin: 0;
+        font-size: 0.95rem;
+        color: var(--muted);
+      }
+      main > h2 {
+        font-size: 1.15rem;
+        font-weight: 600;
+        margin: 1.75rem 0 0.35rem;
+        padding-bottom: 0.35rem;
+        border-bottom: 1px solid var(--border);
+      }
+      main > h2:first-of-type {
+        margin-top: 0;
+      }
+      .section-lead {
+        margin: 0.35rem 0 0.75rem;
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+      label.form-label {
         display: block;
         font-weight: 600;
-        margin-top: 1rem;
+        margin-top: 0.85rem;
+      }
+      label.form-label:first-child {
+        margin-top: 0;
       }
       input[type='password'],
       input[type='text'],
@@ -65,8 +107,8 @@
         font-family: ui-monospace, monospace;
         font-size: 0.9rem;
       }
-      input[type='checkbox'] {
-        margin-top: 0.5rem;
+      input[type='checkbox'].checkbox-inline {
+        margin-top: 0.65rem;
         width: auto;
       }
       .auth-mode-row {
@@ -116,15 +158,30 @@
       .hint {
         font-size: 0.85rem;
         color: var(--muted);
-        margin-top: 0.25rem;
+        margin-top: 0.35rem;
       }
-      .diag {
-        margin-top: 2rem;
-        padding-top: 1.5rem;
+      .save-row {
+        margin-top: 1.5rem;
+        padding-top: 0.25rem;
+      }
+      .save-row button.primary {
+        margin-top: 0;
+      }
+      hr.section-rule {
+        border: none;
         border-top: 1px solid var(--border);
+        margin: 2rem 0 1.25rem;
+      }
+      .debug-block {
+        margin-top: 1.25rem;
+      }
+      .debug-block h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0 0 0.35rem;
       }
       .diag-pre {
-        margin-top: 0.75rem;
+        margin-top: 0.65rem;
         padding: 12px;
         font-family: ui-monospace, monospace;
         font-size: 0.8rem;
@@ -137,42 +194,60 @@
         max-height: 28rem;
         overflow: auto;
       }
-      .panel {
-        margin-top: 1rem;
-        padding: 1rem;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        background: var(--surface);
-      }
       .hidden {
         display: none !important;
+      }
+      .expand-check-wrap {
+        margin-top: 0.5rem;
+      }
+      .expand-check-wrap label {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .expand-check-wrap input {
+        margin-top: 0.2rem;
+        flex-shrink: 0;
       }
     </style>
   </head>
   <body>
-    <h1>FilOzone FOC board (Global boards)</h1>
-    <p>
-      Connect to GitHub for API access. Use <strong>Sign in with GitHub</strong> (OAuth, no PAT required) or paste a
-      <strong>personal access token</strong> if your org requires it.
-    </p>
-    <p class="hint">
-      <a
-        href="https://github.com/FilOzone/tpm-utils-github-extension/blob/main/docs/github-pat-permissions.md"
-        target="_blank"
-        rel="noopener noreferrer"
-        >Token permissions (classic / fine-grained)</a
-      >
-      ·
-      <a
-        href="https://github.com/FilOzone/tpm-utils-github-extension/blob/main/docs/github-oauth-app.md"
-        target="_blank"
-        rel="noopener noreferrer"
-        >OAuth app setup (Connect GitHub)</a
-      >
-    </p>
+    <header class="options-hero">
+      <img
+        class="options-logo"
+        src="icons/icon128.png"
+        width="128"
+        height="128"
+        alt=""
+        decoding="async"
+      />
+      <div class="options-hero-text">
+        <h1>FOC GH</h1>
+        <p class="tagline">GitHub extension for FOC project management.</p>
+      </div>
+    </header>
 
-    <div class="panel">
-      <h2 style="font-size: 1.05rem; margin: 0 0 0.5rem">Authentication</h2>
+    <main>
+      <h2>Authentication</h2>
+      <p class="section-lead">
+        Connect to the GitHub API with <strong>Sign in with GitHub</strong> (OAuth) or a <strong>personal access token</strong>.
+        <a
+          href="https://github.com/FilOzone/foc-gh/blob/main/docs/github-pat-permissions.md"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Token permissions</a
+        >
+        ·
+        <a
+          href="https://github.com/FilOzone/foc-gh/blob/main/docs/github-oauth-app.md"
+          target="_blank"
+          rel="noopener noreferrer"
+          >OAuth setup</a
+        >
+      </p>
+
       <p class="hint" style="margin-top: 0">
         Only one method is active at a time. Saving a PAT while in “Personal access token” replaces a prior GitHub
         sign-in token.
@@ -183,9 +258,7 @@
           ><input type="radio" name="auth-mode" id="auth-mode-github" value="github" checked /> Sign in with
           GitHub</label
         >
-        <label
-          ><input type="radio" name="auth-mode" id="auth-mode-pat" value="pat" /> Personal access token</label
-        >
+        <label><input type="radio" name="auth-mode" id="auth-mode-pat" value="pat" /> Personal access token</label>
       </div>
 
       <div id="oauth-panel">
@@ -195,16 +268,14 @@
           <button type="button" class="danger hidden" id="disconnect-github">Disconnect GitHub</button>
         </div>
         <p class="hint">
-          OAuth requests scopes equivalent to the PAT doc: <code>repo</code>, <code>read:org</code>, <code>project</code>.
-          Build with <code>GITHUB_OAUTH_CLIENT_ID</code> set (see docs).
+          OAuth scopes: <code>repo</code>, <code>read:org</code>, <code>project</code>. Build with
+          <code>GITHUB_OAUTH_CLIENT_ID</code> set (see docs).
         </p>
         <p class="hint">
-          <strong>Cross-org limitation:</strong> adding issues or PRs from an org outside FilOzone to a global board
-          requires that org to approve this OAuth app. If you see an "OAuth App access restrictions" error, ask an
-          owner of that org to approve the app, or switch to a <strong>Personal access token</strong> (PATs are not
-          subject to this restriction).
+          <strong>Cross-org limitation:</strong> adding issues or PRs from an org that restricts third-party OAuth
+          may require org approval of this app, or use a <strong>PAT</strong> instead.
           <a
-            href="https://github.com/FilOzone/tpm-utils-github-extension/blob/main/docs/github-oauth-app.md#4-cross-org-restriction-adding-issuesprs-from-outside-the-home-org"
+            href="https://github.com/FilOzone/foc-gh/blob/main/docs/github-oauth-app.md#4-cross-org-restriction-adding-issuesprs-from-outside-the-home-org"
             target="_blank"
             rel="noopener noreferrer"
             >Learn more</a
@@ -213,77 +284,81 @@
       </div>
 
       <div id="pat-panel" class="hidden">
-        <label for="token">GitHub API token (stored locally)</label>
+        <label class="form-label" for="token">GitHub API token (stored locally)</label>
         <input id="token" type="password" autocomplete="off" />
         <p class="hint">Never commit this token. Revoke from GitHub settings when rotating.</p>
       </div>
-    </div>
 
-    <label for="boards">Global board URLs (one per line)</label>
-    <textarea id="boards"></textarea>
-    <p class="hint">
-      Organization project links such as <code>https://github.com/orgs/FilOzone/projects/14</code>. These boards
-      appear in the GitHub <strong>Projects</strong> picker (gear menu) whenever you open it on an issue or pull
-      request whose <strong>repository owner</strong> differs from the board’s org (see spec / visibility rules).
-      They are <strong>not</strong> limited to the repo list below.
-    </p>
-
-    <label for="repos">Repos to proactively check for global board membership (owner/repo, one per line)</label>
-    <textarea id="repos"></textarea>
-    <p id="repos-hint" class="hint">
-      Used to drive the <strong>FOC sidebar card</strong> (primary board state and editable fields) and other
-      proactive membership checks while you browse those repos. <strong>Does not</strong> control whether Global
-      board rows appear in the Projects picker—Global URLs apply across GitHub where visibility matches.
-    </p>
-
-    <label for="issuePrProjectsAutoExpand"
-      >All issues &amp; PRs: expand native Projects sidebar + extension panel</label
-    >
-    <input
-      id="issuePrProjectsAutoExpand"
-      name="issuePrProjectsAutoExpand"
-      type="checkbox"
-      checked
-      aria-describedby="issuePrProjectsAutoExpand-hint"
-    />
-    <p id="issuePrProjectsAutoExpand-hint" class="hint">
-      <strong>Global on github.com</strong> (every repo’s issues &amp; pull requests): expands GitHub’s own
-      <strong>Projects</strong> blocks in the right sidebar (for example “Show more project fields” / collapsible
-      rows). Additionally, on repos listed under <strong>Repos to proactively check…</strong> only, the extension’s
-      FOC sidebar card field section starts expanded the same way. Uncheck to leave initial collapse state to GitHub
-      / the extension default. Status rows stay visible; this mainly opens detail sections.
-    </p>
-
-    <label for="statusField">Primary single-select column (for panel ordering)</label>
-    <select id="statusField"></select>
-    <button id="status-refresh" type="button">Load columns from primary board</button>
-    <p class="hint">
-      Uses saved token and the <strong>first</strong> board URL. Populates the list with
-      <code>SINGLE_SELECT</code> fields only; the chosen name is listed first in the sidebar. Default:
-      <code>Status</code>.
-    </p>
-
-    <button id="save" type="button" class="primary">Save</button>
-    <p id="status" role="status"></p>
-
-    <div class="diag">
-      <h2 style="font-size: 1.1rem; margin: 0">API checks</h2>
-      <p class="hint" style="margin-top: 0.5rem">
-        Runs GraphQL using the <strong>saved</strong> token (save first after changing credentials).
+      <h2>Global projects</h2>
+      <p class="section-lead">
+        Add project URLs that you want to be global (one per line). These drive which org projects the extension treats as
+        global (i.e., available in the UI of other organizations). They are not limited to the repo list below.
       </p>
-      <button id="diag-run" type="button">Run API checks</button>
-      <pre id="diag-out" class="diag-pre" aria-live="polite"></pre>
-
-      <h3 style="font-size: 1rem; margin: 1.5rem 0 0">Sample issue / pull request</h3>
-      <p class="hint" style="margin-top: 0.35rem">
-        Checks whether this issue or PR appears on your <strong>primary</strong> configured board and lists
-        field values the API returns (saved token + first board URL).
+      <label class="form-label" for="boards">ProjectBoard URLs</label>
+      <textarea id="boards" aria-describedby="boards-hint"></textarea>
+      <p id="boards-hint" class="hint">
+        Organization project links only.
       </p>
-      <label for="sample-url">Issue or PR URL (or <code>owner/repo/issues/1</code>)</label>
-      <input id="sample-url" type="text" placeholder="https://github.com/owner/repo/issues/123" autocomplete="off" />
-      <button id="sample-run" type="button">Check board link &amp; fields</button>
-      <pre id="sample-out" class="diag-pre" aria-live="polite"></pre>
-    </div>
+
+      <h2>Repos to proactively check for global project membership</h2>
+      <p class="section-lead">Add one <code>owner/repo</code> per line.</p>
+      <label class="form-label" for="repos">Target repos</label>
+      <textarea id="repos" aria-describedby="repos-hint"></textarea>
+      <p id="repos-hint" class="hint">
+        Issues/PRs in these repos are are automatically checked for global project membership when they are loaded in the GiHub UI. Wherever they are members, a project widget is rendered for that global project. 
+      </p>
+
+      <h2>Expand all projects in sidebar</h2>
+      <p class="section-lead">
+        Expands GitHub’s right-hand <strong>Projects</strong> blocks on issues and PRs on page load. This includes any global projects that "proactive check" repos above are members of.
+      </p>
+      <div class="expand-check-wrap">
+        <label for="issuePrProjectsAutoExpand">
+          <input
+            id="issuePrProjectsAutoExpand"
+            name="issuePrProjectsAutoExpand"
+            type="checkbox"
+            checked
+            aria-describedby="issuePrProjectsAutoExpand-hint"
+          />
+          <span>Enable auto-expand</span>
+        </label>
+      </div>
+      <p id="issuePrProjectsAutoExpand-hint" class="hint">
+        Uncheck to leave initial collapse state to GitHub: status rows stay visible. Selecting this option means project detail sections expand.
+      </p>
+
+      <div class="save-row">
+        <button id="save" type="button" class="primary">Save</button>
+        <p id="status" role="status" class="hint" style="margin-top: 0.5rem"></p>
+      </div>
+
+      <hr class="section-rule" />
+
+      <h2>Debug</h2>
+      <p class="section-lead">Uses the <strong>saved</strong> token and options.</p>
+
+      <div class="debug-block">
+        <h3>API connectivity check</h3>
+        <p class="hint" style="margin-top: 0.25rem">
+          Viewer, project access, and a sample of board columns (GraphQL).
+        </p>
+        <button id="diag-run" type="button">Run API checks</button>
+        <pre id="diag-out" class="diag-pre" aria-live="polite"></pre>
+      </div>
+
+      <div class="debug-block">
+        <h3>Issue / PR visibility on global boards</h3>
+        <p class="hint" style="margin-top: 0.25rem">
+          For each configured Global board URL, checks whether the issue or PR appears on that board and lists field
+          values returned by the APIs.
+        </p>
+        <label class="form-label" for="sample-url">Issue or PR URL (or <code>owner/repo/issues/1</code>)</label>
+        <input id="sample-url" type="text" placeholder="https://github.com/owner/repo/issues/123" autocomplete="off" />
+        <button id="sample-run" type="button">Run visibility check</button>
+        <pre id="sample-out" class="diag-pre" aria-live="polite"></pre>
+      </div>
+    </main>
 
     <script type="module" src="./options.js"></script>
   </body>

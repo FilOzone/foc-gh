@@ -7,7 +7,12 @@ import {
 } from '../lib/project-board-fields.js'
 import { parseGithubIssuePrInput } from '../lib/github-url.js'
 import { handleGetAuthStatus, handleGithubOAuthDisconnect, handleGithubOAuthStart } from './github-oauth-handler.js'
-import { loadConfig, parseOrgProjectUrl, resolveGithubBearer } from '../lib/project-config.js'
+import {
+  DEFAULT_STATUS_FIELD_NAME,
+  loadConfig,
+  parseOrgProjectUrl,
+  resolveGithubBearer,
+} from '../lib/project-config.js'
 import {
   MUTATION_ADD_PROJECT_ITEM,
   MUTATION_DELETE_PROJECT_ITEM,
@@ -724,7 +729,7 @@ async function executeApiDiagnostics(): Promise<DiagnosticsResponse> {
     lines.push('')
     lines.push(...linesForBoardFieldDiagnostics(boardFields))
 
-    const statusName = cfg.statusFieldName.trim() || 'Status'
+    const statusName = DEFAULT_STATUS_FIELD_NAME.trim()
     const sel = findSingleSelectFieldByName(boardFields, statusName)
     if (sel) {
       lines.push('')
@@ -734,7 +739,7 @@ async function executeApiDiagnostics(): Promise<DiagnosticsResponse> {
     } else {
       lines.push('')
       lines.push(
-        `WARN: No SINGLE_SELECT column named "${statusName}". Pick a name from the list above or change options.`,
+        `WARN: No SINGLE_SELECT column named "${statusName}" (sidebar header uses this name by default).`,
       )
     }
   }
@@ -768,42 +773,8 @@ type PanelStateSuccess = {
   item: { itemId: string; fieldLabels: Record<string, string> } | null
 }
 
-async function executeSampleBoardLinkDiagnostics(sampleInput: string): Promise<DiagnosticsResponse> {
-  const lines: string[] = []
-  lines.push('Sample issue / PR on primary board')
-  lines.push('')
-
-  const ctx = parseGithubIssuePrInput(sampleInput)
-  if (!ctx) {
-    lines.push('FAIL: Could not parse as a GitHub issue or pull request URL/path.')
-    lines.push('Examples: https://github.com/owner/repo/issues/123 — owner/repo/pull/456')
-    return { ok: false, report: lines.join('\n') }
-  }
-
-  const kindLabel = ctx.kind === 'issue' ? 'issue' : 'pull request'
-  lines.push(`Resolved: ${ctx.owner}/${ctx.name} ${kindLabel} #${ctx.number}`)
-  lines.push('')
-
-  const state = await getPanelState(ctx)
-  if (typeof state !== 'object' || state === null) {
-    lines.push('FAIL: Empty response from panel resolver.')
-    return { ok: false, report: lines.join('\n') }
-  }
-
-  const st = state as { ok?: boolean; code?: string; error?: string }
-  if (st.ok !== true) {
-    if (st.code === 'NO_TOKEN') {
-      lines.push('FAIL: No API token in storage. Save options first.')
-    } else if (st.error) {
-      lines.push(`FAIL: ${st.error}`)
-    } else {
-      lines.push('FAIL: Could not resolve board state for this URL.')
-    }
-    return { ok: false, report: lines.join('\n') }
-  }
-
-  const ok = state as PanelStateSuccess
-  lines.push(`Configured primary board: ${ok.primaryBoardUrl}`)
+function appendBoardSampleSection(lines: string[], ok: PanelStateSuccess): void {
+  lines.push(`Board URL: ${ok.primaryBoardUrl}`)
   lines.push(`Project: ${ok.projectTitle}`)
   if (ok.projectUrl) lines.push(`Open project: ${ok.projectUrl}`)
   lines.push(`GraphQL content id: ${ok.contentNodeId}`)
@@ -818,7 +789,8 @@ async function executeSampleBoardLinkDiagnostics(sampleInput: string): Promise<D
     lines.push(
       'If the card appears on github.com, widen PAT project access or confirm the board URL.',
     )
-    return { ok: true, report: lines.join('\n') }
+    lines.push('')
+    return
   }
 
   lines.push(`RESULT: On board — ProjectV2 item id: ${ok.item.itemId}`)
@@ -837,8 +809,56 @@ async function executeSampleBoardLinkDiagnostics(sampleInput: string): Promise<D
   lines.push(
     'Note: Up to 50 field values are requested; omit empty or unsupported GitHub value shapes.',
   )
+  lines.push('')
+}
 
-  return { ok: true, report: lines.join('\n') }
+async function executeSampleBoardLinkDiagnostics(sampleInput: string): Promise<DiagnosticsResponse> {
+  const lines: string[] = []
+  lines.push('Issue / PR visibility on each configured Global board URL')
+  lines.push('')
+
+  const ctx = parseGithubIssuePrInput(sampleInput)
+  if (!ctx) {
+    lines.push('FAIL: Could not parse as a GitHub issue or pull request URL/path.')
+    lines.push('Examples: https://github.com/owner/repo/issues/123 — owner/repo/pull/456')
+    return { ok: false, report: lines.join('\n') }
+  }
+
+  const kindLabel = ctx.kind === 'issue' ? 'issue' : 'pull request'
+  lines.push(`Resolved: ${ctx.owner}/${ctx.name} ${kindLabel} #${ctx.number}`)
+  lines.push('')
+
+  const cfg = await loadConfig()
+  const bearer = resolveGithubBearer(cfg)
+  if (!bearer) {
+    lines.push('FAIL: No API token in storage. Save options first.')
+    return { ok: false, report: lines.join('\n') }
+  }
+
+  const urls = cfg.crossOrgBoardUrls.map((u) => u.trim()).filter((u) => u.length > 0)
+  if (urls.length === 0) {
+    lines.push('FAIL: No Global board URLs configured in options.')
+    return { ok: false, report: lines.join('\n') }
+  }
+
+  for (const boardUrl of urls) {
+    lines.push(`━━━ ${boardUrl} ━━━`)
+    const state = await getPanelStateForBoardUrl(ctx, boardUrl, bearer)
+    if (typeof state !== 'object' || state === null) {
+      lines.push('FAIL: Empty response from panel resolver.')
+      lines.push('')
+      continue
+    }
+    const st = state as { ok?: boolean; code?: string; error?: string }
+    if (st.ok !== true) {
+      lines.push(`FAIL: ${st.code === 'NO_TOKEN' ? 'No token (unexpected).' : st.error ?? 'Could not resolve board.'}`)
+      lines.push('')
+      continue
+    }
+    appendBoardSampleSection(lines, state as PanelStateSuccess)
+  }
+
+  return { ok: true, report: lines.join('\n').trimEnd() }
 }
 
 async function runSampleBoardLinkDiagnostics(sampleInput: string): Promise<DiagnosticsResponse> {
@@ -971,50 +991,6 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
       return { ok: false as const, error: firstError(result.errors) }
     }
     return { ok: true as const, data: result.data }
-  }
-
-  if (message.type === 'GET_PRIMARY_BOARD_FIELD_DEFINITIONS') {
-    const cfg = await loadConfig()
-    const token = resolveGithubBearer(cfg)
-    if (!token) {
-      return { ok: false as const, error: 'Missing GitHub API token. Save options first.' }
-    }
-    const primaryUrl = cfg.crossOrgBoardUrls[0]
-    if (!primaryUrl) {
-      return { ok: false as const, error: 'No board URL configured.' }
-    }
-    const parsed = parseOrgProjectUrl(primaryUrl)
-    if (!parsed) {
-      return { ok: false as const, error: `Invalid primary board URL: ${primaryUrl.slice(0, 120)}` }
-    }
-    const projRes = await graphqlRequest(token, QUERY_PROJECT_V2, {
-      org: parsed.org,
-      number: parsed.number,
-    })
-    if (projRes.errors?.length) {
-      return { ok: false as const, error: firstError(projRes.errors) }
-    }
-    const proj = (projRes.data as { organization?: { projectV2?: { id: string; title: string } } })
-      ?.organization?.projectV2
-    if (!proj?.id) {
-      return { ok: false as const, error: 'Project not found or no access.' }
-    }
-    const defsRes = await graphqlRequest(token, QUERY_PROJECT_V2_FIELD_DEFINITIONS, {
-      projectId: proj.id,
-    })
-    if (defsRes.errors?.length) {
-      return { ok: false as const, error: firstError(defsRes.errors) }
-    }
-    const fields = parseProjectV2FieldDefinitions(defsRes.data)
-    const total =
-      (defsRes.data as { node?: { fields?: { totalCount?: number } } })?.node?.fields?.totalCount
-    return {
-      ok: true as const,
-      projectId: proj.id,
-      projectTitle: proj.title,
-      fields,
-      totalCount: typeof total === 'number' ? total : fields.length,
-    }
   }
 
   if (message.type === 'GET_STATUS_FIELD') {
@@ -1226,25 +1202,21 @@ async function getGlobalBoardsState(payload: {
   return { ok: true, contentNodeId: contentId, rows }
 }
 
-async function getPanelState(payload: {
+type PanelPayload = {
   owner: string
   name: string
   number: number
   kind: 'issue' | 'pull_request'
-}): Promise<unknown> {
-  const cfg = await loadConfig()
-  const bearer = resolveGithubBearer(cfg)
-  if (!bearer) {
-    return {
-      ok: false as const,
-      code: 'NO_TOKEN' as const,
-      error: 'Configure a GitHub PAT or OAuth token in extension options.',
-    }
-  }
+}
 
-  const primaryUrl = cfg.crossOrgBoardUrls[0]
+async function getPanelStateForBoardUrl(
+  payload: PanelPayload,
+  boardUrl: string,
+  bearer: string,
+): Promise<unknown> {
+  const primaryUrl = boardUrl.trim()
   if (!primaryUrl) {
-    return { ok: false as const, error: 'No board URL configured.' }
+    return { ok: false as const, error: 'Empty board URL.' }
   }
 
   const parsed = parseOrgProjectUrl(primaryUrl)
@@ -1366,4 +1338,23 @@ async function getPanelState(payload: {
         }
       : null,
   }
+}
+
+async function getPanelState(payload: PanelPayload): Promise<unknown> {
+  const cfg = await loadConfig()
+  const bearer = resolveGithubBearer(cfg)
+  if (!bearer) {
+    return {
+      ok: false as const,
+      code: 'NO_TOKEN' as const,
+      error: 'Configure a GitHub PAT or OAuth token in extension options.',
+    }
+  }
+
+  const primaryUrl = cfg.crossOrgBoardUrls[0]
+  if (!primaryUrl) {
+    return { ok: false as const, error: 'No board URL configured.' }
+  }
+
+  return getPanelStateForBoardUrl(payload, primaryUrl, bearer)
 }

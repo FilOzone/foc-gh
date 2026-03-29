@@ -132,6 +132,6 @@ Run from repo root after merging this plan:
 
 ### Absolute paths (this workspace)
 
-- **FEATURE_SPEC**: `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/specs/001-cross-org-board-ui/spec.md`
-- **IMPL_PLAN**: `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/specs/001-cross-org-board-ui/plan.md`
-- **SPECS_DIR**: `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/specs/001-cross-org-board-ui`
+- **FEATURE_SPEC**: `/Users/sal/Documents/Code/FilOz Projects/foc-gh/specs/001-cross-org-board-ui/spec.md`
+- **IMPL_PLAN**: `/Users/sal/Documents/Code/FilOz Projects/foc-gh/specs/001-cross-org-board-ui/plan.md`
+- **SPECS_DIR**: `/Users/sal/Documents/Code/FilOz Projects/foc-gh/specs/001-cross-org-board-ui`

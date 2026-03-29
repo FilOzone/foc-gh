@@ -110,6 +110,6 @@ From repo root:
 
 ### Absolute paths (this workspace)
 
-- **FEATURE_SPEC**: `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/specs/006-outside-org-projects-picker/spec.md`
-- **IMPL_PLAN**: `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/specs/006-outside-org-projects-picker/plan.md`
-- **SPECS_DIR**: `/Users/sal/Documents/Code/FilOz Projects/tpm-utils-github-extension/specs/006-outside-org-projects-picker`
+- **FEATURE_SPEC**: `/Users/sal/Documents/Code/FilOz Projects/foc-gh/specs/006-outside-org-projects-picker/spec.md`
+- **IMPL_PLAN**: `/Users/sal/Documents/Code/FilOz Projects/foc-gh/specs/006-outside-org-projects-picker/plan.md`
+- **SPECS_DIR**: `/Users/sal/Documents/Code/FilOz Projects/foc-gh/specs/006-outside-org-projects-picker`
