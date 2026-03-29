@@ -39,7 +39,7 @@ Use these GitHub pages when exercising the extension (same-org vs cross-org, iss
 | Context | URL |
 |---------|-----|
 | FilOzone PR | https://github.com/FilOzone/tpm-utils/pull/7 |
-| FilOzone issue | https://github.com/FilOzone/tpm-utils/issues/23 |
+| FilOzone issue | https://github.com/FilOzone/tpm-utils/issues/1 |
 | Non-FilOzone PR (cross-org) | https://github.com/filecoin-project/filecoin-pin/pull/386 |
 | Non-FilOzone issue (cross-org) | https://github.com/filecoin-project/filecoin-pin/issues/385 |
 

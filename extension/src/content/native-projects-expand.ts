@@ -37,10 +37,22 @@ function expandWidgetsViaMainWorld(): void {
 }
 
 function expandAll(root: Element): void {
-  // Issue layout: React toggle buttons (aria-expanded="false" → click)
-  root.querySelectorAll<HTMLButtonElement>('button[aria-expanded="false"]').forEach((btn) => {
-    btn.click()
-  })
+  // Issue layout: click the section-level collapse toggle to expand all project fields.
+  // The toggle is icon-only (empty innerText, depth shallower than field-edit buttons).
+  // Field-edit buttons (Status, Prio, Cycle…) have visible text — exclude them by
+  // filtering to buttons with empty innerText, which avoids opening field dropdowns.
+  // Guard: if a section toggle is already expanded (aria-expanded="true", empty text),
+  // the section is open and there is nothing to do.
+  const hasExpandedToggle = Array.from(
+    root.querySelectorAll<HTMLButtonElement>('button[aria-expanded="true"]'),
+  ).some((b) => (b as HTMLButtonElement).innerText.trim() === '')
+  if (!hasExpandedToggle) {
+    root
+      .querySelectorAll<HTMLButtonElement>('button[aria-expanded="false"]')
+      .forEach((btn) => {
+        if (btn.innerText.trim() === '') btn.click()
+      })
+  }
   // PR layout: collapsible-sidebar-widget — must run in page's main world
   if (root.querySelector('collapsible-sidebar-widget')) {
     expandWidgetsViaMainWorld()
