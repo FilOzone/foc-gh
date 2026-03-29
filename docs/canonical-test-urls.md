@@ -8,6 +8,8 @@ Use these **fixed issue and pull request URLs** when manually checking **Project
 - Whether the issue/PR is a **member of the global FOC project** on that board.
 - Whether the repo is listed under **Repos to proactively check for global project membership** in extension options.
 
+A separate block below covers **auto-expand** of GitHub’s native **Projects** sidebar when the item is on **other** (non–global FOC) boards only.
+
 Replace **TBD** PR links when you have stable pull requests for the FilOzone scenarios.
 
 ## Scenario matrix
@@ -47,7 +49,19 @@ FOC GH **should not** modify **Project** panel rendering, because the issue/PR i
 
 FOC GH **should not** modify **Project** panel rendering: the item is **not** on the global FOC project **and** the repo is **not** in the proactive-check list.
 
+## Auto-expand native Projects (non–global boards)
+
+Use this when validating **Options → expand Project panel** (and related content in [`native-projects-expand`](../extension/src/content/native-projects-expand.ts)): GitHub’s own project rows should **auto-expand** on issue/PR pages **even when** the work item is **not** on a configured **Global** FOC board—e.g. it only appears on **repo** or **org** Projects v2 boards that are **not** the FilOzone program board.
+
+| Kind | URL | Notes |
+|------|-----|--------|
+| Pull request | [filecoin-project/core-devs#192](https://github.com/filecoin-project/core-devs/pull/192) | Member of **non–global** project board(s); use with **auto-expand** enabled to confirm native rows expand without relying on global FOC membership. |
+| Issue | [filecoin-project/filecoin-ffi#530](https://github.com/filecoin-project/filecoin-ffi/issues/530) | Same intent on **issue** layout: item on a **non–global** project (e.g. org/repo board); confirms auto-expand on issue DOM. |
+
+**Expectation**: With auto-expand on, native **Projects** sections **expand** as implemented for this feature ([spec 003](../specs/003-auto-expand-panels/spec.md)); the **inline FOC** card from scenarios 3–6 still follows global-board / target-repo rules and is unrelated to this check.
+
 ## Related docs
 
 - [Global boards picker status](global-boards-picker-status.md) — picker vs sidebar scope.
+- [spec 003 — Auto-expand project panels](../specs/003-auto-expand-panels/spec.md) — preference and native row expansion.
 - [CONTRIBUTING.md](../CONTRIBUTING.md) — points here for pre-PR manual checks.
