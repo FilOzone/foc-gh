@@ -7,6 +7,8 @@
 | `cross_org_board_urls` | `string[]` | **Global board URLs** (one per line) |
 | `cross_org_target_repos` | `string[]` | **Default repos for inline global board display** (controls page-load card display only; gear picker runs on all pages) |
 
+**Inline card behavior** (Projects sidebar, [`issue-sidebar.ts`](../../extension/src/content/issue-sidebar.ts)): For repos in this list, the extension shows the FOC / program-board card **only** when panel state confirms the issue/PR **has** a **project item** on the configured board. It MUST **not** show program identity chrome while membership is unknown, and MUST **not** flash the card for **non-members**. Credential/configuration errors MAY still use the card shell for **Options** / PAT messaging only (aligns with [spec](./spec.md) Session 2026-03-27).
+
 ## Page context
 
 | Field | Source | Use |

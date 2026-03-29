@@ -30,9 +30,10 @@ fields without opening the board view separately.
 
 1. **Given** an issue in a repository outside FilOzone that is **not** on the FOC
    project, **When** the user opens the issue in the standard GitHub web UI,
-   **Then** they can see that it is not on the FOC project (clear “not linked” or
-   equivalent state), consistent with how same-repo issues communicate absence
-   of a project link.
+   **Then** they can see that it is not on the FOC project: the extension MUST
+   **not** inject the inline FOC sidebar card, and MUST **not** briefly **flash**
+   that card during load before hiding it. **“Not linked”** is communicated by
+   absence of that widget (native GitHub Projects rows, if any, behave as usual).
 2. **Given** an issue in a repository outside FilOzone that **is** on the FOC
    project, **When** the user opens the issue, **Then** they can see which FOC
    project it is on and the same core field values they would see if the issue

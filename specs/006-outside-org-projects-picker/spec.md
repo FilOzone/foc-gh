@@ -10,6 +10,7 @@
 ### Session 2026-03-27
 
 - Q: What user-facing terminology should describe the program boards surfaced in the **Projects** gear menu, and should the **options** page match? → A: Use **Global** consistently: menu section **Global boards**; each actionable row’s visible label MUST include **Global** (default pattern **Global board** for one URL, or disambiguated **Global** labels when several URLs are configured). The extension **options** page MUST adopt the same **Global** vocabulary and retire user-facing **cross-org** / **outside organization** phrasing for those concepts.
+- Q: For repos in **target repos** (`cross_org_target_repos`), when should the **inline** FOC / Global program-board card appear in the **Projects** sidebar (not the gear menu)? → A: Only **after** the extension confirms via the GitHub API (e.g. panel state / item lookup) that the issue/PR **is** a **project item** on the configured board. The extension MUST **not** show program-board **identity** chrome (title, project link, or full card shell that implies membership) **before** that confirmation, and MUST **not** **flash** that card for items that resolve as **non-members**. **Exception**: Missing or unusable API credentials MAY still use the card shell **only** for **actionable configuration** messaging (e.g. open **Options**), consistent with the FOC sidebar auth path.
 
 ### Session 2026-03-28
 

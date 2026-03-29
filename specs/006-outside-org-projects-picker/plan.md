@@ -11,7 +11,7 @@ Implement **[Global boards](./spec.md)** in the native **Projects** gear menu on
 - **Issue picker**: React/Primer `SelectPanel` — `<div role="dialog">` — flat scrollable `FilteredActionList`. Mount Global boards section inside the scrollable container.
 - **PR picker**: legacy `<project-picker>` custom element inside `<div role="menu">` — `<tab-container>` with Recent/Repository/Organization tabs. Mount Global boards after `<tab-container>`.
 
-The **gear picker runs on all pages** regardless of target repos. Target repos (`cross_org_target_repos`) control **inline page-load display** of global board cards only — a separate concern. **Options** copy adopts **Global** terminology ([FR-009](./spec.md)).
+The **gear picker runs on all pages** regardless of target repos. Target repos (`cross_org_target_repos`) control **inline page-load display** of global board cards only — a separate concern. For that inline card, **`issue-sidebar.ts`** MUST mount the FOC program-board widget **only after** panel state confirms a **non-null** project item (no transient program-board chrome for non-members; see [spec clarifications](./spec.md) Session 2026-03-27). **Options** copy adopts **Global** terminology ([FR-009](./spec.md)).
 
 See [`docs/github-page-layout.md`](../../docs/github-page-layout.md) for full issue vs PR DOM reference.
 

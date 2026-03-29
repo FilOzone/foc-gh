@@ -41,7 +41,7 @@ FOC GH **should not** modify **Project** panel rendering, because the repo is **
 
 ### 5 — Cross-org, not member, proactive repo
 
-FOC GH **should not** modify **Project** panel rendering, because the issue/PR is **not** on the global FOC project.
+FOC GH **should not** modify **Project** panel rendering, because the issue/PR is **not** on the global FOC project. The **inline** FOC program-board card MUST **not** appear and MUST **not** **flash** briefly while membership resolves (see [spec 002 FR-008](../specs/002-foc-project-widget-ui/spec.md) and [spec 006](../specs/006-outside-org-projects-picker/spec.md) Session 2026-03-27).
 
 ### 6 — Cross-org, not member, not proactive repo
 

@@ -107,6 +107,13 @@ US1 still holds.
   across reloads is optional (see Assumptions).
 - **Issue vs PR** layouts: placement rules hold for both when the extension is
   active for the page.
+- **Membership not yet known / absent**: The extension MUST **not** mount the FOC
+  widget (no project title, URL, or card chrome that implies the item is on the
+  board) until **API resolution** confirms a linked **project item** exists for
+  the configured program board. Non-members MUST **not** see a **flash** of the
+  widget that is then removed. **Exception**: **Missing or unusable API
+  credentials** MAY use the same card shell solely for **configuration** guidance
+  (e.g. open **Options**), not to imply board membership.
 
 ## Requirements *(mandatory)*
 
@@ -138,6 +145,12 @@ US1 still holds.
   content), with state that clearly indicates expanded vs collapsed.
 - **FR-007**: The widget MUST NOT duplicate misleading **Save/Cancel** chrome
   for standard field updates that GitHub handles inline.
+- **FR-008**: The widget MUST **mount only after** the implementation has
+  confirmed the current issue/PR **has** a **project item** on the configured
+  FOC program board (same rule as [006 spec](../006-outside-org-projects-picker/spec.md)
+  clarification: no transient program-board chrome for non-members). **Exception**:
+  When credentials are missing or unusable for API calls, the shell MAY appear
+  **only** to surface **actionable auth/configuration** messaging.
 
 ### Extension trust and data *(mandatory when delivery is a browser extension)*
 
@@ -194,5 +207,8 @@ US1 still holds.
   the layouts used on github.com for FilOzone and filecoin-project examples.
 - **Session-only** expand state is acceptable unless stakeholders require
   cross-reload persistence (then tracked as a small follow-up).
-- Repositories without a linked FOC project item continue to behave per prior
-  extension rules (out of scope to redefine detection here).
+- Repositories **without** a linked FOC project item (for configured target-repo
+  / cross-org rules): the extension does **not** show this inline widget; users
+  rely on native GitHub Projects UI and/or the **Global boards** gear flow
+  ([006](../006-outside-org-projects-picker/spec.md)). **FR-008** and Edge Cases
+  govern **no-flash** behavior during resolution.

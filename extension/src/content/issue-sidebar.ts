@@ -168,24 +168,30 @@ async function render(
   }
 
   host.innerHTML = ''
-  const card = createFocProjectCard({
-    title: 'FOC',
-    boardUrl: cfg.crossOrgBoardUrls[0],
-    initialExpanded: cfg.issuePrProjectsAutoExpand,
-  })
-  host.append(card.root)
 
-  const bodySlot = card.body
-  bodySlot.innerHTML = '<p class="filoz-muted" style="padding:8px 0;margin:0">Loading…</p>'
+  const placeErrorCard = (
+    fill: (card: ReturnType<typeof createFocProjectCard>) => void,
+  ): void => {
+    host.innerHTML = ''
+    const card = createFocProjectCard({
+      title: 'FOC',
+      boardUrl: cfg.crossOrgBoardUrls[0],
+      initialExpanded: cfg.issuePrProjectsAutoExpand,
+    })
+    host.append(card.root)
+    fill(card)
+  }
 
   if (!resolveGithubBearer(cfg)) {
-    card.statusSlot.innerHTML = ''
-    bodySlot.innerHTML = `
-      <p class="filoz-error">No GitHub API credentials configured. Connect GitHub or add a PAT in extension options.</p>
-      <button type="button" class="filoz-btn filoz-open-options">Open options</button>
-    `
-    bodySlot.querySelector('.filoz-open-options')?.addEventListener('click', () => {
-      void chrome.runtime.openOptionsPage()
+    placeErrorCard((card) => {
+      card.statusSlot.innerHTML = ''
+      card.body.innerHTML = `
+        <p class="filoz-error">No GitHub API credentials configured. Connect GitHub or add a PAT in extension options.</p>
+        <button type="button" class="filoz-btn filoz-open-options">Open options</button>
+      `
+      card.body.querySelector('.filoz-open-options')?.addEventListener('click', () => {
+        void chrome.runtime.openOptionsPage()
+      })
     })
     return
   }
@@ -203,7 +209,10 @@ async function render(
     } satisfies GetPanelStateMessage)
   } catch (e) {
     if (myToken !== loadToken) return
-    bodySlot.innerHTML = `<p class="filoz-error">${escapeHtml(String(e))}</p>`
+    placeErrorCard((card) => {
+      card.statusSlot.innerHTML = ''
+      card.body.innerHTML = `<p class="filoz-error">${escapeHtml(String(e))}</p>`
+    })
     return
   }
 
@@ -211,22 +220,42 @@ async function render(
 
   if (!state.ok) {
     if (state.code === 'NO_TOKEN') {
-      bodySlot.innerHTML = `
-        <p class="filoz-error">${escapeHtml(state.error)}</p>
-        <button type="button" class="filoz-btn filoz-open-options">Open options</button>
-      `
-      bodySlot.querySelector('.filoz-open-options')?.addEventListener('click', () => {
-        void chrome.runtime.openOptionsPage()
+      placeErrorCard((card) => {
+        card.statusSlot.innerHTML = ''
+        card.body.innerHTML = `
+          <p class="filoz-error">${escapeHtml(state.error)}</p>
+          <button type="button" class="filoz-btn filoz-open-options">Open options</button>
+        `
+        card.body.querySelector('.filoz-open-options')?.addEventListener('click', () => {
+          void chrome.runtime.openOptionsPage()
+        })
       })
       return
     }
-    bodySlot.innerHTML = `<p class="filoz-error">${escapeHtml(state.error)}</p>`
+    placeErrorCard((card) => {
+      card.statusSlot.innerHTML = ''
+      card.body.innerHTML = `<p class="filoz-error">${escapeHtml(state.error)}</p>`
+    })
     return
   }
 
   const s = state as PanelStateOk
 
-  // Update title from actual project name and URL
+  if (!s.item) {
+    // Not on the board — do not show the global project card (avoids flash).
+    // Use the gear picker (Global boards section) to add this issue/PR to the board.
+    clearHost()
+    return
+  }
+
+  host.innerHTML = ''
+  const card = createFocProjectCard({
+    title: s.projectTitle,
+    boardUrl: s.projectUrl ?? cfg.crossOrgBoardUrls[0],
+    initialExpanded: cfg.issuePrProjectsAutoExpand,
+  })
+  host.append(card.root)
+
   const titleEl = card.root.querySelector('.filoz-foc-card-title')
   if (titleEl) {
     titleEl.textContent = s.projectTitle
@@ -236,13 +265,7 @@ async function render(
   }
 
   const linkedItem = s.item
-
-  if (!linkedItem) {
-    // Not on the board — hide the inline card entirely.
-    // Use the gear picker (Global boards section) to add this issue/PR to the board.
-    clearHost()
-    return
-  }
+  const bodySlot = card.body
 
   const statusName = DEFAULT_STATUS_FIELD_NAME.trim()
 
