@@ -95,7 +95,42 @@ Requested scopes mirror the capabilities documented in
 content). Exact scope strings are listed there under **OAuth (authorization
 code + PKCE)**.
 
-## 4. Revocation
+## 4. Cross-org restriction: adding issues/PRs from outside the home org
+
+### The problem
+
+When a user adds an issue or PR from a **different organization** (e.g. `filecoin-project/FIPs`) to a global board hosted in FilOzone, the extension calls GitHub's GraphQL mutation `addProjectV2ItemById`. That mutation passes the issue's node ID as `contentId`. GitHub's API backend **validates that the calling OAuth token has read access to the content's owner org** before linking the item — even if the issue is in a public repository.
+
+If the target org (`filecoin-project` in the example) has **OAuth App access restrictions** enabled, GitHub blocks the call with:
+
+> "Although you appear to have the correct authorization credentials, the `<org>` organization has enabled OAuth App access restrictions, meaning that data access to third-parties is limited."
+
+This happens **only for `addProjectV2ItemById`**, not for mutations that operate on items already in the board (e.g. `updateProjectV2ItemFieldValue` for status changes). Those mutations touch only the project's own data and never need to resolve content in the foreign org.
+
+### Why OAuth tokens are subject to this
+
+GitHub's **OAuth App access restrictions** let an organization block all OAuth tokens (regardless of scopes) from reading or writing org data unless the OAuth App has been explicitly approved. This applies even to public-repo content within that org. PATs are not OAuth App tokens and are therefore **not subject to this restriction**.
+
+### Fixes
+
+| Fix | Steps | Trade-off |
+|-----|-------|-----------|
+| **Approve the OAuth App in each external org** (recommended for multi-org use) | An org owner opens `github.com/organizations/<org>/settings/oauth_application_policy`, finds the app under "Pending requests" or searches by name, and clicks **Approve**. | Requires a one-time action by each org's owners; no change to the extension or user workflow thereafter. |
+| **Use a classic PAT instead of OAuth** | In extension options, switch to PAT auth with `repo` + `project` scopes. | Classic PATs bypass OAuth App restrictions entirely; fine-grained PATs may still be blocked depending on org policy. |
+
+### Requesting approval
+
+A user can trigger a self-serve approval request without contacting admins directly:
+
+1. Go to **github.com/settings/connections/applications** and find this extension's OAuth App.
+2. Under **Organization access**, locate the org with the restriction and click **Request**.
+3. GitHub emails the org's owners, who approve at the link above.
+
+Once approved, no extension reinstall or re-authentication is needed — the existing OAuth token gains access immediately.
+
+---
+
+## 5. Revocation
 
 Users can **Disconnect** in extension options and/or revoke the app under
 **GitHub → Settings → Applications**.

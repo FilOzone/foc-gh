@@ -198,6 +198,18 @@
           OAuth requests scopes equivalent to the PAT doc: <code>repo</code>, <code>read:org</code>, <code>project</code>.
           Build with <code>GITHUB_OAUTH_CLIENT_ID</code> set (see docs).
         </p>
+        <p class="hint">
+          <strong>Cross-org limitation:</strong> adding issues or PRs from an org outside FilOzone to a global board
+          requires that org to approve this OAuth app. If you see an "OAuth App access restrictions" error, ask an
+          owner of that org to approve the app, or switch to a <strong>Personal access token</strong> (PATs are not
+          subject to this restriction).
+          <a
+            href="https://github.com/FilOzone/tpm-utils-github-extension/blob/main/docs/github-oauth-app.md#4-cross-org-restriction-adding-issuesprs-from-outside-the-home-org"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Learn more</a
+          >
+        </p>
       </div>
 
       <div id="pat-panel" class="hidden">
