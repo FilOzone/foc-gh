@@ -123,12 +123,6 @@ Workflow: [.github/workflows/chrome-webstore-publish.yml](../.github/workflows/c
 
 The **Google** four authenticate **Google’s API** to upload your package. The **GitHub** pair are the same **production** values you use locally when running **`npm run build:zip`** for release—they are **not** the Chrome API credentials.
 
-If any secret is missing, the workflow step fails; do not echo secrets in logs.
-</think>
-
-
-<｜tool▁calls▁begin｜><｜tool▁call▁begin｜>
-Read
 
 ## Configure
 

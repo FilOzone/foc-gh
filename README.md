@@ -2,18 +2,30 @@
 
 [![FOC GH logo](assets/logo-256.png)](assets/logo-full-res.png)
 
-Browser extension for **FOC TPMs and team members** working in **GitHub**.
-
-Chromium **Manifest V3** extension that connects day-to-day issue and PR work to the **FilOzone FOC** Projects v2 board—without living only inside the project UI.
+Chromium Manifest V3 **browser extension** for **FOC TPMs and team members** working in GitHub. It helps with things like connecting day-to-day issue and PR work to the [FOC Project Board](https://github.com/orgs/FilOzone/projects/14).
 
 ## Features
 
-1. **FOC project board from cross-org issues and PRs** — Manage the board (add items, edit fields where the API allows) from GitHub issues and pull requests on configured repos, with a native-style sidebar and **autosave** for supported field types (single select, number, text, iteration).
+1. **Make FOC's project board "global" (i.e., support cross-org issues and PRs)** — Manage the board (add items, edit fields where the API allows) from GitHub issues and pull requests on configured repos, with a native-style sidebar and **autosave** for supported field types (single select, number, text, iteration).
 2. **Global auto-expand for project panels** — Optional setting so GitHub’s right-hand **Project** panel **auto-expands** for issues and PRs (works across projects, not only FOC).
+
+## Fastest way to start using it
+### Chrome Web Store
+Coming soon - waiting on Web Store approval.
+
+### Build/install locally
+1. Check out the repo.
+2. Run **`npm install`**.
+3. Run **`npm run build`**.
+4. Open **`chrome://extensions`**, enable **Developer mode**, **Load unpacked**, and choose **[extension/dist/](extension/dist/)** (build output from the repo root).
+5. Create a classic PAT following [PAT permissions](docs/github-pat-permissions.md#classic-personal-access-tokens).
+6. Save the PAT in the extension **Options** page.
+
+*(OAuth for local builds is documented in [extension/README.md](extension/README.md); it needs GitHub OAuth client values in `.env.local` before **`npm run build`**. Ask **FilOzone maintainers** if you need those credentials.)*
 
 ## For developers
 
-Install from source, build (`npm run build`), **Chrome Web Store** ZIP (`npm run build:zip`), OAuth credentials, and the **Options** page are documented in **[extension/README.md](extension/README.md)** (from the **repository root**, not from [extension/](extension/) alone). That guide lists the **local** extension ID (stable via committed [extension/manifest-id-public.b64](extension/manifest-id-public.b64)) vs the **Chrome Web Store** listing ID, and links to FilOzone’s **two** GitHub OAuth apps (dev vs prod).
+The **Fastest way** steps above cover PAT + unpacked install; full developer setup (**Chrome Web Store** ZIP, **`npm run build:zip`**, both OAuth apps, extension IDs) lives in **[extension/README.md](extension/README.md)** (read from the **repository root**, not only from [extension/](extension/)). That guide lists the **local** extension ID (stable via committed [extension/manifest-id-public.b64](extension/manifest-id-public.b64)) vs the **Chrome Web Store** listing ID, and links to FilOzone’s **two** GitHub OAuth apps (dev vs prod).
 
 ## Build & distribution
 
