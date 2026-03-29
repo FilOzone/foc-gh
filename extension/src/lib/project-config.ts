@@ -51,6 +51,18 @@ export function parseOrgProjectUrl(url: string): { org: string; number: number }
   return { org: m[1], number: Number(m[2]) }
 }
 
+/** Whether to show the **Global boards** picker section (spec 006 / data-model visibility). */
+export function showGlobalBoardsSection(repoOwner: string, boardUrls: string[]): boolean {
+  const orgs: string[] = []
+  for (const raw of boardUrls) {
+    const p = parseOrgProjectUrl(raw.trim())
+    if (p) orgs.push(p.org.toLowerCase())
+  }
+  if (orgs.length === 0) return false
+  const repo = repoOwner.trim().toLowerCase()
+  return orgs.some((o) => o !== repo)
+}
+
 function readStoredAuthMethod(raw: Record<string, unknown>): AuthMethod | undefined {
   const explicit = raw[STORAGE_KEYS.authMethod]
   if (explicit === 'pat' || explicit === 'oauth' || explicit === 'none') {

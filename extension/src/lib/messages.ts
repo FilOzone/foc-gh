@@ -26,6 +26,35 @@ export type AddToProjectMessage = {
   }
 }
 
+/** Projects gear → Global boards membership + add/remove (spec 006). */
+export type GetGlobalBoardsStateMessage = {
+  type: 'GET_GLOBAL_BOARDS_STATE'
+  payload: {
+    owner: string
+    name: string
+    number: number
+    kind: PageKind
+  }
+}
+
+export type DeleteProjectItemMessage = {
+  type: 'DELETE_PROJECT_ITEM'
+  payload: {
+    itemId: string
+  }
+}
+
+export type GlobalBoardRowState = {
+  url: string
+  projectId: string
+  itemId: string | null
+  label: string
+}
+
+export type GetGlobalBoardsStateResponse =
+  | { ok: true; contentNodeId: string; rows: GlobalBoardRowState[] }
+  | { ok: false; error: string; code?: 'NO_TOKEN' }
+
 export type UpdateStatusMessage = {
   type: 'UPDATE_STATUS'
   payload: {
@@ -106,6 +135,8 @@ export type ExtensionMessage =
   | GraphqlMessage
   | GetPanelStateMessage
   | AddToProjectMessage
+  | GetGlobalBoardsStateMessage
+  | DeleteProjectItemMessage
   | UpdateStatusMessage
   | UpdateItemFieldMessage
   | StatusFieldMessage

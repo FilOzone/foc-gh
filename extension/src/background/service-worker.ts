@@ -1,4 +1,4 @@
-import type { ExtensionMessage } from '../lib/messages.js'
+import type { ExtensionMessage, GetGlobalBoardsStateResponse, GlobalBoardRowState } from '../lib/messages.js'
 import {
   findSingleSelectFieldByName,
   linesForBoardFieldDiagnostics,
@@ -10,6 +10,7 @@ import { handleGetAuthStatus, handleGithubOAuthDisconnect, handleGithubOAuthStar
 import { loadConfig, parseOrgProjectUrl, resolveGithubBearer } from '../lib/project-config.js'
 import {
   MUTATION_ADD_PROJECT_ITEM,
+  MUTATION_DELETE_PROJECT_ITEM,
   MUTATION_UPDATE_ITERATION,
   MUTATION_UPDATE_NUMBER,
   MUTATION_UPDATE_SINGLE_SELECT,
@@ -952,6 +953,25 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
     return { ok: true as const, data: result.data }
   }
 
+  if (message.type === 'GET_GLOBAL_BOARDS_STATE') {
+    return getGlobalBoardsState(message.payload)
+  }
+
+  if (message.type === 'DELETE_PROJECT_ITEM') {
+    const cfg = await loadConfig()
+    const token = resolveGithubBearer(cfg)
+    if (!token) {
+      return { ok: false as const, error: 'Missing GitHub API token.' }
+    }
+    const result = await graphqlRequest(token, MUTATION_DELETE_PROJECT_ITEM, {
+      itemId: message.payload.itemId,
+    })
+    if (result.errors?.length) {
+      return { ok: false as const, error: firstError(result.errors) }
+    }
+    return { ok: true as const, data: result.data }
+  }
+
   if (message.type === 'GET_PRIMARY_BOARD_FIELD_DEFINITIONS') {
     const cfg = await loadConfig()
     const token = resolveGithubBearer(cfg)
@@ -1098,6 +1118,111 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
   }
 
   return { ok: false as const, error: 'Unknown message type' }
+}
+
+async function resolveGlobalBoardRow(
+  bearer: string,
+  boardUrl: string,
+  payload: { owner: string; name: string; number: number; kind: 'issue' | 'pull_request' },
+  contentId: string,
+): Promise<GlobalBoardRowState | null> {
+  const parsed = parseOrgProjectUrl(boardUrl)
+  if (!parsed) return null
+
+  const projRes = await graphqlRequest(bearer, QUERY_PROJECT_V2, {
+    org: parsed.org,
+    number: parsed.number,
+  })
+  if (projRes.errors?.length) return null
+
+  const project = (projRes.data as { organization?: { projectV2?: { id: string; title: string } } })
+    ?.organization?.projectV2
+  if (!project?.id) return null
+
+  const crossOrg = payload.owner.trim().toLowerCase() !== parsed.org.trim().toLowerCase()
+  let match: ProjectItemNode | null = null
+
+  if (crossOrg) {
+    match = await findProjectItemViaRest(
+      bearer,
+      parsed.org,
+      parsed.number,
+      project.id,
+      payload.owner,
+      payload.name,
+      payload.number,
+      payload.kind,
+    )
+  } else {
+    const itemsRes = await graphqlRequest(bearer, QUERY_NODE_PROJECT_ITEMS, {
+      id: contentId,
+    })
+    if (!itemsRes.errors?.length) {
+      const node = (itemsRes.data as { node?: NodeWithItems })?.node
+      const items = node?.projectItems?.nodes
+      match = matchProjectItem(items, project.id, parsed.org, parsed.number)
+    }
+    if (!match) {
+      match = await findProjectItemViaRest(
+        bearer,
+        parsed.org,
+        parsed.number,
+        project.id,
+        payload.owner,
+        payload.name,
+        payload.number,
+        payload.kind,
+      )
+    }
+  }
+
+  return {
+    url: boardUrl.trim(),
+    projectId: project.id,
+    itemId: match?.id ?? null,
+    label: project.title,
+  }
+}
+
+async function getGlobalBoardsState(payload: {
+  owner: string
+  name: string
+  number: number
+  kind: 'issue' | 'pull_request'
+}): Promise<GetGlobalBoardsStateResponse> {
+  const cfg = await loadConfig()
+  const bearer = resolveGithubBearer(cfg)
+  if (!bearer) {
+    return {
+      ok: false,
+      code: 'NO_TOKEN',
+      error: 'Configure a GitHub PAT or OAuth token in extension options.',
+    }
+  }
+
+  const idQuery = payload.kind === 'issue' ? QUERY_ISSUE_NODE_ID : QUERY_PR_NODE_ID
+  const idRes = await graphqlRequest(bearer, idQuery, {
+    owner: payload.owner,
+    name: payload.name,
+    number: payload.number,
+  })
+  if (idRes.errors?.length) {
+    return { ok: false, error: firstError(idRes.errors) }
+  }
+  const repo = (idRes.data as { repository?: { issue?: { id?: string }; pullRequest?: { id?: string } } })
+    ?.repository
+  const contentId =
+    payload.kind === 'issue' ? repo?.issue?.id : repo?.pullRequest?.id
+  if (!contentId) {
+    return { ok: false, error: 'Issue or pull request not found.' }
+  }
+
+  const urls = cfg.crossOrgBoardUrls.map((u) => u.trim()).filter((u) => u.length > 0)
+  const rows = (
+    await Promise.all(urls.map((url) => resolveGlobalBoardRow(bearer, url, payload, contentId)))
+  ).filter((r): r is GlobalBoardRowState => r !== null)
+
+  return { ok: true, contentNodeId: contentId, rows }
 }
 
 async function getPanelState(payload: {

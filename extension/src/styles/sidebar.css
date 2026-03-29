@@ -253,3 +253,94 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* ─── Global boards (Projects gear menu) ─────────────────────────────────── */
+
+.filoz-global-boards {
+  margin: 8px 0 0;
+  padding: 8px 8px 8px 6px;
+  border-top: 1px solid var(--borderColor-muted, #3d444db3);
+}
+
+.filoz-global-boards-heading {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fgColor-muted, #9198a1);
+  background: var(--bgColor-muted, rgba(101,108,118,0.1));
+  padding: 6px 8px;
+  margin: 0 0 4px;
+}
+
+.filoz-global-board-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 2px;
+  font-size: 12px;
+}
+
+.filoz-global-board-row input[type='checkbox'] {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.filoz-global-board-row label {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+
+
+.filoz-global-board-row-error {
+  display: block;
+  font-size: 11px;
+  color: var(--fgColor-danger, #f85149);
+  margin-top: 2px;
+}
+
+.filoz-global-boards-status {
+  font-size: 11px;
+  color: var(--fgColor-muted, #9198a1);
+  margin: 4px 0 0 2px;
+}
+
+/* ─── PR project-picker "Global" tab button ──────────────────────────────────
+   Styled with CSS custom properties only (no hashed class names per Principle VI).
+   Matches GitHub's Primer underline-tab pattern used in the PR project-picker nav. */
+
+.filoz-pr-global-tab {
+  font-size: 12px;
+  font-family: inherit;
+  font-weight: 400;
+  color: var(--fgColor-muted, #9198a1);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 4px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  line-height: 1.5;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.filoz-pr-global-tab:hover {
+  color: var(--fgColor-default, #f0f6fc);
+}
+
+.filoz-pr-global-tab[aria-selected="true"] {
+  color: var(--fgColor-default, #f0f6fc);
+  font-weight: 600;
+  border-bottom-color: var(--underlineNav-borderColor-active, var(--fgColor-accent, #4493f8));
+}
+
+.filoz-pr-global-tab:focus-visible {
+  outline: 2px solid var(--focus-outlineColor, #1f6feb);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.filoz-global-boards-panel {
+  padding: 4px 8px 8px;
+}

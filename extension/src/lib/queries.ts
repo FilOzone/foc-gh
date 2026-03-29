@@ -380,6 +380,15 @@ export const MUTATION_ADD_PROJECT_ITEM = `
   }
 `
 
+/** Remove a draft / issue / PR card from a Projects v2 board. */
+export const MUTATION_DELETE_PROJECT_ITEM = `
+  mutation DeleteProjectV2Item($itemId: ID!) {
+    deleteProjectV2Item(input: { itemId: $itemId }) {
+      deletedItemId
+    }
+  }
+`
+
 /** Load field values for a ProjectV2Item node id (after resolving item via REST or scan). */
 export const QUERY_PROJECT_V2_ITEM_FIELD_VALUES = `
   query ProjectV2ItemFieldValues($itemId: ID!) {

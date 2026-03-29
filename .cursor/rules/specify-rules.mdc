@@ -17,6 +17,10 @@ Auto-generated from all feature plans. Last updated: 2026-03-28
 - `chrome.storage.local` for PAT or OAuth access token + `auth_method` (004-github-oauth-signin)
 - Node.js **24+** (align with repository convention / `AGENTS.md` if present; minimum **20** for `fs`/`glob` patterns in use) + **npm**, **esbuild**, **dotenv**, **archiver** (existing `package.json`); **GitHub Actions** for CI (005-build-distribution-workflows)
 - N/A (artifacts on disk: `extension/dist/`, `foc-gh-webstore.zip` gitignored) (005-build-distribution-workflows)
+- TypeScript (Node LTS for build; see root [`package.json`](../../package.json)) + Chromium MV3, esbuild bundle, existing content script entry [`issue-sidebar.ts`](../../extension/src/content/issue-sidebar.ts) (006-outside-org-projects-picker)
+- `chrome.storage.local` — existing `cross_org_board_urls` (plan: user-facing label **Global board URLs** in options only; key name MAY stay for now per spec) (006-outside-org-projects-picker)
+- TypeScript, Node LTS for build ([`package.json`](../../package.json)) + Chromium MV3, esbuild; GitHub GraphQL (`api.github.com`); existing [`queries.ts`](../../extension/src/lib/queries.ts) (`MUTATION_ADD_PROJECT_ITEM`, `QUERY_PROJECT_V2`, item discovery) (006-outside-org-projects-picker)
+- `chrome.storage.local` — `cross_org_board_urls`, `cross_org_target_repos` (user-facing label **Global board URLs** in options) (006-outside-org-projects-picker)
 
 - TypeScript (Node LTS for build tooling, exact version pinned in `package.json` when scaffolded) + Chromium MV3 toolchain (e.g. Vite or esbuild + webextension polyfills if needed), `fetch` to GitHub GraphQL (001-cross-org-board-ui)
 
@@ -36,9 +40,9 @@ npm test && npm run lint
 TypeScript (Node LTS for build tooling, exact version pinned in `package.json` when scaffolded): Follow standard conventions
 
 ## Recent Changes
+- 006-outside-org-projects-picker: Added TypeScript, Node LTS for build ([`package.json`](../../package.json)) + Chromium MV3, esbuild; GitHub GraphQL (`api.github.com`); existing [`queries.ts`](../../extension/src/lib/queries.ts) (`MUTATION_ADD_PROJECT_ITEM`, `QUERY_PROJECT_V2`, item discovery)
+- 006-outside-org-projects-picker: Added TypeScript (Node LTS for build; see root [`package.json`](../../package.json)) + Chromium MV3, esbuild bundle, existing content script entry [`issue-sidebar.ts`](../../extension/src/content/issue-sidebar.ts)
 - 005-build-distribution-workflows: Added Node.js **24+** (align with repository convention / `AGENTS.md` if present; minimum **20** for `fs`/`glob` patterns in use) + **npm**, **esbuild**, **dotenv**, **archiver** (existing `package.json`); **GitHub Actions** for CI
-- 004-github-oauth-signin: Added TypeScript (ES modules), Node for build (align with repo `package.json`) + Chromium Manifest V3, `chrome.storage`, `chrome.identity`,
-- 003-auto-expand-panels: Added `chrome.storage.local` boolean for issue/PR project panel auto-expand + per-item `sessionStorage` for chevron overrides (`specs/003-auto-expand-panels/plan.md`)
 
 
 <!-- MANUAL ADDITIONS START -->

@@ -1,12 +1,10 @@
 <!--
 Sync Impact Report
+- Version change: 1.1.2 → 1.2.0 (MINOR: Principle VI materially expanded — seamless integration goal, semantic selectors, github-page-layout.md as living doc requirement)
 - Version change: 1.1.1 → 1.1.2 (PATCH: README / documentation linking — relative Markdown links for repo paths)
 - Version change: 1.1.0 → 1.1.1 (PATCH: clarify Principle VI — ban hashed GitHub CSS class names, mandate CSS custom properties)
-- Modified principles: (none renamed); Development Workflow expanded (markdown path linking rule)
-- Added: Principle VI — Native GitHub UI fidelity (light/dark, GitHub-like chrome)
-- Expanded: Development Workflow — Conventional Commits now mandatory (MUST)
-- Templates: plan-template.md ✅ | spec-template.md ✅ | tasks-template.md ✅
-  | commands/speckit.constitution.md — no content delta required (generic)
+- Modified principles: Principle VI expanded (seamless integration intent; semantic selector guidance; github-page-layout.md mandatory)
+- Templates: plan-template.md — no gate changes required; spec-template.md, tasks-template.md — unchanged
 - Follow-up TODOs: none
 -->
 
@@ -80,12 +78,18 @@ tracking table with a rejected simpler alternative.
 
 ### VI. Native GitHub UI fidelity
 
-UI injected on github.com MUST read as native to the page: layout, typography,
-spacing, and control styling SHOULD align with adjacent GitHub UI. Implementations
-SHOULD prefer GitHub’s own styling signals (for example CSS custom properties /
-variables the host page already defines, or patterns consistent with GitHub’s
-Primer design language) over bespoke themes that visually conflict with the
-host.
+The extension’s goal is **seamless integration**: injected UI MUST feel like it
+belongs on the page. A TPM or engineer who does not know the extension is
+installed should have no visual reason to suspect an injection. Layout,
+typography, spacing, control styling, and interaction patterns SHOULD match
+adjacent GitHub UI to the greatest extent practical.
+
+Implementations SHOULD prefer GitHub’s own styling signals — CSS custom
+properties / variables the host page already defines, semantic roles, and
+patterns consistent with GitHub’s Primer design language — over bespoke themes
+that visually conflict with the host. Row controls (checkboxes, labels, hover
+states) inside a native picker dropdown MUST follow the same patterns as the
+picker’s existing rows.
 
 Implementations MUST NOT depend on GitHub’s internal build artifacts that are
 expected to change without notice. Specifically:
@@ -99,6 +103,9 @@ expected to change without notice. Specifically:
   are the intentional public theming API and MUST be used instead.
 - `octicon-*` icon class names and Primer data attributes (`data-variant`,
   `data-size`) are more stable and MAY be used with caution.
+- **Semantic selectors** (`role`, `aria-label`, `placeholder`, tag names for
+  custom elements like `project-picker`, `tab-container`) are more stable than
+  class-based selectors and SHOULD be preferred for DOM detection and mounting.
 
 The extension MUST respect the user’s GitHub **light and dark** appearance.
 Features MUST behave legibly and intentionally in both modes (contrast,
@@ -107,8 +114,18 @@ only temporarily, the implementation plan MUST record the gap and manual
 verification MUST call out theme coverage; reviewers SHOULD treat unresolved
 dark/light defects as merge blocking for UI-affecting changes.
 
+**GitHub UI documentation**: Because issue pages and PR pages (and other GitHub
+surfaces) have different DOM structures, and because GitHub updates its UI over
+time, concrete layout findings MUST be documented in
+[docs/github-page-layout.md](../../docs/github-page-layout.md). When a GitHub
+deployment changes a structure this extension depends on (detected via a broken
+feature or visual regression), the doc and any affected code MUST be updated
+together in the same fix. Stale layout docs are treated the same as stale code —
+they are a liability, not just outdated notes.
+
 **Rationale**: TPMs live in GitHub for long sessions; alien chrome and
-broken dark mode erode trust, tire eyes, and read as low quality.
+broken dark mode erode trust, tire eyes, and read as low quality. Seamless
+integration is the bar, not "close enough".
 
 ## Internal scope and velocity
 
@@ -172,4 +189,4 @@ Compliance expectation: reviewers treat security, permission, and
 credential-handling changes as blocking unless the amendment process was
 followed.
 
-**Version**: 1.1.2 | **Ratified**: 2026-03-26 | **Last Amended**: 2026-03-27
+**Version**: 1.2.0 | **Ratified**: 2026-03-26 | **Last Amended**: 2026-03-29

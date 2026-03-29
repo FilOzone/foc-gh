@@ -4,7 +4,11 @@
 import { pageContextFromLocation } from '../lib/github-url.js'
 import type { GetPanelStateMessage, ExtensionMessage } from '../lib/messages.js'
 import type { SerializableProjectField } from '../lib/project-board-fields.js'
-import { isTargetRepo, loadConfig, resolveGithubBearer } from '../lib/project-config.js'
+import {
+  destroyGlobalBoardsPicker,
+  initGlobalBoardsPicker,
+} from './global-boards-picker.js'
+import { isTargetRepo, loadConfig, resolveGithubBearer, showGlobalBoardsSection } from '../lib/project-config.js'
 import { getOrCreatePanelHost, placePanelHost } from './projects-sidebar-mount.js'
 import { createFocProjectCard } from './foc-project-card.js'
 import { renderEditableProjectFields } from './foc-field-renderer.js'
@@ -228,34 +232,9 @@ async function render(
   const linkedItem = s.item
 
   if (!linkedItem) {
-    bodySlot.innerHTML = `
-      <p>Not linked to <strong>${escapeHtml(s.projectTitle)}</strong>.</p>
-      <button type="button" class="filoz-btn filoz-add-btn">Add to project</button>
-      <p class="filoz-add-err filoz-error" hidden></p>
-    `
-    const addBtn = bodySlot.querySelector('.filoz-add-btn') as HTMLButtonElement
-    const addErr = bodySlot.querySelector('.filoz-add-err') as HTMLParagraphElement
-    addBtn.addEventListener('click', async () => {
-      addErr.hidden = true
-      addBtn.disabled = true
-      try {
-        const res = await sendMessage<{ ok: boolean; error?: string }>({
-          type: 'ADD_TO_PROJECT',
-          payload: { projectId: s.projectId, contentNodeId: s.contentNodeId },
-        })
-        if (!res.ok) {
-          addErr.textContent = res.error ?? 'Add failed'
-          addErr.hidden = false
-          addBtn.disabled = false
-          return
-        }
-        await render(host, ctx)
-      } catch (e) {
-        addErr.textContent = String(e)
-        addErr.hidden = false
-        addBtn.disabled = false
-      }
-    })
+    // Not on the board — hide the inline card entirely.
+    // Use the gear picker (Global boards section) to add this issue/PR to the board.
+    clearHost()
     return
   }
 
@@ -294,12 +273,21 @@ async function sync(): Promise<void> {
   const ctx = pageContextFromLocation(window.location)
   if (!ctx) {
     clearHost()
+    destroyGlobalBoardsPicker()
     syncNativeProjectsExpand(false)
     return
   }
 
   const cfg = await loadConfig()
   syncNativeProjectsExpand(cfg.issuePrProjectsAutoExpand)
+
+  // Gear picker runs on all pages where visibility applies — not gated by target repos
+  if (showGlobalBoardsSection(ctx.owner, cfg.crossOrgBoardUrls)) {
+    injectStylesheet()
+    initGlobalBoardsPicker(ctx)
+  } else {
+    destroyGlobalBoardsPicker()
+  }
 
   if (!isTargetRepo(cfg, ctx.owner, ctx.name)) {
     clearHost()
