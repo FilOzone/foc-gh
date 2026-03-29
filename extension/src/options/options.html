@@ -221,10 +221,20 @@
 
     <label for="boards">Global board URLs (one per line)</label>
     <textarea id="boards"></textarea>
-    <p class="hint">Example: <code>https://github.com/orgs/FilOzone/projects/14</code></p>
+    <p class="hint">
+      Organization project links such as <code>https://github.com/orgs/FilOzone/projects/14</code>. These boards
+      appear in the GitHub <strong>Projects</strong> picker (gear menu) whenever you open it on an issue or pull
+      request whose <strong>repository owner</strong> differs from the board’s org (see spec / visibility rules).
+      They are <strong>not</strong> limited to the repo list below.
+    </p>
 
-    <label for="repos">Target repos (owner/repo, one per line)</label>
+    <label for="repos">Repos to proactively check for global board membership (owner/repo, one per line)</label>
     <textarea id="repos"></textarea>
+    <p id="repos-hint" class="hint">
+      Used to drive the <strong>FOC sidebar card</strong> (primary board state and editable fields) and other
+      proactive membership checks while you browse those repos. <strong>Does not</strong> control whether Global
+      board rows appear in the Projects picker—Global URLs apply across GitHub where visibility matches.
+    </p>
 
     <label for="issuePrProjectsAutoExpand"
       >All issues &amp; PRs: expand native Projects sidebar + extension panel</label
@@ -239,9 +249,9 @@
     <p id="issuePrProjectsAutoExpand-hint" class="hint">
       <strong>Global on github.com</strong> (every repo’s issues &amp; pull requests): expands GitHub’s own
       <strong>Projects</strong> blocks in the right sidebar (for example “Show more project fields” / collapsible
-      rows). Additionally, on <strong>target repos</strong> only, the extension’s FOC card field section starts
-      expanded the same way. Uncheck to leave initial collapse state to GitHub / the extension default. Status rows
-      stay visible; this mainly opens detail sections.
+      rows). Additionally, on repos listed under <strong>Repos to proactively check…</strong> only, the extension’s
+      FOC sidebar card field section starts expanded the same way. Uncheck to leave initial collapse state to GitHub
+      / the extension default. Status rows stay visible; this mainly opens detail sections.
     </p>
 
     <label for="statusField">Primary single-select column (for panel ordering)</label>
