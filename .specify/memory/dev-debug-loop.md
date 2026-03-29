@@ -34,14 +34,9 @@ to a new value before each debug session to confirm you're running the latest bu
 
 ## Reference URLs for manual testing
 
-Use these GitHub pages when exercising the extension (same-org vs cross-org, issue vs PR):
+**Canonical matrix**: Use **[`docs/canonical-test-urls.md`](../../docs/canonical-test-urls.md)** for FilOzone vs cross-org, global FOC project membership, proactive-check repos, and **expected Project panel / FOC behavior** per scenario (issues and PRs). That doc is the single source of truth; update it when scenarios change.
 
-| Context | URL |
-|---------|-----|
-| FilOzone PR | https://github.com/FilOzone/tpm-utils/pull/7 |
-| FilOzone issue | https://github.com/FilOzone/tpm-utils/issues/1 |
-| Non-FilOzone PR (cross-org) | https://github.com/filecoin-project/filecoin-pin/pull/386 |
-| Non-FilOzone issue (cross-org) | https://github.com/filecoin-project/filecoin-pin/issues/385 |
+**Quick smoke after reload**: Any open GitHub issue or PR is enough to confirm the content-script `BUILD_MARKER` in the page console (see above).
 
 ## Why not `chrome.runtime.reload()`?
 

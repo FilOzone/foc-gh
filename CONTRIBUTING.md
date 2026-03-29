@@ -36,3 +36,7 @@ npm run build
 ```
 
 See [extension/README.md](extension/README.md) for local load, OAuth profiles, and Chrome Web Store packaging.
+
+## Manual regression testing (Project panel / FOC)
+
+For behavioral checks on real GitHub pages, use the **canonical issue and PR URLs** and the **expected outcomes** in **[docs/canonical-test-urls.md](docs/canonical-test-urls.md)**. Exercise the scenarios that match your change (FilOzone vs cross-org, global FOC membership, proactive-check repo list) before you open a PR that touches sidebar, project panel, or board membership logic.

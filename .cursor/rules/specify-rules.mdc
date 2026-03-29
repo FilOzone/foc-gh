@@ -46,4 +46,9 @@ TypeScript (Node LTS for build tooling, exact version pinned in `package.json` w
 
 
 <!-- MANUAL ADDITIONS START -->
+
+## Manual regression (GitHub issue / PR)
+
+Use the canonical scenario matrix in [`docs/canonical-test-urls.md`](../../docs/canonical-test-urls.md) for **Project panel**, **FOC sidebar**, and **global board membership** checks. Build/reload flow: [`.specify/memory/dev-debug-loop.md`](../../.specify/memory/dev-debug-loop.md).
+
 <!-- MANUAL ADDITIONS END -->

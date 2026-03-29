@@ -43,6 +43,8 @@ Gates derived from `.specify/memory/constitution.md` (TPM Utils GitHub Extension
 - **Verification (internal velocity)**: Automated tests optional; PR must
   document either tests updated or **manual** GitHub flows exercised.
   Manifest/auth/host-permission changes include a short **smoke checklist**.
+  For Project panel / FOC / global-board behavior, prefer scenarios in
+  [`docs/canonical-test-urls.md`](../../docs/canonical-test-urls.md).
 - **Incremental scope**: MVP slice is explicit; speculative features are cut or
   deferred with rationale.
 - **UI fidelity**: Injected UI matches GitHub-consistent styling (Principle VI);

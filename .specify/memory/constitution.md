@@ -1,5 +1,6 @@
 <!--
 Sync Impact Report
+- Version change: 1.2.0 → 1.2.1 (PATCH: Principle IV — canonical manual test URLs doc for Project panel / FOC; dev-debug-loop points to same)
 - Version change: 1.1.2 → 1.2.0 (MINOR: Principle VI materially expanded — seamless integration goal, semantic selectors, github-page-layout.md as living doc requirement)
 - Version change: 1.1.1 → 1.1.2 (PATCH: README / documentation linking — relative Markdown links for repo paths)
 - Version change: 1.1.0 → 1.1.1 (PATCH: clarify Principle VI — ban hashed GitHub CSS class names, mandate CSS custom properties)
@@ -62,6 +63,11 @@ paths, which API actions). Changes to auth flows, `manifest.json`,
 credential storage, or host permissions MUST include a short written smoke
 checklist in the PR; reviewers MUST treat regressions in those areas as merge
 blocking.
+
+For changes affecting the **Project** panel, **FOC sidebar**, or **global board
+membership** rules, manual steps SHOULD include the applicable scenarios in
+[`docs/canonical-test-urls.md`](../../docs/canonical-test-urls.md) unless the PR
+documents why a different URL set is enough.
 
 **Rationale**: The project prioritizes shipping GitHub UI enhancements quickly
 for an internal audience; residual risk is offset by mandatory security rules,
@@ -189,4 +195,4 @@ Compliance expectation: reviewers treat security, permission, and
 credential-handling changes as blocking unless the amendment process was
 followed.
 
-**Version**: 1.2.0 | **Ratified**: 2026-03-26 | **Last Amended**: 2026-03-29
+**Version**: 1.2.1 | **Ratified**: 2026-03-26 | **Last Amended**: 2026-03-27

@@ -14,6 +14,11 @@ description: "Task list template for feature implementation"
 (native GitHub UI fidelity, including light/dark). Include manual verification
 for both themes when practical, or document a tracked deferral per plan.
 
+**Manual issue/PR URLs**: For Project panel, FOC sidebar, or global-board membership
+behavior, reference the scenario matrix in
+[`docs/canonical-test-urls.md`](../../docs/canonical-test-urls.md) in verification
+tasks unless the plan calls for different URLs.
+
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
 ## Format: `[ID] [P?] [Story] Description`

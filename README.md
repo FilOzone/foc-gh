@@ -29,6 +29,7 @@ CI: [.github/workflows/extension-ci.yml](.github/workflows/extension-ci.yml) run
 
 ## Documentation
 
+- **[docs/canonical-test-urls.md](docs/canonical-test-urls.md)** — Canonical **issue/PR URLs** and **expected Project panel / FOC behavior** for manual regression testing (see [CONTRIBUTING.md](CONTRIBUTING.md))
 - **[docs/global-boards-picker-status.md](docs/global-boards-picker-status.md)** — Global boards **Projects** picker is “Coming soon”; add/remove from the picker is not implemented yet
 - **[extension/README.md](extension/README.md)** — Build, FilOzone OAuth (dev vs production), PAT vs **Connect GitHub**, configuration
 - [docs/github-pat-permissions.md](docs/github-pat-permissions.md) — PAT / OAuth scope reference
