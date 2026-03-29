@@ -382,8 +382,8 @@ export const MUTATION_ADD_PROJECT_ITEM = `
 
 /** Remove a draft / issue / PR card from a Projects v2 board. */
 export const MUTATION_DELETE_PROJECT_ITEM = `
-  mutation DeleteProjectV2Item($itemId: ID!) {
-    deleteProjectV2Item(input: { itemId: $itemId }) {
+  mutation DeleteProjectV2Item($projectId: ID!, $itemId: ID!) {
+    deleteProjectV2Item(input: { projectId: $projectId, itemId: $itemId }) {
       deletedItemId
     }
   }

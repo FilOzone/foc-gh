@@ -964,6 +964,7 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
       return { ok: false as const, error: 'Missing GitHub API token.' }
     }
     const result = await graphqlRequest(token, MUTATION_DELETE_PROJECT_ITEM, {
+      projectId: message.payload.projectId,
       itemId: message.payload.itemId,
     })
     if (result.errors?.length) {

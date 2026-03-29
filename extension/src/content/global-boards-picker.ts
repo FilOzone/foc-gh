@@ -68,13 +68,14 @@ async function handleCheckboxChange(cb: HTMLInputElement, errEl: HTMLElement): P
     }
     const nid = extractNewItemId(r.data)
     if (nid) cb.dataset.itemId = nid
+    document.dispatchEvent(new CustomEvent('filoz:boards-changed'))
     return
   }
 
   if (!prevItemId) return
   const dr = await sendMessage<{ ok: boolean; error?: string }>({
     type: 'DELETE_PROJECT_ITEM',
-    payload: { itemId: prevItemId },
+    payload: { projectId, itemId: prevItemId },
   })
   if (!dr.ok) {
     cb.checked = true
@@ -83,6 +84,7 @@ async function handleCheckboxChange(cb: HTMLInputElement, errEl: HTMLElement): P
     return
   }
   cb.dataset.itemId = ''
+  document.dispatchEvent(new CustomEvent('filoz:boards-changed'))
 }
 
 function renderRow(row: GlobalBoardRowState, contentNodeId: string): HTMLElement {

@@ -40,6 +40,7 @@ export type GetGlobalBoardsStateMessage = {
 export type DeleteProjectItemMessage = {
   type: 'DELETE_PROJECT_ITEM'
   payload: {
+    projectId: string
     itemId: string
   }
 }

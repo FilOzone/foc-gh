@@ -306,6 +306,7 @@ function bindNavigation(): void {
     document.addEventListener(ev, run)
   }
   window.addEventListener('popstate', run)
+  document.addEventListener('filoz:boards-changed', run)
 }
 
 void sync()
