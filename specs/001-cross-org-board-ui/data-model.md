@@ -50,7 +50,7 @@ single configured board before generalizing).
 | Key | Type | Purpose |
 |-----|------|---------|
 | `cross_org_board_urls` | `string[]` | Project pages to surface on matching repos. **Default**: `["https://github.com/orgs/FilOzone/projects/14"]`. |
-| `cross_org_target_repos` | `string[]` | Full names `owner/repo` where the panel may load. **Default**: `["filecoin-project/curio", "filecoin-project/filecoin-pin"]`. |
+| `cross_org_target_repos` | `string[]` | Full names `owner/repo` where the panel may load. **Default**: `["filecoin-project/curio", "filecoin-project/filecoin-pin", "filecoin-project/FIPs", "filecoin-project/filecoin-pin-website", "filecoin-project/github-mgmt"]`. |
 | `status_field_name` | `string` | **Primary single-select column name** for sidebar ordering (e.g. which field appears first in multi-select editors). Options UI can **load** real `SINGLE_SELECT` names from `ProjectV2.fields`. **Default**: `Status`. |
 
 Injection runs only when the current page’s `owner/repo` is in

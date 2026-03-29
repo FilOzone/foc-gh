@@ -8,7 +8,7 @@
 
 Deliver a **Chromium MV3 extension** that, on `github.com` **issue and pull request**
 pages for **configured cross-org repositories** (defaults:
-**`filecoin-project/curio`**, **`filecoin-project/filecoin-pin`**), shows whether
+**`filecoin-project/curio`**, **`filecoin-project/filecoin-pin`**, **`filecoin-project/FIPs`**, **`filecoin-project/filecoin-pin-website`**, **`filecoin-project/github-mgmt`**), shows whether
 the work item is on the **configured FilOzone FOC board** (default
 [orgs/FilOzone/projects/14](https://github.com/orgs/FilOzone/projects/14)), allows **add**
 and **field updates** using the same outcomes as the native sidebar when the repo
@@ -34,7 +34,7 @@ issue—not a gating assumption.
 **Project Type**: browser-extension  
 **Performance Goals**: Initial panel paint < 2s after page idle on typical TPM issue pages; avoid N+1 GraphQL where one round-trip suffices  
 **Constraints**: MV3: network from **service worker**; content script for DOM only; no secrets in repo; API auth via **OAuth token or PAT**, not browser session cookie → `api.github.com` (see [research.md](./research.md)); respect GitHub rate limits  
-**Scale/Scope**: Internal TPM team; default board [projects/14](https://github.com/orgs/FilOzone/projects/14); default repos **curio** and **filecoin-pin**
+**Scale/Scope**: Internal TPM team; default board [projects/14](https://github.com/orgs/FilOzone/projects/14); default repos include **curio**, **filecoin-pin**, **FIPs**, **filecoin-pin-website**, **github-mgmt**
 
 ## Constitution Check
 

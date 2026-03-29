@@ -19,6 +19,9 @@ export const DEFAULT_BOARD_URLS = ['https://github.com/orgs/FilOzone/projects/14
 export const DEFAULT_TARGET_REPOS = [
   'filecoin-project/curio',
   'filecoin-project/filecoin-pin',
+  'filecoin-project/FIPs',
+  'filecoin-project/filecoin-pin-website',
+  'filecoin-project/github-mgmt',
 ] as const
 
 export const DEFAULT_STATUS_FIELD_NAME = 'Status'

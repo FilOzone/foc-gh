@@ -6,7 +6,7 @@ must allow:
 1. **Reading and writing** the **organization Project (Projects v2)** that owns the
    board (default: FilOzone project 14).
 2. **Reading** Issues and Pull Requests in each **target repository** (default:
-   `filecoin-project/curio`, `filecoin-project/filecoin-pin`) so it can resolve
+   `filecoin-project/curio`, `filecoin-project/filecoin-pin`, `filecoin-project/FIPs`, `filecoin-project/filecoin-pin-website`, `filecoin-project/github-mgmt`) so it can resolve
    `contentId` and read `projectItems`.
 
 Org **roles** still apply: if you cannot add or edit items in the FilOzone project

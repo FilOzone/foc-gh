@@ -136,7 +136,7 @@ Read
 2. Choose **Sign in with GitHub** or **Personal access token**:
    - **OAuth**: **Connect GitHub** (requires build with OAuth env vars above).
    - **PAT**: classic or fine-grained token per **[PAT permissions](../docs/github-pat-permissions.md)**.
-3. Adjust board URLs or target repos (defaults: `filecoin-project/curio`, `filecoin-project/filecoin-pin`; default board [orgs/FilOzone/projects/14](https://github.com/orgs/FilOzone/projects/14)).
+3. Adjust board URLs or target repos (defaults include `filecoin-project/curio`, `filecoin-project/filecoin-pin`, `filecoin-project/FIPs`, `filecoin-project/filecoin-pin-website`, `filecoin-project/github-mgmt`; default board [orgs/FilOzone/projects/14](https://github.com/orgs/FilOzone/projects/14)).
 
 The extension does **not** use your `github.com` session cookie as a bearer for `api.github.com`; see [research.md](../specs/001-cross-org-board-ui/research.md).
 

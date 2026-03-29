@@ -11,7 +11,7 @@
 ## Built-in defaults ([data-model.md](./data-model.md))
 
 - **Boards**: `https://github.com/orgs/FilOzone/projects/14`
-- **Repos**: `filecoin-project/curio`, `filecoin-project/filecoin-pin`
+- **Repos**: `filecoin-project/curio`, `filecoin-project/filecoin-pin`, `filecoin-project/FIPs`, `filecoin-project/filecoin-pin-website`, `filecoin-project/github-mgmt`
 
 The extension shows the panel only on issue/PR pages for repos in
 **cross-org target repos**. It reads/writes the configured **organization
@@ -43,8 +43,8 @@ tokens.
 2. Complete **Connect GitHub** (OAuth) or paste a **PAT** under advanced.
 3. Confirm **Cross-org boards** includes
    `https://github.com/orgs/FilOzone/projects/14` (default).
-4. Confirm **Cross-org repos** lists `filecoin-project/curio` and
-   `filecoin-project/filecoin-pin` (default).
+4. Confirm **Cross-org repos** lists the five default `filecoin-project/…` repos
+   (see [data-model.md](./data-model.md)).
 
 ## Verify
 

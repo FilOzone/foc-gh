@@ -156,7 +156,7 @@ and [New Feature Request](https://github.com/refined-github/refined-github/wiki/
 |-------|--------|
 | Transport | GitHub GraphQL `POST https://api.github.com/graphql` |
 | Auth | **OAuth user access token** (preferred) or **PAT**; **not** github.com session cookies as `Bearer` on this API—document scopes in options |
-| MVP scope | **Configured project URLs** (default [FOC project](https://github.com/orgs/FilOzone/projects/14)); **configured repos** (default `filecoin-project/curio`, `filecoin-project/filecoin-pin`); see [data-model.md](./data-model.md) |
+| MVP scope | **Configured project URLs** (default [FOC project](https://github.com/orgs/FilOzone/projects/14)); **configured repos** (defaults in [data-model.md](./data-model.md)) |
 | UI integration | Injected panel visually aligned with sidebar; no React internals |
 | “All projects” view | Deferred; research preserves GraphQL path for Phase 2 |
 | Upstream Refined GitHub | Out of scope for MVP; reassess after dogfood |

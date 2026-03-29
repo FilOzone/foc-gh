@@ -7,7 +7,7 @@ Use after changing `extension/manifest.json`, auth, or GraphQL behavior. Record 
 - [ ] `npm run build` succeeds; load unpacked from `extension/dist/`
 - [ ] Options: valid PAT per [github-pat-permissions.md](./github-pat-permissions.md);
       default board `https://github.com/orgs/FilOzone/projects/14`
-- [ ] Target repos include `filecoin-project/curio` and/or `filecoin-project/filecoin-pin`
+- [ ] Target repos include at least one of the defaults (e.g. `filecoin-project/curio`, `filecoin-project/filecoin-pin`, `filecoin-project/FIPs`, `filecoin-project/filecoin-pin-website`, `filecoin-project/github-mgmt`)
 
 ## Smoke
 
