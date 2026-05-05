@@ -15,7 +15,7 @@ https://github.com/user-attachments/assets/3610e84f-d0cb-42b0-a0d6-4309f9dcd29b
 
 ## Fastest way to start using it
 ### Chrome Web Store
-Coming soon - waiting on Web Store approval.
+Coming soon. See https://github.com/FilOzone/foc-gh/issues/3
 
 ### Build/install locally
 1. Check out the repo.
