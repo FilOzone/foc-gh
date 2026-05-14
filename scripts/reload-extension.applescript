@@ -18,9 +18,10 @@ tell application "Google Chrome"
           }
           var btn = findBtn(document);
           if (btn) { btn.click(); return 'reloaded'; }
-          return 'not found';
+          return 'not found — dev-reload-button missing (is Developer mode on?)';
         })()"
       end if
     end repeat
   end repeat
+  error "No chrome://extensions tab found. Open chrome://extensions in Chrome first."
 end tell
