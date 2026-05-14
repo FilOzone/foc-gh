@@ -28,6 +28,7 @@ import {
   QUERY_PROJECT_V2_FIELD_DEFINITIONS,
   QUERY_PROJECT_V2_ITEM_FIELD_VALUES,
   QUERY_PROJECT_V2_ITEMS_PAGE,
+  QUERY_REPO_ACCESS,
   QUERY_VIEWER,
 } from '../lib/queries.js'
 
@@ -648,7 +649,8 @@ async function executeApiDiagnostics(): Promise<DiagnosticsResponse> {
     lines.push('FAIL: No token in storage. Connect GitHub or enter a PAT and click Save.')
     return { ok: false, report: lines.join('\n') }
   }
-  lines.push('PASS: Token is non-empty in storage.')
+  const tokenHint = bearer.length > 8 ? `${bearer.substring(0, 8)}…` : '(short)'
+  lines.push(`PASS: Token is non-empty in storage (auth: ${cfg.authMethod}, prefix: ${tokenHint}).`)
 
   const viewerRes = await graphqlRequest(bearer, QUERY_VIEWER)
   if (viewerRes.errors?.length) {
@@ -713,8 +715,15 @@ async function executeApiDiagnostics(): Promise<DiagnosticsResponse> {
   const more = itemsConn?.pageInfo?.hasNextPage === true
   lines.push(`PASS: Can read board rows (sample page: ${count} item(s); more pages: ${more}).`)
 
+  let diagOk = true
+
   if (defsRes.errors?.length) {
-    lines.push(`WARN: Board column discovery — ${firstError(defsRes.errors)}`)
+    diagOk = false
+    lines.push(`FAIL: Board column discovery — ${firstError(defsRes.errors)}`)
+    lines.push('  The sidebar card will not show interactive fields (Status dropdown, etc.).')
+    lines.push('  This is often caused by an OAuth token that needs to be refreshed.')
+    lines.push('  Try: Disconnect GitHub in options, then Connect GitHub again.')
+    lines.push('  Alternatively, switch to a classic PAT with repo + project scopes.')
   } else {
     const boardFields = parseProjectV2FieldDefinitions(defsRes.data)
     const total =
@@ -744,12 +753,60 @@ async function executeApiDiagnostics(): Promise<DiagnosticsResponse> {
     }
   }
 
+  // ── Per-repo access check ───────────────────────────────────────────────
   lines.push('')
-  lines.push(
-    'All PASS above means the PAT can reach the board API. If an issue still shows "not linked", open that issue and check the service worker console (chrome://extensions → service worker → Inspect).',
-  )
+  lines.push('━━━ Target repo access (each configured repo) ━━━')
+  lines.push('')
 
-  return { ok: true, report: lines.join('\n') }
+  const repos = cfg.crossOrgTargetRepos.map((r) => r.trim()).filter(Boolean)
+  if (repos.length === 0) {
+    lines.push('SKIP: No target repos configured.')
+  } else {
+    for (const repo of repos) {
+      const parts = repo.split('/')
+      if (parts.length !== 2) {
+        lines.push(`SKIP: "${repo}" — not in owner/name format.`)
+        continue
+      }
+      const [owner, name] = parts
+      const repoRes = await graphqlRequest(bearer, QUERY_REPO_ACCESS, {
+        owner,
+        name,
+      })
+      if (repoRes.errors?.length) {
+        diagOk = false
+        const msg = firstError(repoRes.errors)
+        lines.push(`FAIL: ${repo} — ${msg}`)
+        if (msg.includes('OAuth App access restrictions')) {
+          lines.push(`  → The "${owner}" org restricts third-party OAuth apps.`)
+          lines.push(`    Approve this app at: github.com/organizations/${owner}/settings/oauth_application_policy`)
+          lines.push(`    Or switch to a classic PAT.`)
+        }
+      } else {
+        const nwo = (repoRes.data as { repository?: { nameWithOwner?: string } })
+          ?.repository?.nameWithOwner
+        if (nwo) {
+          lines.push(`PASS: ${nwo} — accessible.`)
+        } else {
+          lines.push(`FAIL: ${repo} — repository not found or no access.`)
+          diagOk = false
+        }
+      }
+    }
+  }
+
+  lines.push('')
+  if (diagOk) {
+    lines.push(
+      'All checks passed. If an issue still shows "not linked", run the visibility check below with that specific issue URL.',
+    )
+  } else {
+    lines.push(
+      'Some checks FAILED — see details above. If using OAuth, try disconnecting and reconnecting. If the problem persists, switch to a classic PAT.',
+    )
+  }
+
+  return { ok: diagOk, report: lines.join('\n') }
 }
 
 async function runDiagnostics(): Promise<DiagnosticsResponse> {
@@ -770,6 +827,8 @@ type PanelStateSuccess = {
   contentNodeId: string
   /** Column definitions from `ProjectV2.fields` (names, types, single-select options, iterations). */
   boardFields: SerializableProjectField[]
+  /** Non-null when the field-definitions GraphQL query returned an error (sidebar should warn). */
+  fieldDefsError: string | null
   item: { itemId: string; fieldLabels: Record<string, string> } | null
 }
 
@@ -1271,6 +1330,7 @@ async function getPanelStateForBoardUrl(
   let boardFields: SerializableProjectField[] = []
   let match: ProjectItemNode | null = null
 
+  let fieldDefsError: string | null = null
   if (crossOrg) {
     const [defsRes, restMatch] = await Promise.all([
       graphqlRequest(bearer, QUERY_PROJECT_V2_FIELD_DEFINITIONS, {
@@ -1287,7 +1347,9 @@ async function getPanelStateForBoardUrl(
         payload.kind,
       ),
     ])
-    if (!defsRes.errors?.length) {
+    if (defsRes.errors?.length) {
+      fieldDefsError = firstError(defsRes.errors)
+    } else {
       boardFields = parseProjectV2FieldDefinitions(defsRes.data)
     }
     match = restMatch
@@ -1303,7 +1365,9 @@ async function getPanelStateForBoardUrl(
     if (itemsRes.errors?.length) {
       return { ok: false as const, error: firstError(itemsRes.errors) }
     }
-    if (!defsRes.errors?.length) {
+    if (defsRes.errors?.length) {
+      fieldDefsError = firstError(defsRes.errors)
+    } else {
       boardFields = parseProjectV2FieldDefinitions(defsRes.data)
     }
     const node = (itemsRes.data as { node?: NodeWithItems })?.node
@@ -1331,6 +1395,7 @@ async function getPanelStateForBoardUrl(
     primaryBoardUrl: primaryUrl,
     contentNodeId: contentId,
     boardFields,
+    fieldDefsError,
     item: match
       ? {
           itemId: match.id,

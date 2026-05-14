@@ -108,6 +108,16 @@
   cursor: not-allowed;
 }
 
+.filoz-status-readonly {
+  display: inline-block;
+  padding: 2px 7px;
+  font-size: 12px;
+  line-height: 1.5;
+  border-radius: 2em;
+  background-color: var(--bgColor-neutral-muted, #272b33);
+  color: var(--fgColor-muted, #9198a1);
+}
+
 .filoz-status-select-arrow {
   position: absolute;
   right: 5px;
@@ -228,6 +238,7 @@
 }
 
 .filoz-btn {
+  display: inline-block;
   margin-top: 10px;
   padding: 5px 12px;
   font-size: 12px;
@@ -235,6 +246,7 @@
   border-radius: 6px;
   cursor: pointer;
   appearance: none;
+  text-decoration: none;
   background-color: var(--control-bgColor-rest, #212830);
   color: var(--fgColor-default, #f0f6fc);
   border: 1px solid var(--borderColor-default, #3d444d);

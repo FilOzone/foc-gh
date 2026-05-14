@@ -48,39 +48,11 @@ options**.
 
 ---
 
-## Fine-grained personal access tokens
+## Fine-grained personal access tokens — not supported
 
-Create at: **Settings → Developer settings → Personal access tokens → Fine-grained tokens**.
-
-Configure **Resource owners** and **repository access** explicitly.
-
-### Organization that **owns** the project board (e.g. FilOzone)
-
-Under **Organization permissions** for that org:
-
-| Permission | Access level | Why |
-|------------|--------------|-----|
-| **Projects** | **Read and write** | Load `projectV2`, list/update fields, add items, set Status. |
-
-**Read-only** Projects may be enough to **view** linked state but will **fail** on
-**Add to FOC project** or **Update Status**.
-
-### Repositories whose **issues/PRs** you open in the browser (e.g. `filecoin-project/*`)
-
-Add each repository (or use “All repositories” only if policy allows). Under
-**Repository permissions**:
-
-| Permission | Access level | Why |
-|------------|--------------|-----|
-| **Issues** | **Read-only** at minimum | Resolve issue `id`, read `projectItems` on issues. |
-| **Pull requests** | **Read-only** at minimum | Same for PR pages. |
-
-If a repo is **private**, the token must include that repository; **Metadata** read
-is usually included by default for selected repos.
-
-Fine-grained tokens can be picky: if something still fails, compare with a **classic**
-token using `project` + `repo`/`public_repo` to isolate whether the limitation is
-token shape vs org/repo policy.
+**Fine-grained tokens do not work reliably** with this extension. GitHub's
+fine-grained PAT system has limited and inconsistent support for Projects v2
+cross-org operations. Use a **classic PAT** (above) or **OAuth** (below) instead.
 
 ---
 

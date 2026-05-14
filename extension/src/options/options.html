@@ -194,6 +194,12 @@
         max-height: 28rem;
         overflow: auto;
       }
+      .copy-btn {
+        margin-top: 0;
+        margin-left: 0.5rem;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.8rem;
+      }
       .hidden {
         display: none !important;
       }
@@ -344,6 +350,7 @@
           Viewer, project access, and a sample of board columns (GraphQL).
         </p>
         <button id="diag-run" type="button">Run API checks</button>
+        <button id="diag-copy" type="button" class="copy-btn hidden">Copy</button>
         <pre id="diag-out" class="diag-pre" aria-live="polite"></pre>
       </div>
 
@@ -356,6 +363,7 @@
         <label class="form-label" for="sample-url">Issue or PR URL (or <code>owner/repo/issues/1</code>)</label>
         <input id="sample-url" type="text" placeholder="https://github.com/owner/repo/issues/123" autocomplete="off" />
         <button id="sample-run" type="button">Run visibility check</button>
+        <button id="sample-copy" type="button" class="copy-btn hidden">Copy</button>
         <pre id="sample-out" class="diag-pre" aria-live="polite"></pre>
       </div>
     </main>

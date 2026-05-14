@@ -187,6 +187,15 @@ export const QUERY_VIEWER = `
   }
 `
 
+export const QUERY_REPO_ACCESS = `
+  query RepoAccess($owner: String!, $name: String!) {
+    repository(owner: $owner, name: $name) {
+      id
+      nameWithOwner
+    }
+  }
+`
+
 export const QUERY_PROJECT_V2 = `
   query ProjectV2Id($org: String!, $number: Int!) {
     organization(login: $org) {
@@ -199,7 +208,17 @@ export const QUERY_PROJECT_V2 = `
   }
 `
 
-/** Discover board column definitions (names, data types, single-select options, iteration catalog). */
+/**
+ * Discover board column definitions (names, data types, single-select options, iteration catalog).
+ *
+ * WORKAROUND: `dataType` is omitted from the `ProjectV2Field` fragment
+ * because GitHub's built-in timestamp fields (Created, Updated, Closed)
+ * crash the API with a 500 when it is requested. Custom generic fields
+ * (TEXT, NUMBER, DATE) are identified by excluding known system field
+ * names — see SYSTEM_FIELD_NAMES in project-board-fields.ts.
+ *
+ * GitHub support ticket: https://support.github.com/ticket/personal/0/4386180
+ */
 export const QUERY_PROJECT_V2_FIELD_DEFINITIONS = `
   query ProjectV2FieldDefinitions($projectId: ID!) {
     node(id: $projectId) {
@@ -213,7 +232,6 @@ export const QUERY_PROJECT_V2_FIELD_DEFINITIONS = `
             ... on ProjectV2Field {
               id
               name
-              dataType
             }
             ... on ProjectV2SingleSelectField {
               id

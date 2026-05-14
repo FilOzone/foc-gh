@@ -136,10 +136,12 @@ The extension does **not** use your `github.com` session cookie as a bearer for 
 
 ### PAT permissions (summary)
 
-| Need | Classic scopes (typical) | Fine-grained (typical) |
-|------|--------------------------|-------------------------|
-| View panel / linked state | `read:project` + `public_repo` or `repo` | Org **Projects** read; target repos **Issues** + **Pull requests** read |
-| Add item + edit Status | **`project`** + `public_repo` or `repo` | Org **Projects** **Read and write**; repos **Issues** + **Pull requests** read |
+Use a **classic** PAT. Fine-grained tokens are **not supported** (see [`docs/github-pat-permissions.md`](../docs/github-pat-permissions.md)).
+
+| Need | Classic scopes |
+|------|----------------|
+| View panel / linked state | `read:project` + `public_repo` or `repo` |
+| Add item + edit Status | **`project`** + `public_repo` or `repo` |
 
 Full tables: [`docs/github-pat-permissions.md`](../docs/github-pat-permissions.md).
 

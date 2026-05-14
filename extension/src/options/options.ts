@@ -18,9 +18,11 @@ const reposEl = document.querySelector<HTMLTextAreaElement>('#repos')
 const saveBtn = document.querySelector<HTMLButtonElement>('#save')
 const statusEl = document.querySelector<HTMLParagraphElement>('#status')
 const diagRunBtn = document.querySelector<HTMLButtonElement>('#diag-run')
+const diagCopyBtn = document.querySelector<HTMLButtonElement>('#diag-copy')
 const diagOutEl = document.querySelector<HTMLPreElement>('#diag-out')
 const sampleUrlEl = document.querySelector<HTMLInputElement>('#sample-url')
 const sampleRunBtn = document.querySelector<HTMLButtonElement>('#sample-run')
+const sampleCopyBtn = document.querySelector<HTMLButtonElement>('#sample-copy')
 const sampleOutEl = document.querySelector<HTMLPreElement>('#sample-out')
 const issuePrProjectsAutoExpandEl = document.querySelector<HTMLInputElement>('#issuePrProjectsAutoExpand')
 
@@ -262,6 +264,7 @@ disconnectGithubBtn?.addEventListener('click', () => {
 diagRunBtn?.addEventListener('click', () => {
   if (!diagOutEl || !diagRunBtn) return
   diagRunBtn.disabled = true
+  diagCopyBtn?.classList.add('hidden')
   const logLines: string[] = []
   let reportSoFar = 'Running…'
   renderStreamingDiag(diagOutEl, reportSoFar, logLines)
@@ -271,6 +274,7 @@ diagRunBtn?.addEventListener('click', () => {
 
   const finish = (): void => {
     diagRunBtn.disabled = false
+    diagCopyBtn?.classList.remove('hidden')
   }
 
   port.onMessage.addListener((msg: unknown) => {
@@ -303,6 +307,7 @@ sampleRunBtn?.addEventListener('click', () => {
   if (!url) return
 
   sampleRunBtn.disabled = true
+  sampleCopyBtn?.classList.add('hidden')
   const logLines: string[] = []
   let reportSoFar = 'Running…'
   renderStreamingDiag(sampleOutEl, reportSoFar, logLines)
@@ -312,6 +317,7 @@ sampleRunBtn?.addEventListener('click', () => {
 
   const finish = (): void => {
     sampleRunBtn.disabled = false
+    sampleCopyBtn?.classList.remove('hidden')
   }
 
   port.onMessage.addListener((msg: unknown) => {
@@ -336,3 +342,18 @@ sampleRunBtn?.addEventListener('click', () => {
 
   port.onDisconnect.addListener(finish)
 })
+
+function wireCopyBtn(btn: HTMLButtonElement | null, pre: HTMLPreElement | null): void {
+  if (!btn || !pre) return
+  btn.addEventListener('click', async () => {
+    const text = pre.textContent ?? ''
+    if (!text) return
+    await navigator.clipboard.writeText(text)
+    const orig = btn.textContent
+    btn.textContent = 'Copied!'
+    setTimeout(() => { btn.textContent = orig }, 1500)
+  })
+}
+
+wireCopyBtn(diagCopyBtn, diagOutEl)
+wireCopyBtn(sampleCopyBtn, sampleOutEl)

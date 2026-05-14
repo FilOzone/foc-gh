@@ -19,5 +19,9 @@ export function normalizeFieldType(field: SerializableProjectField): NormalizedF
   if (dt.includes('NUMBER')) return 'NUMBER'
   if (dt.includes('TEXT')) return 'TEXT'
   if (dt.includes('DATE')) return 'DATE'
+  // When dataType is empty (omitted from query due to GitHub API bug),
+  // system fields have already been filtered out by SYSTEM_FIELD_NAMES,
+  // so remaining generic fields are custom — default to TEXT.
+  if (!dt && field.kind === 'generic') return 'TEXT'
   return 'UNSUPPORTED'
 }

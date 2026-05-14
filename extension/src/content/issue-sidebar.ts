@@ -65,6 +65,7 @@ type PanelStateOk = {
   primaryBoardUrl: string
   contentNodeId: string
   boardFields: SerializableProjectField[]
+  fieldDefsError: string | null
   item: { itemId: string; fieldLabels: Record<string, string> } | null
 }
 
@@ -268,6 +269,24 @@ async function render(
   const bodySlot = card.body
 
   const statusName = DEFAULT_STATUS_FIELD_NAME.trim()
+
+  // If field definitions failed, show read-only status + warning instead of interactive controls.
+  if (s.fieldDefsError) {
+    const statusValue = linkedItem.fieldLabels[statusName] ?? ''
+    if (statusValue) {
+      const span = document.createElement('span')
+      span.className = 'filoz-status-readonly'
+      span.textContent = statusValue
+      card.statusSlot.append(span)
+    }
+    bodySlot.innerHTML = ''
+    const warn = document.createElement('p')
+    warn.className = 'filoz-error'
+    warn.textContent = 'Could not load project fields — the API returned an error. Right-click the FOC GH extension icon and choose "Options", then run diagnostics.'
+    bodySlot.append(warn)
+    card.setExpanded(true)
+    return
+  }
 
   // Render Status in header slot
   const statusField = s.boardFields.find(

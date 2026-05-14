@@ -128,6 +128,17 @@ A user can trigger a self-serve approval request without contacting admins direc
 
 Once approved, no extension reinstall or re-authentication is needed — the existing OAuth token gains access immediately.
 
+### Current org approvals
+
+The **development** OAuth app (FOC GH dev) is approved in these organizations:
+
+| Organization | Approval status | Admin link |
+|-------------|-----------------|------------|
+| **FilOzone** | Approved (home org — owns the app) | [OAuth app settings](https://github.com/organizations/FilOzone/settings/applications/3490509) |
+| **filecoin-project** | Approved | [App policy page](https://github.com/orgs/filecoin-project/policies/applications/3490509) |
+
+If the extension needs to access issues/PRs in additional orgs, follow the approval steps above for each new org.
+
 ---
 
 ## 5. Revocation
