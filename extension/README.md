@@ -63,6 +63,18 @@ A production build that falls back to plain **`GITHUB_OAUTH_*`** prints a **warn
 
 Requires `CHROME_WEBSTORE_*` and `GITHUB_OAUTH_*_PRODUCTION` credentials in `.env.local` (see [`.env.example`](../.env.example)).
 
+### Chrome Web Store account
+
+The extension is published under **biglep@filoz.org** (personal developer account, publisher ID `2270af3f`).
+
+| Resource | URL |
+|----------|-----|
+| **Dev console** (manage listing) | [chrome.google.com/webstore/devconsole/…/2270af3f…](https://chrome.google.com/webstore/devconsole/2270af3f-be41-4cb8-aec8-040cb9627f74) |
+| **Public listing** | [chromewebstore.google.com/detail/foc-gh/haicdejjcnecapheflpdpdngflffejpf](https://chromewebstore.google.com/detail/foc-gh/haicdejjcnecapheflpdpdngflffejpf) |
+| **Google Cloud project** (OAuth for Publish API) | Same Google account — the `CHROME_WEBSTORE_*` credentials in `.env.local` are for this project |
+
+A **group publisher** (`chrome-webstore-group-publisher@filoz.org`, publisher ID `cc8e8ca4`) also exists but has no extensions. The listing could be transferred there in the future to decouple it from a personal account.
+
 ### Chrome Web Store ZIP and upload (reference)
 
 Build a **Store-ready ZIP** (manifest and assets at the **root** of the archive — required by Google):
