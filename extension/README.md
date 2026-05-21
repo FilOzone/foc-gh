@@ -149,6 +149,50 @@ Full tables: [`docs/github-pat-permissions.md`](../docs/github-pat-permissions.m
 
 **Connect GitHub** uses OAuth **PKCE** plus a **client secret** at token exchange (build-time). Requested scopes match PAT capability: **`repo`**, **`read:org`**, **`project`**. Only one of OAuth or PAT is active at a time.
 
+## Dev workflow: reloading the extension
+
+Two reload approaches are available. Use whichever matches your Chrome setup.
+
+### Option A: CDP reload (recommended for AI-agent workflows)
+
+**`node scripts/cdp-reload.mjs`** reloads the extension via Chrome DevTools Protocol — instant, no timeouts. It also refreshes any open GitHub tabs so content scripts reconnect.
+
+**Requires Chrome launched with a dedicated dev profile:**
+
+```bash
+/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
+  --remote-debugging-port=9222 \
+  --remote-allow-origins='*' \
+  --user-data-dir="$HOME/.chrome-dev-profile"
+```
+
+**Why a separate `--user-data-dir`?** Since Chrome 136, `--remote-debugging-port` is **silently ignored** when using the default user data directory (`~/Library/Application Support/Google/Chrome`). This is a deliberate security hardening — no error is printed, the port simply doesn't open. Passing a non-default `--user-data-dir` satisfies the requirement.
+
+**You cannot point `--user-data-dir` to your existing default profile** — Chrome recognizes the default path and still blocks the debug port. Copying the default profile to another location would technically work but risks corruption if both instances run simultaneously. The dev profile is lightweight and only needs one-time setup:
+
+1. Launch Chrome with the command above.
+2. **Load unpacked** the extension at `chrome://extensions` → select `extension/dist/`. This persists across restarts (unlike `--load-extension` which is ephemeral).
+3. Log in to GitHub and configure the extension PAT in **Options**.
+
+**Service worker logs:** `node scripts/sw-logs.mjs` streams service worker console output via CDP auto-attach. Note: Chrome MV3 service workers go idle quickly and may not appear in CDP targets. The log streamer waits and reconnects automatically when the SW activates, but very short-lived activations may be missed.
+
+### Option B: AppleScript reload (works with default Chrome profile)
+
+**`osascript scripts/reload-extension.applescript`** finds an open `chrome://extensions` tab and clicks the reload button via shadow DOM traversal.
+
+**Advantages:** Works with your normal Chrome profile — no special launch flags, all your extensions and cookies are present.
+
+**Limitations:**
+- Requires a `chrome://extensions` tab to be open (errors if not found).
+- Occasionally times out with `AppleEvent timed out (-1712)` when Chrome is busy.
+- Does not refresh GitHub tabs after reload — content scripts in already-open tabs become orphaned and need a manual page refresh.
+
+### Extension ID notes
+
+The unpacked extension ID is pinned to **`akbchnphednohmffplmejpefockadcbg`** by `manifest.key` (derived from [manifest-id-public.b64](manifest-id-public.b64)). This works with both **Load unpacked** in `chrome://extensions` and the CDP dev profile.
+
+**Do not use `--load-extension`** to sideload — while it loads the extension initially, it does not persist across Chrome restarts and the extension does not appear in the `chrome://extensions` UI, making it impossible to reload or inspect.
+
 ## Verify
 
 [quickstart.md](../specs/001-cross-org-board-ui/quickstart.md), [manual verification](../docs/manual-verification.md), and OAuth flow notes in [specs/004-github-oauth-signin/quickstart.md](../specs/004-github-oauth-signin/quickstart.md).
