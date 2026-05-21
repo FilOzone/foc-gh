@@ -211,14 +211,12 @@ export const QUERY_PROJECT_V2 = `
 /**
  * Discover board column definitions (names, data types, single-select options, iteration catalog).
  *
- * WORKAROUND: Uses `ProjectV2FieldCommon` for shared id/name instead of
- * per-type fragments. `dataType` is NOT requested because GitHub's built-in
- * timestamp fields (Created, Updated, Closed) crash the API with a 500.
- * Custom generic fields (TEXT, NUMBER, DATE) are identified by excluding
- * known system field names — see SYSTEM_FIELD_NAMES in project-board-fields.ts.
- * Per GitHub Support, __typename is the recommended way to distinguish field
- * types until the dataType resolver bug is fixed.
+ * Uses `ProjectV2FieldCommon` for shared id/name/dataType fields per GitHub
+ * Support recommendation. `dataType` is used to distinguish TEXT, NUMBER,
+ * DATE, etc. among generic ProjectV2Field nodes.
  *
+ * History: `dataType` previously crashed on built-in timestamp fields
+ * (Created, Updated, Closed) — fixed by GitHub 2026-05-20.
  * GitHub support ticket: https://support.github.com/ticket/personal/0/4386180
  */
 export const QUERY_PROJECT_V2_FIELD_DEFINITIONS = `
@@ -234,6 +232,7 @@ export const QUERY_PROJECT_V2_FIELD_DEFINITIONS = `
             ... on ProjectV2FieldCommon {
               id
               name
+              dataType
             }
             ... on ProjectV2SingleSelectField {
               options {

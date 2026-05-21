@@ -3,31 +3,6 @@
  * Schema union: ProjectV2Field | ProjectV2SingleSelectField | ProjectV2IterationField
  */
 
-/**
- * Built-in ProjectV2 system field names (lowercased). These are excluded from
- * the parsed field list because:
- * 1. The sidebar never needs to render or edit them.
- * 2. Some (Created, Updated, Closed) crash GitHub's GraphQL API with a 500
- *    when `dataType` is requested — so we omit `dataType` from the query
- *    entirely and use this list to distinguish system fields from custom ones.
- *
- * GitHub support ticket: https://support.github.com/ticket/personal/0/4386180
- */
-const SYSTEM_FIELD_NAMES = new Set([
-  'title',
-  'assignees',
-  'labels',
-  'linked pull requests',
-  'milestone',
-  'repository',
-  'reviewers',
-  'parent issue',
-  'sub-issues progress',
-  'created',
-  'updated',
-  'closed',
-])
-
 export type SerializableProjectField =
   | { kind: 'generic'; id: string; name: string; dataType: string }
   | {
@@ -80,7 +55,6 @@ export function parseProjectV2FieldDefinitions(data: unknown): SerializableProje
     const name = typeof r.name === 'string' ? r.name : ''
     const dataType = typeof r.dataType === 'string' ? r.dataType : ''
     if (!id || !name) continue
-    if (tn === 'ProjectV2Field' && SYSTEM_FIELD_NAMES.has(name.toLowerCase())) continue
 
     if (tn === 'ProjectV2SingleSelectField') {
       const optsRaw = r.options
