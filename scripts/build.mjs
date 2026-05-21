@@ -85,6 +85,14 @@ const dist = path.join(root, 'extension', 'dist')
 const manifestSrc = path.join(root, 'extension', 'manifest.json')
 const manifest = JSON.parse(readFileSync(manifestSrc, 'utf8'))
 
+// Development builds append " (Dev)" to the extension name so it's easy to
+// distinguish from the Web Store install when both are loaded side by side.
+if (oauthProfile === 'development') {
+  if (!manifest.name.includes('(Dev)')) {
+    manifest.name = `${manifest.name} (Dev)`
+  }
+}
+
 /** Chrome Web Store rejects packages when `description` exceeds this (manifest “summary from package”). */
 const CHROME_WEBSTORE_DESCRIPTION_MAX = 132
 if (typeof manifest.description === 'string' && manifest.description.length > CHROME_WEBSTORE_DESCRIPTION_MAX) {

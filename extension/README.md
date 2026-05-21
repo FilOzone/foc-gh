@@ -54,7 +54,16 @@ A production build that falls back to plain **`GITHUB_OAUTH_*`** prints a **warn
 - **Connect GitHub** only works if **both** variables were set at build time; they are compiled into [dist/service-worker.js](dist/service-worker.js). Do not commit real secrets.
 - **Load unpacked** from **[dist/](dist/)** in **`chrome://extensions`** (**Developer mode** on) → **Load unpacked**.
 
-### Chrome Web Store ZIP and upload
+### Publishing a new version to Chrome Web Store
+
+1. **Bump the version** in both `extension/manifest.json` and `package.json` — the Web Store rejects uploads with the same version as the current listing.
+2. **`npm run publish:chrome`** — builds the production ZIP (with production OAuth credentials), uploads, and publishes.
+3. **Rebuild for dev**: `npm run build` — restores development OAuth credentials and adds `-dev` suffix to the version in `extension/dist/`.
+4. **Commit and push** the version bump.
+
+Requires `CHROME_WEBSTORE_*` and `GITHUB_OAUTH_*_PRODUCTION` credentials in `.env.local` (see [`.env.example`](../.env.example)).
+
+### Chrome Web Store ZIP and upload (reference)
 
 Build a **Store-ready ZIP** (manifest and assets at the **root** of the archive — required by Google):
 
