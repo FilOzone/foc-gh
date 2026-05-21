@@ -74,13 +74,12 @@ export function renderEditableProjectFields(mount: HTMLElement, opts: FieldRende
         if (stale()) return
         setRowError(wrap, null)
         const optionId = sel.value
-        if (!optionId) return
         const res = await updateProjectItemField({
           projectId,
           itemId,
           fieldId: field.id,
           fieldName: field.name,
-          value: { kind: 'single_select', optionId },
+          value: optionId ? { kind: 'single_select', optionId } : { kind: 'clear' },
         })
         if (!res.ok) {
           setRowError(wrap, res.error ?? 'Update failed')
@@ -101,7 +100,17 @@ export function renderEditableProjectFields(mount: HTMLElement, opts: FieldRende
         if (stale()) return
         setRowError(wrap, null)
         const raw = input.value.trim()
-        if (raw === '') return
+        if (raw === '') {
+          const res = await updateProjectItemField({
+            projectId,
+            itemId,
+            fieldId: field.id,
+            fieldName: field.name,
+            value: { kind: 'clear' },
+          })
+          if (!res.ok) setRowError(wrap, res.error ?? 'Clear failed')
+          return
+        }
         const num = Number(raw)
         if (!Number.isFinite(num)) {
           setRowError(wrap, 'Enter a valid number')
@@ -178,13 +187,12 @@ export function renderEditableProjectFields(mount: HTMLElement, opts: FieldRende
         if (stale()) return
         setRowError(wrap, null)
         const iterationId = sel.value
-        if (!iterationId) return
         const res = await updateProjectItemField({
           projectId,
           itemId,
           fieldId: field.id,
           fieldName: field.name,
-          value: { kind: 'iteration', iterationId },
+          value: iterationId ? { kind: 'iteration', iterationId } : { kind: 'clear' },
         })
         if (!res.ok) {
           setRowError(wrap, res.error ?? 'Update failed')

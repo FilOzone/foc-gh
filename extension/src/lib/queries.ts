@@ -494,6 +494,22 @@ export const MUTATION_UPDATE_TEXT = `
   }
 `
 
+export const MUTATION_CLEAR_FIELD = `
+  mutation ClearProjectV2ItemField($projectId: ID!, $itemId: ID!, $fieldId: ID!) {
+    clearProjectV2ItemFieldValue(
+      input: {
+        projectId: $projectId
+        itemId: $itemId
+        fieldId: $fieldId
+      }
+    ) {
+      projectV2Item {
+        id
+      }
+    }
+  }
+`
+
 export const MUTATION_UPDATE_ITERATION = `
   mutation UpdateProjectV2Iteration(
     $projectId: ID!

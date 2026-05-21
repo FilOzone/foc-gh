@@ -68,6 +68,7 @@ export type UpdateStatusMessage = {
 }
 
 export type ItemFieldValue =
+  | { kind: 'clear' }
   | { kind: 'single_select'; optionId: string }
   | { kind: 'number'; number: number }
   | { kind: 'text'; text: string }

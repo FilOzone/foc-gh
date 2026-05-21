@@ -127,7 +127,6 @@ function renderStatusInSlot(
   sel.addEventListener('change', async () => {
     if (stale()) return
     const optionId = sel.value
-    if (!optionId) return
     errEl.hidden = true
     sel.disabled = true
     const res = await updateProjectItemField({
@@ -135,7 +134,7 @@ function renderStatusInSlot(
       itemId,
       fieldId: statusField.id,
       fieldName: statusField.name,
-      value: { kind: 'single_select', optionId },
+      value: optionId ? { kind: 'single_select', optionId } : { kind: 'clear' },
     })
     sel.disabled = false
     if (!res.ok) {

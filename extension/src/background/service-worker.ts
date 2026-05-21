@@ -15,6 +15,7 @@ import {
 } from '../lib/project-config.js'
 import {
   MUTATION_ADD_PROJECT_ITEM,
+  MUTATION_CLEAR_FIELD,
   MUTATION_DELETE_PROJECT_ITEM,
   MUTATION_UPDATE_ITERATION,
   MUTATION_UPDATE_NUMBER,
@@ -1092,7 +1093,13 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
     }
     const { projectId, itemId, fieldId, value } = message.payload
     const gql =
-      value.kind === 'single_select' ?
+      value.kind === 'clear' ?
+        graphqlRequest(token, MUTATION_CLEAR_FIELD, {
+          projectId,
+          itemId,
+          fieldId,
+        })
+      : value.kind === 'single_select' ?
         graphqlRequest(token, MUTATION_UPDATE_SINGLE_SELECT, {
           projectId,
           itemId,
