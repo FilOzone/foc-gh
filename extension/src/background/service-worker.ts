@@ -972,6 +972,10 @@ async function runSampleBoardLinkStreaming(port: chrome.runtime.Port, sampleInpu
   }
 }
 
+chrome.action.onClicked.addListener(() => {
+  void chrome.runtime.openOptionsPage()
+})
+
 chrome.runtime.onConnect.addListener((port) => {
   if (port.name !== 'diagnostics') return
   port.onMessage.addListener((msg: unknown) => {
