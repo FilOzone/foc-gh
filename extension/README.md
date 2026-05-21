@@ -65,15 +65,13 @@ Requires `CHROME_WEBSTORE_*` and `GITHUB_OAUTH_*_PRODUCTION` credentials in `.en
 
 ### Chrome Web Store account
 
-The extension is published under **biglep@filoz.org** (personal developer account, publisher ID `2270af3f`).
+The extension is published under biglep@filoz.org (personal developer account, publisher ID `2270af3f`). The `CHROME_WEBSTORE_*` credentials in `.env.local` are for this account's Google Cloud project.
 
-| Resource | URL |
-|----------|-----|
-| **Dev console** (manage listing) | [chrome.google.com/webstore/devconsole/…/2270af3f…](https://chrome.google.com/webstore/devconsole/2270af3f-be41-4cb8-aec8-040cb9627f74) |
-| **Public listing** | [chromewebstore.google.com/detail/foc-gh/haicdejjcnecapheflpdpdngflffejpf](https://chromewebstore.google.com/detail/foc-gh/haicdejjcnecapheflpdpdngflffejpf) |
-| **Google Cloud project** (OAuth for Publish API) | Same Google account — the `CHROME_WEBSTORE_*` credentials in `.env.local` are for this project |
+- [Dev console (account)](https://chrome.google.com/webstore/devconsole/2270af3f-be41-4cb8-aec8-040cb9627f74)
+- [Dev console (FOC GH package)](https://chrome.google.com/webstore/devconsole/2270af3f-be41-4cb8-aec8-040cb9627f74/haicdejjcnecapheflpdpdngflffejpf/edit/package)
+- [Public listing](https://chromewebstore.google.com/detail/foc-gh/haicdejjcnecapheflpdpdngflffejpf)
 
-A **group publisher** (`chrome-webstore-group-publisher@filoz.org`, publisher ID `cc8e8ca4`) also exists but has no extensions. The listing could be transferred there in the future to decouple it from a personal account.
+A group publisher (`chrome-webstore-group-publisher@filoz.org`, publisher ID `cc8e8ca4`) also exists but has no extensions. The listing could be transferred there in the future to decouple it from a personal account.
 
 ### Chrome Web Store ZIP and upload (reference)
 
