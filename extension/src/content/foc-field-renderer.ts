@@ -181,6 +181,9 @@ export function renderEditableProjectFields(mount: HTMLElement, opts: FieldRende
         const opt = document.createElement('option')
         opt.value = it.id
         opt.textContent = `Completed · ${it.title || it.id}`
+        if (displayValue && (it.title === displayValue || displayValue.includes(it.title))) {
+          opt.selected = true
+        }
         sel.append(opt)
       }
       sel.addEventListener('change', async () => {
