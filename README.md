@@ -14,8 +14,15 @@ Chromium Manifest V3 **browser extension** for **FOC TPMs and team members** wor
 https://github.com/user-attachments/assets/3610e84f-d0cb-42b0-a0d6-4309f9dcd29b
 
 ## Fastest way to start using it
-### Chrome Web Store
-Coming soon. See https://github.com/FilOzone/foc-gh/issues/3
+
+### Chrome Web Store (recommended)
+
+1. Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/foc-gh/haicdejjcnecapheflpdpdngflffejpf).
+2. Click the **FOC GH** extension icon (puzzle piece → pin it) to open **Options**.
+3. **Sign in with GitHub** (OAuth) — or switch to **Personal access token** and paste a classic PAT with `project`, `repo`, `read:org` scopes ([details](docs/github-pat-permissions.md)).
+4. Navigate to an issue or PR in a configured repo (e.g. [filecoin-project/filecoin-pin](https://github.com/filecoin-project/filecoin-pin)) — the FOC project card appears in the right sidebar.
+
+> **OAuth note:** The production OAuth app must be approved in each GitHub org whose issues/PRs you work with. If you see "OAuth App access restrictions" errors, ask an org owner to approve the app or use a classic PAT instead. See [OAuth org approvals](docs/github-oauth-app.md#current-org-approvals).
 
 ### Build/install locally
 1. Check out the repo.

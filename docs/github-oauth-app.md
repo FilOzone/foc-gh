@@ -130,12 +130,21 @@ Once approved, no extension reinstall or re-authentication is needed — the exi
 
 ### Current org approvals
 
-The **development** OAuth app (FOC GH dev) is approved in these organizations:
+Each OAuth app (dev and production) must be approved separately in every org.
+
+**Development** OAuth app (FOC GH dev) — for unpacked `extension/dist/` builds:
 
 | Organization | Approval status | Admin link |
 |-------------|-----------------|------------|
 | **FilOzone** | Approved (home org — owns the app) | [OAuth app settings](https://github.com/organizations/FilOzone/settings/applications/3490509) |
 | **filecoin-project** | Approved | [App policy page](https://github.com/orgs/filecoin-project/policies/applications/3490509) |
+
+**Production** OAuth app (FOC GH prod) — for the [Chrome Web Store](https://chromewebstore.google.com/detail/foc-gh/haicdejjcnecapheflpdpdngflffejpf) install:
+
+| Organization | Approval status | Admin link |
+|-------------|-----------------|------------|
+| **FilOzone** | Approved (home org — owns the app) | [OAuth app settings](https://github.com/organizations/FilOzone/settings/applications/3491974) |
+| **filecoin-project** | Needs approval | [App policy page](https://github.com/orgs/filecoin-project/policies/applications/3491974) |
 
 If the extension needs to access issues/PRs in additional orgs, follow the approval steps above for each new org.
 
