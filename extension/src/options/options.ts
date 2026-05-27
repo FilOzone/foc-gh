@@ -1,6 +1,7 @@
 import {
   DEFAULT_BOARD_URLS,
   DEFAULT_TARGET_REPOS,
+  DEFAULT_OR_FILTER_BOARD_PATTERNS,
   STORAGE_KEYS,
 } from '../lib/project-config.js'
 
@@ -25,6 +26,7 @@ const sampleRunBtn = document.querySelector<HTMLButtonElement>('#sample-run')
 const sampleCopyBtn = document.querySelector<HTMLButtonElement>('#sample-copy')
 const sampleOutEl = document.querySelector<HTMLPreElement>('#sample-out')
 const issuePrProjectsAutoExpandEl = document.querySelector<HTMLInputElement>('#issuePrProjectsAutoExpand')
+const orFilterPatternsEl = document.querySelector<HTMLTextAreaElement>('#or-filter-patterns')
 
 function authMode(): 'github' | 'pat' {
   return authModePatEl?.checked === true ? 'pat' : 'github'
@@ -98,6 +100,7 @@ async function load(): Promise<void> {
     STORAGE_KEYS.crossOrgBoardUrls,
     STORAGE_KEYS.crossOrgTargetRepos,
     STORAGE_KEYS.issuePrProjectsAutoExpand,
+    STORAGE_KEYS.orFilterBoardPatterns,
   ])
 
   const storedMethod = raw[STORAGE_KEYS.authMethod] as string | undefined
@@ -145,6 +148,12 @@ async function load(): Promise<void> {
   if (issuePrProjectsAutoExpandEl) {
     issuePrProjectsAutoExpandEl.checked = raw[STORAGE_KEYS.issuePrProjectsAutoExpand] !== false
   }
+  const orPatterns = raw[STORAGE_KEYS.orFilterBoardPatterns] as string[] | undefined
+  if (orFilterPatternsEl) {
+    orFilterPatternsEl.value = listToLines(
+      Array.isArray(orPatterns) && orPatterns.length > 0 ? orPatterns : [...DEFAULT_OR_FILTER_BOARD_PATTERNS],
+    )
+  }
 
   await refreshAuthUi()
 }
@@ -153,10 +162,13 @@ async function save(): Promise<void> {
   const urls = boardsEl ? linesToList(boardsEl.value) : [...DEFAULT_BOARD_URLS]
   const repos = reposEl ? linesToList(reposEl.value) : [...DEFAULT_TARGET_REPOS]
 
+  const orPatterns = orFilterPatternsEl ? linesToList(orFilterPatternsEl.value) : [...DEFAULT_OR_FILTER_BOARD_PATTERNS]
+
   const common: Record<string, unknown> = {
     [STORAGE_KEYS.crossOrgBoardUrls]: urls.length ? urls : [...DEFAULT_BOARD_URLS],
     [STORAGE_KEYS.crossOrgTargetRepos]: repos.length ? repos : [...DEFAULT_TARGET_REPOS],
     [STORAGE_KEYS.issuePrProjectsAutoExpand]: issuePrProjectsAutoExpandEl?.checked !== false,
+    [STORAGE_KEYS.orFilterBoardPatterns]: orPatterns.length ? orPatterns : [...DEFAULT_OR_FILTER_BOARD_PATTERNS],
   }
 
   if (authMode() === 'pat') {

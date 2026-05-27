@@ -4,12 +4,12 @@
  * Architecture: content script (this file) → main-world script (board-data-injector.ts)
  *   → fetch interception → merge
  *
- * This content script injects the main-world fetch interceptor script into the page.
- * The interceptor is self-contained: it reads the filter bar value on every
- * paginated_items fetch and decides whether to intercept based on OR syntax detection.
- *
- * The content script also handles SPA navigation by re-injecting if needed.
+ * This content script checks whether the current project board URL matches
+ * the configured OR filter patterns. If it does, it injects the main-world
+ * fetch interceptor. If not, it does nothing (no interception, no overhead).
  */
+
+import { loadConfig, isOrFilterBoard } from '../../lib/project-config.js'
 
 const LOG_PREFIX = '[FilOz:board-filter]'
 
@@ -25,6 +25,20 @@ function injectMainWorldScript(): void {
   console.log(LOG_PREFIX, 'Main-world interceptor injected')
 }
 
-// Entry point
-console.log(LOG_PREFIX, 'Content script loaded')
-injectMainWorldScript()
+async function init(): Promise<void> {
+  console.log(LOG_PREFIX, 'Content script loaded')
+
+  const cfg = await loadConfig()
+  // Strip /views/N from the URL for pattern matching — patterns target the project, not the view
+  const baseUrl = window.location.href.replace(/\/views\/\d+.*$/, '')
+
+  if (!isOrFilterBoard(cfg, baseUrl)) {
+    console.log(LOG_PREFIX, 'OR filter not enabled for this board, skipping')
+    return
+  }
+
+  console.log(LOG_PREFIX, 'OR filter enabled for this board')
+  injectMainWorldScript()
+}
+
+void init()
