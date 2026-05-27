@@ -6,8 +6,9 @@ Chromium Manifest V3 **browser extension** for **FOC TPMs and team members** wor
 
 ## Features
 
-1. **Make FOC's project board "global" (i.e., support cross-org issues and PRs)** — Manage the board (add items, edit fields where the API allows) from GitHub issues and pull requests on configured repos, with a native-style sidebar and **autosave** for supported field types (single select, number, text, iteration).
+1. **Make FOC’s project board "global" (i.e., support cross-org issues and PRs)** — Manage the board (add items, edit fields where the API allows) from GitHub issues and pull requests on configured repos, with a native-style sidebar and **autosave** for supported field types (single select, number, text, iteration).
 2. **Global auto-expand for project panels** — Optional setting so GitHub’s right-hand **Project** panel **auto-expands** for issues and PRs (works across projects, not only FOC).
+3. **OR filter for project boards** — Enter OR queries in the project board filter bar (e.g. `cycle:202605-2 biglep (-status:"🎉 Done") OR (-last-updated:1days)`) to see merged results from multiple filter branches in a single view. The extension splits the query, fetches each branch separately, deduplicates, and renders the combined results through GitHub’s native UI.  This is particularly useful during standups where you want to see all your active and recently completed work in a single view. Configure which boards support this in **Options → OR filter for project boards** (defaults to all FilOzone projects).
 
 ### 🎥 2026-03-29 Demo
 

@@ -334,6 +334,19 @@
         Uncheck to leave initial collapse state to GitHub: status rows stay visible. Selecting this option means project detail sections expand.
       </p>
 
+      <h2>OR filter for project boards</h2>
+      <p class="section-lead">
+        Enable <strong>OR query support</strong> in the filter bar on matching project board pages.
+        Enter URL patterns (one per line, <code>*</code> = wildcard).
+        Leave empty to disable.
+      </p>
+      <label class="form-label" for="or-filter-patterns">Board URL patterns</label>
+      <textarea id="or-filter-patterns" aria-describedby="or-filter-patterns-hint"></textarea>
+      <p id="or-filter-patterns-hint" class="hint">
+        Example: <code>https://github.com/orgs/FilOzone/projects/*</code> matches all FilOzone project views.
+        Use <code>*</code> for any characters. Queries like <code>(-status:"Done") OR (-last-updated:1days)</code> will be split, fetched per branch, and merged.
+      </p>
+
       <div class="save-row">
         <button id="save" type="button" class="primary">Save</button>
         <p id="status" role="status" class="hint" style="margin-top: 0.5rem"></p>
