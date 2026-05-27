@@ -195,4 +195,68 @@ window.fetch = async function patchedFetch(
 } as typeof fetch
 
 console.log('[FilOz] Fetch interceptor installed')
+
+/**
+ * Handle initial page load with an OR query in the URL.
+ *
+ * On initial load, GitHub server-renders 0 results (it doesn't understand OR).
+ * Fix: wait for the filter bar, then append a space via execCommand. This
+ * creates a trusted InputEvent that React sees as a filter change. The new
+ * query (with trailing space) isn't in React's cache, so it fires a fresh
+ * paginated_items fetch — which our interceptor catches and returns merged
+ * data. The trailing space doesn't affect OR parsing (we trim).
+ *
+ * Important: do NOT remove the space afterward. React caches query results,
+ * and restoring the original text would return the cached 0-result response.
+ */
+function handleInitialOrQuery(): void {
+  const urlParams = new URLSearchParams(window.location.search)
+  const filterQuery = urlParams.get('filterQuery')
+  if (!filterQuery) return
+
+  const result = parseORQuery(filterQuery)
+  if (result.kind !== 'or_query') return
+
+  console.log('[FilOz] OR query in URL on initial load, will nudge filter bar')
+
+  function waitAndNudge(): void {
+    const input = document.querySelector<HTMLInputElement>('input#filter-bar-component-input')
+    if (input) {
+      nudge(input)
+      return
+    }
+    const observer = new MutationObserver(() => {
+      const el = document.querySelector<HTMLInputElement>('input#filter-bar-component-input')
+      if (!el) return
+      observer.disconnect()
+      nudge(el)
+    })
+    observer.observe(document.documentElement, { childList: true, subtree: true })
+    setTimeout(() => observer.disconnect(), 15_000)
+  }
+
+  function nudge(input: HTMLInputElement): void {
+    // Wait for React to finish mounting and the filter to be interactive
+    setTimeout(() => {
+      input.focus()
+      const val = input.value
+      if (val.endsWith(' ')) {
+        // Trailing space exists — remove it by selecting it and deleting
+        console.log('[FilOz] Nudging filter: removing trailing space to trigger re-fetch')
+        input.setSelectionRange(val.length - 1, val.length)
+        document.execCommand('delete')
+      } else {
+        // No trailing space — add one
+        console.log('[FilOz] Nudging filter: appending space to trigger re-fetch')
+        input.setSelectionRange(val.length, val.length)
+        document.execCommand('insertText', false, ' ')
+      }
+    }, 500)
+  }
+
+  waitAndNudge()
+}
+
+handleInitialOrQuery()
+
 } // end guard
