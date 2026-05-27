@@ -23,10 +23,10 @@
 
 **Purpose**: Add project board content script match and create file structure for the new feature module.
 
-- [ ] T001 Add content_scripts entry for project board pages (`https://github.com/orgs/*/projects/*/views/*`) in `extension/manifest.json`
-- [ ] T002 Add new esbuild entry point for board-filter content script in `scripts/build.mjs`
-- [ ] T003 Create directory `extension/src/content/board-filter/` and empty entry point `extension/src/content/board-filter/board-filter-main.ts`
-- [ ] T004 Add `board-filter-main-world.js` to `web_accessible_resources` in `extension/manifest.json` (needed for main-world script injection)
+- [x] T001 Add content_scripts entry for project board pages (`https://github.com/orgs/*/projects/*/views/*`) in `extension/manifest.json`
+- [x] T002 Add new esbuild entry point for board-filter content script in `scripts/build.mjs`
+- [x] T003 Create directory `extension/src/content/board-filter/` and empty entry point `extension/src/content/board-filter/board-filter-main.ts`
+- [x] T004 Add `board-data-injector.js` to `web_accessible_resources` in `extension/manifest.json` (needed for main-world script injection)
 
 ---
 
@@ -36,9 +36,9 @@
 
 **CRITICAL**: No user story integration work can begin until these modules are complete.
 
-- [ ] T005 [P] Implement OR query parser in `extension/src/content/board-filter/or-query-parser.ts` — parse filter string into `{ prefix, branches }` per contract in `specs/007-project-board-or-filter/contracts/or-query-parser.ts`; handle valid OR syntax, plain queries (no OR), and return structured `ORParseResult`
-- [ ] T006 [P] Implement memex API client in `extension/src/content/board-filter/memex-api.ts` — extract `memexId` from `#memex-item-get-api-data` script tag, extract view params (sort, group, slice, fields) from `#memex-views` script tag, fetch `GET /memexes/{memexId}/paginated_items` with query params, follow cursor-based pagination via `after` parameter until all pages fetched
-- [ ] T007 [P] Implement result merger in `extension/src/content/board-filter/result-merger.ts` — take array of API responses (one per OR branch), deduplicate items by `item.id`, union group metadata from all branches, reconstruct `groupedItems` with items in correct groups, recalculate `totalCount` and merge `slices`
+- [x] T005 [P] Implement OR query parser in `extension/src/content/board-filter/or-query-parser.ts` — parse filter string into `{ prefix, branches }` per contract in `specs/007-project-board-or-filter/contracts/or-query-parser.ts`; handle valid OR syntax, plain queries (no OR), and return structured `ORParseResult`
+- [x] T006 [P] Implement memex API client in `extension/src/content/board-filter/memex-api.ts` — extract `memexId` from `#memex-item-get-api-data` script tag, extract view params (sort, group, slice, fields) from `#memex-views` script tag, fetch `GET /memexes/{memexId}/paginated_items` with query params, follow cursor-based pagination via `after` parameter until all pages fetched
+- [x] T007 [P] Implement result merger in `extension/src/content/board-filter/result-merger.ts` — take array of API responses (one per OR branch), deduplicate items by `item.id`, union group metadata from all branches, reconstruct `groupedItems` with items in correct groups, recalculate `totalCount` and merge `slices`
 
 **Checkpoint**: All three standalone modules are complete and can be exercised via console/unit tests.
 
@@ -52,10 +52,10 @@
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] Implement main-world fetch interceptor in `extension/src/content/board-filter/board-data-injector.ts` — monkey-patch `window.fetch` to detect calls to `/memexes/{id}/paginated_items`; when an OR query is active, intercept the call, invoke multi-branch fetch (one call per branch using `memex-api.ts`), merge results (using `result-merger.ts`), and return merged response as if it were a single API response; when no OR query is active, pass through to original fetch unchanged
-- [ ] T009 [US1] Implement content script entry point in `extension/src/content/board-filter/board-filter-main.ts` — observe `#filter-bar-component-input` for Enter key and form submission events; parse filter text using `or-query-parser.ts`; if OR detected, signal main-world script (via `window.postMessage` or `CustomEvent`) with the parsed query; inject main-world script (`board-data-injector.ts`) into the page on load (following the pattern in `extension/src/content/pr-expand-main-world.ts`)
-- [ ] T010 [US1] Wire content script and main-world script communication in `extension/src/content/board-filter/board-filter-main.ts` and `extension/src/content/board-filter/board-data-injector.ts` — define message protocol for: (a) content script → main-world: "OR query active with these branches", (b) content script → main-world: "no OR query, pass through", (c) handle SPA navigation (view switches) by re-detecting filter bar and re-attaching listeners
-- [ ] T011 [US1] Build and manually verify end-to-end on `https://github.com/orgs/FilOzone/projects/14/views/20` — run `npm run build && node scripts/cdp-reload.mjs`, enter OR query, confirm merged results appear, confirm no duplicates, confirm non-OR queries still work, confirm existing issue/PR sidebar features are unaffected
+- [x] T008 [US1] Implement main-world fetch interceptor in `extension/src/content/board-filter/board-data-injector.ts` — monkey-patch `window.fetch` to detect calls to `/memexes/{id}/paginated_items`; when an OR query is active, intercept the call, invoke multi-branch fetch (one call per branch using `memex-api.ts`), merge results (using `result-merger.ts`), and return merged response as if it were a single API response; when no OR query is active, pass through to original fetch unchanged
+- [x] T009 [US1] Implement content script entry point in `extension/src/content/board-filter/board-filter-main.ts` — observe `#filter-bar-component-input` for Enter key and form submission events; parse filter text using `or-query-parser.ts`; if OR detected, signal main-world script (via `window.postMessage` or `CustomEvent`) with the parsed query; inject main-world script (`board-data-injector.ts`) into the page on load (following the pattern in `extension/src/content/pr-expand-main-world.ts`)
+- [x] T010 [US1] Wire content script and main-world script communication in `extension/src/content/board-filter/board-filter-main.ts` and `extension/src/content/board-filter/board-data-injector.ts` — define message protocol for: (a) content script → main-world: "OR query active with these branches", (b) content script → main-world: "no OR query, pass through", (c) handle SPA navigation (view switches) by re-detecting filter bar and re-attaching listeners
+- [x] T011 [US1] Build and manually verify end-to-end on `https://github.com/orgs/FilOzone/projects/14/views/20` — run `npm run build && node scripts/cdp-reload.mjs`, enter OR query, confirm merged results appear, confirm no duplicates, confirm non-OR queries still work, confirm existing issue/PR sidebar features are unaffected
 
 **Checkpoint**: User Story 1 is fully functional. OR queries work on project board pages. Non-OR queries pass through unchanged. Existing features unaffected.
 
@@ -69,9 +69,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T012 [US3] Add invalid OR syntax detection to `extension/src/content/board-filter/or-query-parser.ts` — handle all invalid patterns: nested parentheses `((…))`, filter terms after final `)`, `OR` keyword inside parentheses, single branch `(…)` without OR; return `{ kind: 'invalid_or', error }` with specific error type
-- [ ] T013 [US3] Handle `invalid_or` parse result in `extension/src/content/board-filter/board-filter-main.ts` — when parser returns `invalid_or`, do nothing (let native filtering proceed); log a console warning with the parse error for debugging
-- [ ] T014 [US3] Manually verify fallback behavior — enter each invalid pattern on `https://github.com/orgs/FilOzone/projects/14/views/20`, confirm native GitHub filtering works normally, confirm no console errors beyond the debug warning
+- [x] T012 [US3] Add invalid OR syntax detection to `extension/src/content/board-filter/or-query-parser.ts` — handle all invalid patterns: nested parentheses `((…))`, filter terms after final `)`, `OR` keyword inside parentheses, single branch `(…)` without OR; return `{ kind: 'invalid_or', error }` with specific error type
+- [x] T013 [US3] Handle `invalid_or` parse result in `board-data-injector.ts` (moved to main-world interceptor — logs warning, passes through to native) — when parser returns `invalid_or`, do nothing (let native filtering proceed); log a console warning with the parse error for debugging
+- [x] T014 [US3] Manually verify fallback behavior — enter each invalid pattern on `https://github.com/orgs/FilOzone/projects/14/views/20`, confirm native GitHub filtering works normally, confirm no console errors beyond the debug warning
 
 **Checkpoint**: All invalid OR patterns degrade gracefully to native filtering. No user-visible errors.
 
@@ -81,9 +81,9 @@
 
 **Purpose**: Documentation updates, edge case hardening, and verification across multiple views.
 
-- [ ] T015 [P] Update `docs/canonical-test-urls.md` with project board OR filter test URLs and scenarios per plan.md verification section
-- [ ] T016 [P] Add `extension/src/content/board-filter/` module overview comment in `board-filter-main.ts` explaining architecture (content script → main-world script → fetch interception → merge)
-- [ ] T017 Verify on multiple views: test OR queries on "All" view (`/views/2`, large item set with pagination), "Recently Updated" view (`/views/33`), and a board-layout view if available
+- [x] T015 [P] Update `docs/canonical-test-urls.md` with project board OR filter test URLs and scenarios per plan.md verification section
+- [x] T016 [P] Add `extension/src/content/board-filter/` module overview comment in `board-filter-main.ts` explaining architecture (content script → main-world script → fetch interception → merge)
+- [x] T017 Verify on multiple views: test OR queries on "All" view (`/views/2`, large item set with pagination), "Recently Updated" view (`/views/33`), and a board-layout view if available
 - [ ] T018 Verify cancellation behavior: change filter while OR query is in-flight, confirm no stale results or errors appear
 
 ---

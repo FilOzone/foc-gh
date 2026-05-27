@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "FOC GH",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Utilities for FOC team members working in GitHub.",
   "icons": {
     "16": "icons/icon16.png",
@@ -36,11 +36,18 @@
       ],
       "js": ["content.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://github.com/orgs/*/projects/*/views/*"
+      ],
+      "js": ["board-filter.js"],
+      "run_at": "document_idle"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["sidebar.css", "pr-expand-main-world.js"],
+      "resources": ["sidebar.css", "pr-expand-main-world.js", "board-data-injector.js"],
       "matches": ["https://github.com/*"]
     }
   ]
