@@ -1,42 +1,27 @@
 /**
- * Contract: Memex Paginated Items API Client
+ * Contract: Memex Paginated Items API Types
  *
- * Fetches project board items from GitHub's internal paginated items API.
- * Handles cursor-based pagination to retrieve complete result sets.
+ * Type definitions for GitHub's internal paginated items API response.
+ * These types were verified empirically against live API responses.
+ *
+ * NOTE: The original spec assumed groupedItems and slices were Record<number, T>
+ * (numeric-keyed objects). Empirical testing confirmed they are actual Arrays.
+ * The groups object also includes a pageInfo field.
  */
-
-/** Parameters for a paginated items API call */
-export interface PaginatedItemsParams {
-  /** The memex project ID (extracted from page) */
-  memexId: string
-  /** Filter query string */
-  query: string
-  /** Sort direction */
-  sortDirection: 'asc' | 'desc'
-  /** Column ID to sort by */
-  sortColumnId: string
-  /** Column ID to group by (optional) */
-  groupColumnId?: string
-  /** Column ID to slice by (optional) */
-  sliceColumnId?: string
-  /** Field IDs to include in response */
-  fieldIds: string[]
-}
 
 /** A single page response from the paginated items API (grouped) */
 export interface GroupedItemsResponse {
-  groups: { nodes: GroupNode[] }
-  groupedItems: Record<number, GroupItems>
-  slices: Record<number, SliceInfo>
+  groups: { nodes: GroupNode[]; pageInfo: PageInfo }
+  groupedItems: GroupItems[]
+  slices: SliceInfo[]
   totalCount: { value: number; isApproximate: boolean }
 }
 
-/** A single page response from the paginated items API (flat) */
-export interface FlatItemsResponse {
-  nodes: MemexItem[]
-  pageInfo: { hasNextPage: boolean; endCursor: string }
-  slices: Record<number, SliceInfo>
-  totalCount: { value: number; isApproximate: boolean }
+export interface PageInfo {
+  startCursor?: string
+  endCursor: string
+  hasNextPage: boolean
+  hasPreviousPage?: boolean
 }
 
 export interface GroupNode {
@@ -57,7 +42,7 @@ export interface GroupNode {
 export interface GroupItems {
   groupId: string
   nodes: MemexItem[]
-  pageInfo: { hasNextPage: boolean; endCursor: string }
+  pageInfo: PageInfo
 }
 
 export interface SliceInfo {
@@ -85,21 +70,11 @@ export interface ColumnValue {
 }
 
 /**
- * Fetch all items for a single filter query, following pagination cursors.
- *
- * @param params - API call parameters
- * @returns Complete response with all items (pagination resolved)
- */
-export declare function fetchAllItems(
-  params: PaginatedItemsParams
-): Promise<GroupedItemsResponse>
-
-/**
  * Extract memexId and view configuration from the current page's embedded data.
  *
- * @param viewNumber - The current view number (from URL)
- * @returns Parameters needed for API calls
+ * Implementation note: In the shipped code, memexId extraction and view param
+ * parsing are handled inline in board-data-injector.ts rather than as a
+ * standalone function. The interceptor clones the original URL from the React
+ * app's fetch call and only replaces the `q` parameter, preserving all other
+ * params (sortedBy, groupedBy, sliceBy, fieldIds, layout, sumFields, hierarchy).
  */
-export declare function extractViewParams(
-  viewNumber: number
-): PaginatedItemsParams | null

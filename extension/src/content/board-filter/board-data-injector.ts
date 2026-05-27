@@ -94,7 +94,12 @@ async function fetchBranch(
     while (current.pageInfo?.hasNextPage && current.pageInfo.endCursor) {
       const nextUrl = buildPaginationUrl(originalUrl, query, current, current.pageInfo.endCursor)
       const nextPage = await fetchJson(nextUrl, signal)
-      const nextGroup = nextPage.groupedItems?.[idx]
+      // When paginating with groupedBy[value], the API may return only the
+      // requested group (at index 0), not at the original group index.
+      // Find the matching group by groupId rather than assuming index alignment.
+      const nextGroup = nextPage.groupedItems?.find(
+        (g) => g.groupId === current.groupId,
+      ) ?? nextPage.groupedItems?.[0]
       if (!nextGroup) break
       groupedItems[idx].nodes.push(...nextGroup.nodes)
       current = nextGroup

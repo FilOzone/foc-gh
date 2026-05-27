@@ -31,22 +31,13 @@ Parsed representation of a filter string containing OR syntax.
 
 API response from `/memexes/{id}/paginated_items` when `groupedBy` is specified.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `groups` | `{ nodes: GroupNode[] }` | Group definitions with metadata |
-| `groupedItems` | `Record<number, GroupItems>` | Items organized by group index |
-| `slices` | `Record<number, SliceInfo>` | Slice/category breakdowns |
-| `totalCount` | `{ value: number, isApproximate: boolean }` | Total items matching the filter |
-
-### MemexPaginatedResponse (Flat)
-
-API response for pagination continuation (no grouping).
+**Note**: `groupedItems` and `slices` are **arrays**, not numeric-keyed objects. This was verified empirically against the live API. The `groups` object also includes a `pageInfo` field.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `nodes` | `MemexItem[]` | Array of project items |
-| `pageInfo` | `{ hasNextPage: boolean, endCursor: string }` | Pagination cursor |
-| `slices` | `Record<number, SliceInfo>` | Slice/category breakdowns |
+| `groups` | `{ nodes: GroupNode[], pageInfo: PageInfo }` | Group definitions with metadata and pagination |
+| `groupedItems` | `GroupItems[]` | Items organized by group (array, not Record) |
+| `slices` | `SliceInfo[]` | Slice/category breakdowns (array, not Record) |
 | `totalCount` | `{ value: number, isApproximate: boolean }` | Total items matching the filter |
 
 ### GroupNode

@@ -17,7 +17,7 @@ export interface ORQuery {
 
 /** Parse error when OR syntax is detected but malformed */
 export interface ORParseError {
-  type: 'nested_parens' | 'trailing_terms' | 'or_inside_parens' | 'single_branch'
+  type: 'nested_parens' | 'trailing_terms' | 'or_inside_parens' | 'single_branch' | 'too_many_branches'
   message: string
   raw: string
 }

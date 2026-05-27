@@ -151,7 +151,7 @@ async function load(): Promise<void> {
   const orPatterns = raw[STORAGE_KEYS.orFilterBoardPatterns] as string[] | undefined
   if (orFilterPatternsEl) {
     orFilterPatternsEl.value = listToLines(
-      Array.isArray(orPatterns) && orPatterns.length > 0 ? orPatterns : [...DEFAULT_OR_FILTER_BOARD_PATTERNS],
+      Array.isArray(orPatterns) ? orPatterns : [...DEFAULT_OR_FILTER_BOARD_PATTERNS],
     )
   }
 
@@ -168,7 +168,7 @@ async function save(): Promise<void> {
     [STORAGE_KEYS.crossOrgBoardUrls]: urls.length ? urls : [...DEFAULT_BOARD_URLS],
     [STORAGE_KEYS.crossOrgTargetRepos]: repos.length ? repos : [...DEFAULT_TARGET_REPOS],
     [STORAGE_KEYS.issuePrProjectsAutoExpand]: issuePrProjectsAutoExpandEl?.checked !== false,
-    [STORAGE_KEYS.orFilterBoardPatterns]: orPatterns.length ? orPatterns : [...DEFAULT_OR_FILTER_BOARD_PATTERNS],
+    [STORAGE_KEYS.orFilterBoardPatterns]: orPatterns,
   }
 
   if (authMode() === 'pat') {

@@ -138,7 +138,7 @@ export async function loadConfig(): Promise<StoredConfig> {
       Array.isArray(repos) && repos.length > 0 ? repos : [...DEFAULT_TARGET_REPOS],
     issuePrProjectsAutoExpand,
     orFilterBoardPatterns:
-      Array.isArray(orPatterns) && orPatterns.length > 0 ? orPatterns : [...DEFAULT_OR_FILTER_BOARD_PATTERNS],
+      Array.isArray(orPatterns) ? orPatterns : [...DEFAULT_OR_FILTER_BOARD_PATTERNS],
   }
 }
 

@@ -14,7 +14,7 @@ export interface ORQuery {
 }
 
 export interface ORParseError {
-  type: 'nested_parens' | 'trailing_terms' | 'or_inside_parens' | 'single_branch'
+  type: 'nested_parens' | 'trailing_terms' | 'or_inside_parens' | 'single_branch' | 'too_many_branches'
   message: string
   raw: string
 }
@@ -119,7 +119,7 @@ export function parseORQuery(filterText: string): ORParseResult {
     return {
       kind: 'invalid_or',
       error: {
-        type: 'single_branch',
+        type: 'too_many_branches',
         message: `Maximum ${MAX_BRANCHES} OR branches supported, got ${branches.length}`,
         raw,
       },
