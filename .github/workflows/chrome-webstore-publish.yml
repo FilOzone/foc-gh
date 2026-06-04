@@ -36,6 +36,9 @@ jobs:
           CHROME_WEBSTORE_CLIENT_SECRET: ${{ secrets.CHROME_WEBSTORE_CLIENT_SECRET }}
           CHROME_WEBSTORE_REFRESH_TOKEN: ${{ secrets.CHROME_WEBSTORE_REFRESH_TOKEN }}
           CHROME_WEBSTORE_EXTENSION_ID: ${{ secrets.CHROME_WEBSTORE_EXTENSION_ID }}
-          GITHUB_OAUTH_CLIENT_ID: ${{ secrets.EXTENSION_PRODUCTION_GITHUB_OAUTH_CLIENT_ID }}
-          GITHUB_OAUTH_CLIENT_SECRET: ${{ secrets.EXTENSION_PRODUCTION_GITHUB_OAUTH_CLIENT_SECRET }}
+          # GitHub reserves the GITHUB_* prefix for secrets, so we store these
+          # as EXTENSION_PRODUCTION_* and map to the _PRODUCTION env vars that
+          # build.mjs reads (see scripts/build.mjs and .env.example).
+          GITHUB_OAUTH_CLIENT_ID_PRODUCTION: ${{ secrets.EXTENSION_PRODUCTION_GITHUB_OAUTH_CLIENT_ID }}
+          GITHUB_OAUTH_CLIENT_SECRET_PRODUCTION: ${{ secrets.EXTENSION_PRODUCTION_GITHUB_OAUTH_CLIENT_SECRET }}
         run: npm run publish:chrome
