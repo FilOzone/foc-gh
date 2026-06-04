@@ -60,6 +60,27 @@ Use this when validating **Options → expand Project panel** (and related conte
 
 **Expectation**: With auto-expand on, native **Projects** sections **expand** as implemented for this feature ([spec 003](../specs/003-auto-expand-panels/spec.md)); the **inline FOC** card from scenarios 3–6 still follows global-board / target-repo rules and is unrelated to this check.
 
+## Project Board OR Filter (spec 007)
+
+Use these URLs when verifying the **OR query filter** on project board views ([spec 007](../specs/007-project-board-or-filter/spec.md)).
+
+| View | URL | Notes |
+|------|-----|-------|
+| Current by Status | [FilOzone/projects/14/views/20](https://github.com/orgs/FilOzone/projects/14/views/20) | Grouped by Status, filtered by cycle. Primary test view. |
+| All | [FilOzone/projects/14/views/2](https://github.com/orgs/FilOzone/projects/14/views/2) | Large item set (~360 items), exercises pagination. |
+| Recently Updated | [FilOzone/projects/14/views/33](https://github.com/orgs/FilOzone/projects/14/views/33) | Different sort/filter configuration. |
+
+### Test queries
+
+| Query | Expected |
+|-------|----------|
+| `cycle:202605-2 biglep (-status:"🎉 Done") OR (-last-updated:1days)` | Merged results from both branches, no duplicates |
+| `(-status:"🎉 Done") OR (-last-updated:1days)` | Two branches with no shared prefix |
+| `cycle:202605-2 -status:"🎉 Done"` | Non-OR query — native pass-through, unchanged behavior |
+| `((nested))` | Invalid OR — native pass-through, console warning |
+| `(a) OR (b) trailing` | Invalid OR — native pass-through, console warning |
+| `(a OR b)` | Invalid OR — native pass-through, console warning |
+
 ## Related docs
 
 - [Global boards picker status](global-boards-picker-status.md) — picker vs sidebar scope.

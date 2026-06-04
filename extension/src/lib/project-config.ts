@@ -11,6 +11,8 @@ export const STORAGE_KEYS = {
   crossOrgTargetRepos: 'cross_org_target_repos',
   /** When true (default), FOC sidebar card field body loads expanded on issues/PRs. */
   issuePrProjectsAutoExpand: 'issue_pr_projects_auto_expand',
+  /** URL patterns (glob-style) for project boards where OR filter support is enabled. */
+  orFilterBoardPatterns: 'or_filter_board_patterns',
 } as const
 
 export const DEFAULT_BOARD_URLS = ['https://github.com/orgs/FilOzone/projects/14'] as const
@@ -21,6 +23,10 @@ export const DEFAULT_TARGET_REPOS = [
   'filecoin-project/FIPs',
   'filecoin-project/filecoin-pin-website',
   'filecoin-project/github-mgmt',
+] as const
+
+export const DEFAULT_OR_FILTER_BOARD_PATTERNS = [
+  'https://github.com/orgs/FilOzone/projects/*',
 ] as const
 
 export const DEFAULT_STATUS_FIELD_NAME = 'Status'
@@ -35,6 +41,7 @@ export type StoredConfig = {
   crossOrgBoardUrls: string[]
   crossOrgTargetRepos: string[]
   issuePrProjectsAutoExpand: boolean
+  orFilterBoardPatterns: string[]
 }
 
 export function normalizeRepoKey(owner: string, name: string): string {
@@ -89,10 +96,12 @@ export async function loadConfig(): Promise<StoredConfig> {
     STORAGE_KEYS.crossOrgBoardUrls,
     STORAGE_KEYS.crossOrgTargetRepos,
     STORAGE_KEYS.issuePrProjectsAutoExpand,
+    STORAGE_KEYS.orFilterBoardPatterns,
   ])
 
   const urls = raw[STORAGE_KEYS.crossOrgBoardUrls] as string[] | undefined
   const repos = raw[STORAGE_KEYS.crossOrgTargetRepos] as string[] | undefined
+  const orPatterns = raw[STORAGE_KEYS.orFilterBoardPatterns] as string[] | undefined
   const autoRaw = raw[STORAGE_KEYS.issuePrProjectsAutoExpand]
   const issuePrProjectsAutoExpand = autoRaw === false ? false : true
 
@@ -128,7 +137,31 @@ export async function loadConfig(): Promise<StoredConfig> {
     crossOrgTargetRepos:
       Array.isArray(repos) && repos.length > 0 ? repos : [...DEFAULT_TARGET_REPOS],
     issuePrProjectsAutoExpand,
+    orFilterBoardPatterns:
+      Array.isArray(orPatterns) ? orPatterns : [...DEFAULT_OR_FILTER_BOARD_PATTERNS],
   }
+}
+
+/**
+ * Convert a glob-style URL pattern to a RegExp.
+ * Supports `*` as wildcard for any characters.
+ */
+function globToRegExp(pattern: string): RegExp {
+  const escaped = pattern
+    .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+    .replace(/\*/g, '.*')
+  return new RegExp(`^${escaped}$`, 'i')
+}
+
+/** Check whether a URL matches any of the configured OR filter board patterns. */
+export function isOrFilterBoard(config: StoredConfig, pageUrl: string): boolean {
+  return config.orFilterBoardPatterns.some((pattern) => {
+    try {
+      return globToRegExp(pattern.trim()).test(pageUrl)
+    } catch {
+      return false
+    }
+  })
 }
 
 export function isTargetRepo(config: StoredConfig, owner: string, name: string): boolean {
