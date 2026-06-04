@@ -214,9 +214,6 @@ console.log('[FilOz] Fetch interceptor installed')
  * This avoids modifying the filter string, so there's no trailing space,
  * no "Discard" button, and no URL change.
  *
- * Falls back to the trailing-space nudge if the QueryClient is not found
- * (e.g., if React internals change).
- *
  * See specs/007-project-board-or-filter/research.md § "React Hydration Cache Problem".
  */
 function handleInitialOrQuery(): void {
@@ -248,8 +245,7 @@ function handleInitialOrQuery(): void {
       if (qc) {
         invalidateOrQueries(qc)
       } else {
-        console.warn('[FilOz] QueryClient not found, falling back to nudge')
-        nudgeFilter(input)
+        console.warn('[FilOz] QueryClient not found — cannot invalidate cache')
       }
     }, 500)
   }
@@ -314,24 +310,6 @@ function invalidateOrQueries(qc: { invalidateQueries: (opts: unknown) => void })
       )
     },
   })
-}
-
-/**
- * Fallback: nudge the filter bar with a trailing space to force a cache-miss
- * fetch. Used when the QueryClient is not found.
- */
-function nudgeFilter(input: HTMLInputElement): void {
-  input.focus()
-  const val = input.value
-  if (val.endsWith(' ')) {
-    console.log('[FilOz] Nudging filter: removing trailing space to trigger re-fetch')
-    input.setSelectionRange(val.length - 1, val.length)
-    document.execCommand('delete')
-  } else {
-    console.log('[FilOz] Nudging filter: appending space to trigger re-fetch')
-    input.setSelectionRange(val.length, val.length)
-    document.execCommand('insertText', false, ' ')
-  }
 }
 
 handleInitialOrQuery()
