@@ -217,7 +217,8 @@ console.log('[FilOz] Fetch interceptor installed')
  * Works for both ?filterQuery= URL params and saved view filters.
  *
  * TODO: find a way to invalidate React's in-memory cache for the original
- * filter key so the trailing space is not needed. See /tmp/or-filter-cache-bug.md.
+ * filter key so the trailing space is not needed.
+ * See specs/007-project-board-or-filter/research.md § "React Hydration Cache Problem".
  */
 function handleInitialOrQuery(): void {
   function waitAndNudge(): void {
