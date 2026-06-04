@@ -127,7 +127,7 @@ Existing tooling:
 
 ## React Hydration Cache Problem
 
-**Status**: Open (workaround in place, no clean fix found)  
+**Status**: Solution found (QueryClient.invalidateQueries via React fiber tree)  
 **Last investigated**: 2026-06-04
 
 ### The problem
@@ -153,14 +153,26 @@ The extension adds a trailing space to the filter via `document.execCommand('ins
 
 ### React's internal state management
 
-GitHub's project board does NOT use React Query (TanStack Query). There is no `QueryClient` in the React fiber tree. GitHub uses a custom data-fetching and caching layer.
+**CORRECTION**: GitHub's project board DOES use React Query (TanStack Query). The `QueryClient` IS accessible in the React fiber tree at depth ~5, exposed via a context provider (fiber tag 10). Earlier investigation missed it because the search was too shallow or used wrong heuristics.
+
+The `QueryClient` can be accessed from the page's main world via:
+```javascript
+const memexRoot = document.querySelector('#memex-root');
+const fiberRoot = memexRoot.reactRoot._internalRoot.current;
+// Walk fiber tree: find tag===10 node where memoizedProps.value has invalidateQueries()
+```
+
+The `QueryClient` has all standard TanStack Query methods: `invalidateQueries`, `setQueryData`, `getQueryCache`, `refetchQueries`, etc.
 
 Key behaviors observed:
-- **Cache keyed by exact filter string**: Any whitespace or character difference creates a new cache key.
-- **Embedded data cached at hydration**: `#memex-paginated-items-data` is parsed once into in-memory state. Modifying the DOM element after hydration has no effect.
+- **React Query cache structure**: Queries are keyed as `["memex", "paginatedMemexItems", {q, sortedBy, viewType, horizontalGroupedByColumnId, sliceByColumnId, sumFields, hierarchy}, variant]`. The `variant` (4th element) is one of: `"sliceByData"`, `"paginatedTotalCounts"`, `"fieldMetrics"`, `"groups"`, `"pageParamsData"`, or `{groupId: "base64..."}` for per-group data. A single view has ~11 queries.
+- **Cache keyed by exact filter string**: The `q` param in the query key must match exactly. Any whitespace or character difference creates a new cache key.
+- **Embedded data cached at hydration**: `#memex-paginated-items-data` is parsed once into the QueryClient cache. Modifying the DOM element after hydration has no effect.
 - **`groupedBy[columnId]` derived from embedded data**: React reads the group structure from the embedded JSON and includes `groupedBy[columnId]` in subsequent fetch URLs. Clearing the embedded data removes this param, causing the API to return a flat response instead of grouped — which breaks the board layout.
 - **`#memex-views` is the source of truth for the "saved" view state**: Modifying it before hydration causes React to treat the view as "modified" (URL changes, discard button appears).
 - **Refetch-on-focus**: GitHub's custom code refetches board data when the browser tab regains real focus (via `visibilitychange` / `focus` events). This is what allows recovery after cmd+tab.
+- **Query options**: `networkMode: "always"`, `refetchOnWindowFocus: false`. QueryFn uses `fetch()` internally.
+- **Active queries**: After hydration, the original-key queries have observers (components subscribed). `invalidateQueries` on active queries triggers a refetch via `fetch()`, which our interceptor catches.
 
 ### Approaches tried
 
@@ -174,14 +186,61 @@ Key behaviors observed:
 | **Double nudge** (add space → wait → replace with clean text) | ❌ Returning to the original string K hits the in-memory cached 0-result data |
 | **Synthetic `visibilitychange` events** (override `Document.prototype.visibilityState`, dispatch on both `document` and `window`) | ❌ GitHub's focus handling requires real (trusted) browser events; synthetic events do not trigger refetch |
 | **Synthetic `window.focus` events** | ❌ Same issue — not trusted events |
-| **Find and patch React's cache directly** (traverse fiber tree) | ❌ GitHub doesn't use React Query; no `QueryClient` found. Internal cache not accessible. |
+| **Find and patch React's cache directly** (traverse fiber tree) | ✅ **QueryClient FOUND** — GitHub DOES use TanStack Query. `invalidateQueries` on active queries triggers refetch through our `fetch()` interceptor. See "Solution" section below. |
 | **ZWS nudge + URL-polling Discard recovery** | ✅ Detects Discard via URL change, re-nudges automatically. Works but adds polling overhead and still has "Discard" button. |
+| **Overwrite `#memex-paginated-items-data` + re-mount custom element** | ❌ React re-mounts via `connectedCallback` but uses module-scoped QueryClient cache, NOT re-reading from the script element. Same React container key persists across re-mount. |
 
-### What might work (not yet tried)
+### Solution: QueryClient.invalidateQueries
+
+**Discovered 2026-06-04.** GitHub uses TanStack Query (React Query). The `QueryClient` is accessible via the React fiber tree.
+
+**How it works:**
+1. Page loads. React hydrates, reads embedded `#memex-paginated-items-data` (0 results for OR filter), and populates the QueryClient cache under the original filter key K. Components subscribe to these queries (queries are **active**).
+2. Our extension's MutationObserver fires when the filter input appears.
+3. Instead of nudging the filter, we traverse the fiber tree from `memexRoot.reactRoot._internalRoot.current`, find the `QueryClient` (context provider at fiber depth ~5), and call `invalidateQueries` for all `["memex", "paginatedMemexItems", ...]` queries matching the OR filter.
+4. Since these queries are **active** (components are subscribed), React Query refetches them using the registered `queryFn`, which calls `fetch()`.
+5. Our monkey-patched `fetch()` interceptor catches the `paginated_items` calls, detects the OR syntax, executes multi-branch fetches, merges results, and returns the merged response.
+6. React Query updates the cache and notifies subscribed components. The board re-renders with correct data.
+
+**Advantages over the nudge approach:**
+- No filter modification (no trailing space, no ZWS)
+- No "Discard" button
+- No `?filterQuery=` URL change
+- Clean filter bar matching the saved view exactly
+- Clicking "Discard" is a no-op (filter was never modified)
+
+**Implementation plan:**
+```javascript
+// In handleInitialOrQuery(), replace the nudge with:
+function findQueryClient(fiber, depth) {
+  if (!fiber || depth > 10) return null;
+  if (fiber.tag === 10 && fiber.memoizedProps?.value?.invalidateQueries) {
+    return fiber.memoizedProps.value;
+  }
+  return findQueryClient(fiber.child, depth + 1) || findQueryClient(fiber.sibling, depth + 1);
+}
+
+const root = document.querySelector('#memex-root');
+const fiberRoot = root.reactRoot._internalRoot.current;
+const qc = findQueryClient(fiberRoot, 0);
+qc.invalidateQueries({
+  predicate: q => Array.isArray(q.queryKey) &&
+    q.queryKey[0] === 'memex' &&
+    q.queryKey[1] === 'paginatedMemexItems'
+});
+```
+
+**Risks:**
+- React fiber internals (`tag`, `memoizedProps`, `child`, `sibling`) are not public API and may change across React versions. GitHub's React version could update.
+- The `reactRoot` property on the `<projects-v2>` custom element is GitHub-specific.
+- TanStack Query's internal cache key structure could change.
+- Mitigation: fall back to the nudge approach if QueryClient is not found.
+
+### Previously considered (now superseded)
 
 - **Monkey-patch `JSON.parse`** to intercept when React parses `#memex-paginated-items-data`. Modify the parsed result before React caches it (e.g., keep groups but set items to empty + `hasNextPage: true` to trigger eager pagination). Risk: React may not auto-paginate from hydrated data the same way it does after a fetch.
 - **Intercept `textContent` getter** on the script element via `Object.defineProperty` to return modified JSON. Same idea as `JSON.parse` interception but at the DOM read level. Risk: timing — need to intercept before React reads, which happens very early.
-- **Synchronous XHR in `textContent` getter** to fetch merged data before React reads embedded data. Would block the main thread for 2–3 seconds but would give React the correct data on first read with no cache key issues. Risk: terrible UX (page freezes during load).
+- **Synchronous XHR in `textContent` getter** to fetch merged data before React reads embedded data. Would block the main thread for 2-3 seconds but would give React the correct data on first read with no cache key issues. Risk: terrible UX (page freezes during load).
 - **Intercept `document.getElementById`** to return a modified element when React looks up `memex-paginated-items-data`. Similar timing constraints as textContent interception.
 
 ### Architecture notes for future agents
@@ -205,15 +264,26 @@ Page load timeline for a saved view with OR filter:
     │
   React hydration complete
     ├─ Filter input appears in DOM
-    ├─ MutationObserver fires → maybeNudge()
+    ├─ MutationObserver fires
+    │
+    │   OLD approach (nudge):
     │   └─ After 500ms delay:
     │       ├─ Adds trailing space to filter via execCommand
     │       ├─ React sees K+" " → cache miss → calls fetch()
     │       ├─ Interceptor catches fetch → branch fetches → merge
     │       └─ Returns merged response → React renders 124 items
+    │       └─ Problem: "Discard" button appears, URL changes
+    │
+    │   NEW approach (QueryClient.invalidateQueries):
+    │   └─ Find QueryClient via fiber tree (memexRoot.reactRoot._internalRoot.current)
+    │       ├─ Call qc.invalidateQueries({predicate: paginatedMemexItems})
+    │       ├─ Queries are ACTIVE (components subscribed) → React Query refetches
+    │       ├─ Refetch calls fetch() → interceptor catches → branch fetches → merge
+    │       └─ Returns merged response → React renders 124 items
+    │       └─ No filter modification, no Discard button, clean URL
     │
   User interaction
-    ├─ Removing the trailing space → React uses cached {K → 0} → blank
+    ├─ Removing the trailing space → React uses cached {K → 0} → blank (nudge only)
     ├─ Re-adding a space → React fetches K+" " again (or uses cache if same key)
     └─ Tab switch (cmd+tab away then back) → GitHub's focus handler
         → refetches active query → interceptor returns merged data

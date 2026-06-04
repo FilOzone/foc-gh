@@ -204,64 +204,134 @@ console.log('[FilOz] Fetch interceptor installed')
  *
  * On initial load, GitHub server-renders board data into the HTML (no fetch).
  * It doesn't understand OR syntax, so the embedded data has 0 results.
- * Fix: wait for the filter bar, check if its value contains an OR query,
- * then toggle a trailing space via execCommand. This creates a trusted
- * InputEvent that React sees as a filter change, triggering a fresh
- * paginated_items fetch — which our interceptor catches and returns merged
- * data. The trailing space doesn't affect OR parsing (we trim).
+ * React hydrates and caches this under the exact filter string K.
  *
- * Important: do NOT remove the space afterward. React caches query results
- * keyed by filter string. The original (no-space) key is cached with the
- * server-rendered 0-result data. Removing the space reverts to that cache.
+ * Fix: find GitHub's TanStack Query QueryClient via the React fiber tree and
+ * call invalidateQueries() on the paginatedMemexItems queries. Since these
+ * queries are active (components are subscribed), React Query refetches via
+ * fetch() — which our interceptor catches and returns merged OR data.
  *
- * Works for both ?filterQuery= URL params and saved view filters.
+ * This avoids modifying the filter string, so there's no trailing space,
+ * no "Discard" button, and no URL change.
  *
- * TODO: find a way to invalidate React's in-memory cache for the original
- * filter key so the trailing space is not needed.
+ * Falls back to the trailing-space nudge if the QueryClient is not found
+ * (e.g., if React internals change).
+ *
  * See specs/007-project-board-or-filter/research.md § "React Hydration Cache Problem".
  */
 function handleInitialOrQuery(): void {
-  function waitAndNudge(): void {
+  function waitForFilter(): void {
     const input = document.querySelector<HTMLInputElement>('input#filter-bar-component-input')
     if (input && input.value.trim()) {
-      maybeNudge(input)
+      onFilterReady(input)
       return
     }
     const observer = new MutationObserver(() => {
       const el = document.querySelector<HTMLInputElement>('input#filter-bar-component-input')
       if (!el || !el.value.trim()) return
       observer.disconnect()
-      maybeNudge(el)
+      onFilterReady(el)
     })
     observer.observe(document.documentElement, { childList: true, subtree: true })
     setTimeout(() => observer.disconnect(), 15_000)
   }
 
-  function maybeNudge(input: HTMLInputElement): void {
+  function onFilterReady(input: HTMLInputElement): void {
     const result = parseORQuery(input.value)
     if (result.kind !== 'or_query') return
 
-    console.log('[FilOz] OR query detected on initial load, will nudge filter bar')
+    console.log('[FilOz] OR query detected on initial load')
 
-    // Wait for React to finish mounting and the filter to be interactive
+    // Wait for React to finish hydrating and mounting
     setTimeout(() => {
-      input.focus()
-      const val = input.value
-      if (val.endsWith(' ')) {
-        // Trailing space exists — remove it to trigger re-fetch
-        console.log('[FilOz] Nudging filter: removing trailing space to trigger re-fetch')
-        input.setSelectionRange(val.length - 1, val.length)
-        document.execCommand('delete')
+      const qc = findQueryClient()
+      if (qc) {
+        invalidateOrQueries(qc)
       } else {
-        // No trailing space — add one
-        console.log('[FilOz] Nudging filter: appending space to trigger re-fetch')
-        input.setSelectionRange(val.length, val.length)
-        document.execCommand('insertText', false, ' ')
+        console.warn('[FilOz] QueryClient not found, falling back to nudge')
+        nudgeFilter(input)
       }
     }, 500)
   }
 
-  waitAndNudge()
+  waitForFilter()
+}
+
+/**
+ * Walk the React fiber tree from #memex-root to find TanStack Query's
+ * QueryClient, exposed via a context provider (fiber tag 10).
+ */
+function findQueryClient(): { invalidateQueries: (opts: unknown) => void } | null {
+  try {
+    const root = document.querySelector('#memex-root') as HTMLElement & {
+      reactRoot?: { _internalRoot?: { current?: unknown } }
+    }
+    if (!root?.reactRoot?._internalRoot?.current) return null
+
+    type Fiber = {
+      tag: number
+      child: Fiber | null
+      sibling: Fiber | null
+      memoizedProps: { value?: Record<string, unknown> } | null
+    }
+
+    const fiberRoot = root.reactRoot._internalRoot.current as Fiber
+
+    function walk(fiber: Fiber | null, depth: number): Record<string, unknown> | null {
+      if (!fiber || depth > 15) return null
+      // tag 10 = ContextProvider. Check if the value has invalidateQueries.
+      if (
+        fiber.tag === 10 &&
+        fiber.memoizedProps?.value &&
+        typeof fiber.memoizedProps.value.invalidateQueries === 'function'
+      ) {
+        return fiber.memoizedProps.value
+      }
+      return walk(fiber.child, depth + 1) || walk(fiber.sibling, depth + 1)
+    }
+
+    return walk(fiberRoot, 0) as { invalidateQueries: (opts: unknown) => void } | null
+  } catch (err) {
+    console.warn('[FilOz] Error traversing fiber tree:', err)
+    return null
+  }
+}
+
+/**
+ * Invalidate all paginatedMemexItems queries in the QueryClient.
+ * Since these queries are active (components subscribed), React Query
+ * refetches via fetch() → our interceptor catches and returns merged data.
+ */
+function invalidateOrQueries(qc: { invalidateQueries: (opts: unknown) => void }): void {
+  console.log('[FilOz] Invalidating paginatedMemexItems queries via QueryClient')
+  qc.invalidateQueries({
+    predicate: (q: { queryKey: unknown }) => {
+      const key = q.queryKey
+      return (
+        Array.isArray(key) &&
+        key[0] === 'memex' &&
+        key[1] === 'paginatedMemexItems'
+      )
+    },
+  })
+}
+
+/**
+ * Fallback: nudge the filter bar with a trailing space to force a cache-miss
+ * fetch. Used when the QueryClient is not found.
+ */
+function nudgeFilter(input: HTMLInputElement): void {
+  input.focus()
+  const val = input.value
+  if (val.endsWith(' ')) {
+    console.log('[FilOz] Nudging filter: removing trailing space to trigger re-fetch')
+    input.setSelectionRange(val.length - 1, val.length)
+    document.execCommand('delete')
+  } else {
+    console.log('[FilOz] Nudging filter: appending space to trigger re-fetch')
+    input.setSelectionRange(val.length, val.length)
+    document.execCommand('insertText', false, ' ')
+  }
 }
 
 handleInitialOrQuery()
