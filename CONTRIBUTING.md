@@ -22,6 +22,25 @@ In this repo that workflow is wired in as:
 
 - Single-file fixes, dependency bumps, documentation-only tweaks, or CI copy edits may skip a full spec folder if that’s proportionate — use judgment; err toward a small spec + tasks for anything you’d want design review on.
 
+**Keeping Spec Kit itself up to date**
+
+The `specify` CLI that owns `.specify/` is pinned to a specific version (check `.specify/init-options.json`, gitignored, or `specify version` locally), not auto-updated. Spec Kit releases frequently, so periodically check whether this repo has drifted:
+
+```bash
+# see what's currently installed vs. latest
+specify version
+gh release list --repo github/spec-kit --limit 1
+
+# upgrade the global tool if it's pinned to an old tag
+uv tool install --force specify-cli --from "git+https://github.com/github/spec-kit.git@<latest-tag>"
+
+# refresh this repo's .specify/ + agent command/skill files (run once per integration in use)
+specify init --here --force --non-interactive --integration claude
+specify init --here --force --non-interactive --integration cursor-agent
+```
+
+`specify init --here --force` preserves `constitution.md` and everything under `specs/` — it only refreshes `.specify/scripts/`, `.specify/templates/`, and the agent-specific command/skill files. Diff before committing, and watch for command-format migrations (e.g. Spec Kit's move from `.claude/commands/speckit.*.md` dot-syntax slash commands to `.claude/skills/speckit-*/SKILL.md` dash-syntax skills) — delete stale files from the old format so agents don't see duplicate/conflicting commands.
+
 ## Commits
 
 Use [Conventional Commits](https://www.conventionalcommits.org/) (e.g. `feat:`, `fix:`, `chore:`, `docs:`) so release and changelog tooling stay predictable.
