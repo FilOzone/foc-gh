@@ -369,7 +369,12 @@ if ((window as unknown as Record<string, unknown>).__filozNativePickerInstalled)
     const pageChanged =
       JSON.stringify(detail.page) !== JSON.stringify(state.page)
     state.page = detail.page
-    state.boards = Array.isArray(detail.boards) ? detail.boards : []
+    // Invariant enforced at the choke point: never inject a board whose org
+    // owns the current repo — GitHub's native picker already lists it there.
+    const pageOwner = detail.page?.owner.toLowerCase() ?? ''
+    state.boards = (Array.isArray(detail.boards) ? detail.boards : []).filter(
+      (b) => b.org.toLowerCase() !== pageOwner,
+    )
     if (pageChanged) {
       state.contentNodeId = null
       state.membership.clear()
