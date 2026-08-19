@@ -6,18 +6,10 @@ description: "Task list template for feature implementation"
 # Tasks: [FEATURE NAME]
 
 **Input**: Design documents from `/specs/[###-feature-name]/`
+
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
-**Tests**: The examples below include test tasks. Per `.specify/memory/constitution.md`, automated tests are optional unless the feature spec explicitly requires them; manual verification tasks are acceptable for merge.
-
-**UI**: Work that injects or restyles DOM on github.com MUST satisfy Principle VI
-(native GitHub UI fidelity, including light/dark). Include manual verification
-for both themes when practical, or document a tracked deferral per plan.
-
-**Manual issue/PR URLs**: For Project panel, FOC sidebar, or global-board membership
-behavior, reference the scenario matrix in
-[`docs/canonical-test-urls.md`](../../docs/canonical-test-urls.md) in verification
-tasks unless the plan calls for different URLs.
+**Tests**: The examples below include test tasks. Tests are OPTIONAL - only include them if explicitly requested in the feature specification.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
@@ -32,27 +24,23 @@ tasks unless the plan calls for different URLs.
 - **Single project**: `src/`, `tests/` at repository root
 - **Web app**: `backend/src/`, `frontend/src/`
 - **Mobile**: `api/src/`, `ios/src/` or `android/src/`
-- **Browser extension (Chromium MV3)**: `src/` (or `extension/`) for
-  background/service worker, content scripts, and shared modules; `manifest.json`
-  (or build output) at package root or `dist/` per plan; extension tests under
-  `tests/` or `e2e/` as chosen in plan.md
 - Paths shown below assume single project - adjust based on plan.md structure
 
-<!-- 
+<!--
   ============================================================================
   IMPORTANT: The tasks below are SAMPLE TASKS for illustration purposes only.
-  
-  The /speckit.tasks command MUST replace these with actual tasks based on:
+
+  The /speckit-tasks command MUST replace these with actual tasks based on:
   - User stories from spec.md (with their priorities P1, P2, P3...)
   - Feature requirements from plan.md
   - Entities from data-model.md
   - Endpoints from contracts/
-  
+
   Tasks MUST be organized by user story so each story can be:
   - Implemented independently
   - Tested independently
   - Delivered as an MVP increment
-  
+
   DO NOT keep these sample tasks in the generated tasks.md file.
   ============================================================================
 -->
