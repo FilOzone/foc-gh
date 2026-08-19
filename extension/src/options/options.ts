@@ -3,6 +3,7 @@ import {
   DEFAULT_TARGET_REPOS,
   DEFAULT_OR_FILTER_BOARD_PATTERNS,
   STORAGE_KEYS,
+  type TargetRepoMode,
 } from '../lib/project-config.js'
 
 const authModeGithubEl = document.querySelector<HTMLInputElement>('#auth-mode-github')
@@ -15,6 +16,9 @@ const disconnectGithubBtn = document.querySelector<HTMLButtonElement>('#disconne
 
 const tokenEl = document.querySelector<HTMLInputElement>('#token')
 const boardsEl = document.querySelector<HTMLTextAreaElement>('#boards')
+const reposModeDefaultEl = document.querySelector<HTMLInputElement>('#repos-mode-default')
+const reposModeCustomEl = document.querySelector<HTMLInputElement>('#repos-mode-custom')
+const reposDefaultsEl = document.querySelector<HTMLTextAreaElement>('#repos-defaults')
 const reposEl = document.querySelector<HTMLTextAreaElement>('#repos')
 const saveBtn = document.querySelector<HTMLButtonElement>('#save')
 const statusEl = document.querySelector<HTMLParagraphElement>('#status')
@@ -36,6 +40,16 @@ function syncAuthPanels(): void {
   const mode = authMode()
   oauthPanelEl?.classList.toggle('hidden', mode !== 'github')
   patPanelEl?.classList.toggle('hidden', mode !== 'pat')
+}
+
+function reposMode(): TargetRepoMode {
+  return reposModeCustomEl?.checked === true ? 'custom' : 'default'
+}
+
+function syncReposPanels(): void {
+  const mode = reposMode()
+  if (reposDefaultsEl) reposDefaultsEl.disabled = mode === 'custom'
+  if (reposEl) reposEl.disabled = mode === 'default'
 }
 
 function linesToList(s: string): string[] {
@@ -99,6 +113,7 @@ async function load(): Promise<void> {
     STORAGE_KEYS.authMethod,
     STORAGE_KEYS.crossOrgBoardUrls,
     STORAGE_KEYS.crossOrgTargetRepos,
+    STORAGE_KEYS.crossOrgTargetReposMode,
     STORAGE_KEYS.issuePrProjectsAutoExpand,
     STORAGE_KEYS.orFilterBoardPatterns,
   ])
@@ -135,16 +150,27 @@ async function load(): Promise<void> {
 
   const urls = raw[STORAGE_KEYS.crossOrgBoardUrls] as string[] | undefined
   const repos = raw[STORAGE_KEYS.crossOrgTargetRepos] as string[] | undefined
+  const reposModeRaw = raw[STORAGE_KEYS.crossOrgTargetReposMode] as string | undefined
   if (boardsEl) {
     boardsEl.value = listToLines(
       Array.isArray(urls) && urls.length > 0 ? urls : [...DEFAULT_BOARD_URLS],
     )
   }
-  if (reposEl) {
-    reposEl.value = listToLines(
-      Array.isArray(repos) && repos.length > 0 ? repos : [...DEFAULT_TARGET_REPOS],
-    )
+  if (reposDefaultsEl) {
+    reposDefaultsEl.value = listToLines([...DEFAULT_TARGET_REPOS])
   }
+  if (reposEl) {
+    reposEl.value = listToLines(Array.isArray(repos) ? repos : [])
+  }
+  const mode: TargetRepoMode =
+    reposModeRaw === 'default' || reposModeRaw === 'custom'
+      ? reposModeRaw
+      : Array.isArray(repos)
+        ? 'custom'
+        : 'default'
+  if (reposModeDefaultEl) reposModeDefaultEl.checked = mode === 'default'
+  if (reposModeCustomEl) reposModeCustomEl.checked = mode === 'custom'
+  syncReposPanels()
   if (issuePrProjectsAutoExpandEl) {
     issuePrProjectsAutoExpandEl.checked = raw[STORAGE_KEYS.issuePrProjectsAutoExpand] !== false
   }
@@ -160,13 +186,14 @@ async function load(): Promise<void> {
 
 async function save(): Promise<void> {
   const urls = boardsEl ? linesToList(boardsEl.value) : [...DEFAULT_BOARD_URLS]
-  const repos = reposEl ? linesToList(reposEl.value) : [...DEFAULT_TARGET_REPOS]
+  const repos = reposEl ? linesToList(reposEl.value) : []
 
   const orPatterns = orFilterPatternsEl ? linesToList(orFilterPatternsEl.value) : [...DEFAULT_OR_FILTER_BOARD_PATTERNS]
 
   const common: Record<string, unknown> = {
     [STORAGE_KEYS.crossOrgBoardUrls]: urls.length ? urls : [...DEFAULT_BOARD_URLS],
-    [STORAGE_KEYS.crossOrgTargetRepos]: repos.length ? repos : [...DEFAULT_TARGET_REPOS],
+    [STORAGE_KEYS.crossOrgTargetRepos]: repos,
+    [STORAGE_KEYS.crossOrgTargetReposMode]: reposMode(),
     [STORAGE_KEYS.issuePrProjectsAutoExpand]: issuePrProjectsAutoExpandEl?.checked !== false,
     [STORAGE_KEYS.orFilterBoardPatterns]: orPatterns,
   }
@@ -206,6 +233,9 @@ function renderStreamingDiag(
 
 void load()
 saveBtn?.addEventListener('click', () => void save())
+
+reposModeDefaultEl?.addEventListener('change', syncReposPanels)
+reposModeCustomEl?.addEventListener('change', syncReposPanels)
 
 authModeGithubEl?.addEventListener('change', () => {
   syncAuthPanels()

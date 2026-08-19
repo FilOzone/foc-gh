@@ -125,6 +125,33 @@
         font-weight: 600;
         margin-top: 0;
       }
+      .repos-mode-option {
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
+        margin-top: 0.85rem;
+      }
+      .repos-mode-radio-label {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-weight: 600;
+        flex: 0 0 9rem;
+        padding-top: 0.5rem;
+        cursor: pointer;
+      }
+      .repos-mode-field {
+        flex: 1;
+        min-width: 0;
+      }
+      .repos-mode-field textarea {
+        margin-top: 0;
+      }
+      textarea:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        background: var(--surface);
+      }
       .oauth-actions {
         display: flex;
         flex-wrap: wrap;
@@ -307,12 +334,33 @@
       </p>
 
       <h2>Repos to proactively check for global project membership</h2>
-      <p class="section-lead">Add one <code>owner/repo</code> per line.</p>
-      <label class="form-label" for="repos">Target repos</label>
-      <textarea id="repos" aria-describedby="repos-hint"></textarea>
-      <p id="repos-hint" class="hint">
-        Issues/PRs in these repos are are automatically checked for global project membership when they are loaded in the GiHub UI. Wherever they are members, a project widget is rendered for that global project. 
+      <p class="section-lead">
+        Issues/PRs in these repos are automatically checked for global project membership when they are loaded in the
+        GitHub UI. Wherever they are members, a project widget is rendered for that global project. Supports
+        <code>owner/*</code> wildcards.
       </p>
+
+      <div class="repos-mode-option" role="radiogroup" aria-label="Repos to proactively check mode">
+        <label class="repos-mode-radio-label" for="repos-mode-default">
+          <input type="radio" name="repos-mode" id="repos-mode-default" value="default" checked />
+          Use defaults
+        </label>
+        <div class="repos-mode-field">
+          <textarea id="repos-defaults" aria-describedby="repos-defaults-hint" readonly></textarea>
+          <p id="repos-defaults-hint" class="hint">Built in to the extension.</p>
+        </div>
+      </div>
+
+      <div class="repos-mode-option">
+        <label class="repos-mode-radio-label" for="repos-mode-custom">
+          <input type="radio" name="repos-mode" id="repos-mode-custom" value="custom" />
+          Use custom rules
+        </label>
+        <div class="repos-mode-field">
+          <textarea id="repos" aria-describedby="repos-hint"></textarea>
+          <p id="repos-hint" class="hint">One <code>owner/repo</code> or <code>owner/*</code> pattern per line.</p>
+        </div>
+      </div>
 
       <h2>Expand all projects in sidebar</h2>
       <p class="section-lead">

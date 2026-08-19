@@ -9,6 +9,8 @@ export const STORAGE_KEYS = {
   oauthTokenExpiresAt: 'oauth_token_expires_at',
   crossOrgBoardUrls: 'cross_org_board_urls',
   crossOrgTargetRepos: 'cross_org_target_repos',
+  /** Whether target-repo membership checks use the built-in defaults or the user's custom list. */
+  crossOrgTargetReposMode: 'cross_org_target_repos_mode',
   /** When true (default), FOC sidebar card field body loads expanded on issues/PRs. */
   issuePrProjectsAutoExpand: 'issue_pr_projects_auto_expand',
   /** URL patterns (glob-style) for project boards where OR filter support is enabled. */
@@ -17,13 +19,8 @@ export const STORAGE_KEYS = {
 
 export const DEFAULT_BOARD_URLS = ['https://github.com/orgs/FilOzone/projects/14'] as const
 
-export const DEFAULT_TARGET_REPOS = [
-  'filecoin-project/curio',
-  'filecoin-project/filecoin-pin',
-  'filecoin-project/FIPs',
-  'filecoin-project/filecoin-pin-website',
-  'filecoin-project/github-mgmt',
-] as const
+/** Glob-style owner/repo patterns (e.g. `FilOzone/*`), same syntax as {@link DEFAULT_OR_FILTER_BOARD_PATTERNS}. */
+export const DEFAULT_TARGET_REPOS = ['FilOzone/*', 'filecoin-project/*', 'filbeam/*'] as const
 
 export const DEFAULT_OR_FILTER_BOARD_PATTERNS = [
   'https://github.com/orgs/FilOzone/projects/*',
@@ -33,13 +30,17 @@ export const DEFAULT_STATUS_FIELD_NAME = 'Status'
 
 export type AuthMethod = 'pat' | 'oauth' | 'none'
 
+export type TargetRepoMode = 'default' | 'custom'
+
 export type StoredConfig = {
   githubApiToken: string
   githubTokenKind: 'oauth' | 'pat' | ''
   authMethod: AuthMethod
   oauthTokenExpiresAt: number | null
   crossOrgBoardUrls: string[]
+  /** User-entered custom repo patterns, independent of {@link crossOrgTargetReposMode}. */
   crossOrgTargetRepos: string[]
+  crossOrgTargetReposMode: TargetRepoMode
   issuePrProjectsAutoExpand: boolean
   orFilterBoardPatterns: string[]
 }
@@ -66,6 +67,20 @@ export function showGlobalBoardsSection(repoOwner: string, boardUrls: string[]):
   if (orgs.length === 0) return false
   const repo = repoOwner.trim().toLowerCase()
   return orgs.some((o) => o !== repo)
+}
+
+/**
+ * Determines the effective target-repo mode. Installs that already had a custom
+ * `crossOrgTargetRepos` list saved before this mode setting existed default to
+ * "custom" on upgrade, so their existing configuration keeps working unchanged.
+ */
+function readTargetRepoMode(
+  raw: Record<string, unknown>,
+  storedRepos: string[] | undefined,
+): TargetRepoMode {
+  const explicit = raw[STORAGE_KEYS.crossOrgTargetReposMode]
+  if (explicit === 'default' || explicit === 'custom') return explicit
+  return Array.isArray(storedRepos) ? 'custom' : 'default'
 }
 
 function readStoredAuthMethod(raw: Record<string, unknown>): AuthMethod | undefined {
@@ -95,6 +110,7 @@ export async function loadConfig(): Promise<StoredConfig> {
     STORAGE_KEYS.oauthTokenExpiresAt,
     STORAGE_KEYS.crossOrgBoardUrls,
     STORAGE_KEYS.crossOrgTargetRepos,
+    STORAGE_KEYS.crossOrgTargetReposMode,
     STORAGE_KEYS.issuePrProjectsAutoExpand,
     STORAGE_KEYS.orFilterBoardPatterns,
   ])
@@ -102,6 +118,7 @@ export async function loadConfig(): Promise<StoredConfig> {
   const urls = raw[STORAGE_KEYS.crossOrgBoardUrls] as string[] | undefined
   const repos = raw[STORAGE_KEYS.crossOrgTargetRepos] as string[] | undefined
   const orPatterns = raw[STORAGE_KEYS.orFilterBoardPatterns] as string[] | undefined
+  const targetReposMode = readTargetRepoMode(raw as Record<string, unknown>, repos)
   const autoRaw = raw[STORAGE_KEYS.issuePrProjectsAutoExpand]
   const issuePrProjectsAutoExpand = autoRaw === false ? false : true
 
@@ -134,8 +151,8 @@ export async function loadConfig(): Promise<StoredConfig> {
     oauthTokenExpiresAt,
     crossOrgBoardUrls:
       Array.isArray(urls) && urls.length > 0 ? urls : [...DEFAULT_BOARD_URLS],
-    crossOrgTargetRepos:
-      Array.isArray(repos) && repos.length > 0 ? repos : [...DEFAULT_TARGET_REPOS],
+    crossOrgTargetRepos: Array.isArray(repos) ? repos : [],
+    crossOrgTargetReposMode: targetReposMode,
     issuePrProjectsAutoExpand,
     orFilterBoardPatterns:
       Array.isArray(orPatterns) ? orPatterns : [...DEFAULT_OR_FILTER_BOARD_PATTERNS],
@@ -164,7 +181,20 @@ export function isOrFilterBoard(config: StoredConfig, pageUrl: string): boolean 
   })
 }
 
+/** The `owner/repo` glob patterns actually in effect, given the current mode. */
+export function activeTargetRepoPatterns(config: StoredConfig): string[] {
+  return config.crossOrgTargetReposMode === 'custom'
+    ? config.crossOrgTargetRepos
+    : [...DEFAULT_TARGET_REPOS]
+}
+
 export function isTargetRepo(config: StoredConfig, owner: string, name: string): boolean {
   const key = normalizeRepoKey(owner, name)
-  return config.crossOrgTargetRepos.some((r) => r.trim().toLowerCase() === key)
+  return activeTargetRepoPatterns(config).some((pattern) => {
+    try {
+      return globToRegExp(pattern.trim()).test(key)
+    } catch {
+      return false
+    }
+  })
 }

@@ -9,6 +9,7 @@ import { parseGithubIssuePrInput } from '../lib/github-url.js'
 import { handleGetAuthStatus, handleGithubOAuthDisconnect, handleGithubOAuthStart } from './github-oauth-handler.js'
 import {
   DEFAULT_STATUS_FIELD_NAME,
+  activeTargetRepoPatterns,
   loadConfig,
   parseOrgProjectUrl,
   resolveGithubBearer,
@@ -759,11 +760,15 @@ async function executeApiDiagnostics(): Promise<DiagnosticsResponse> {
   lines.push('━━━ Target repo access (each configured repo) ━━━')
   lines.push('')
 
-  const repos = cfg.crossOrgTargetRepos.map((r) => r.trim()).filter(Boolean)
+  const repos = activeTargetRepoPatterns(cfg).map((r) => r.trim()).filter(Boolean)
   if (repos.length === 0) {
     lines.push('SKIP: No target repos configured.')
   } else {
     for (const repo of repos) {
+      if (repo.includes('*')) {
+        lines.push(`SKIP: "${repo}" — wildcard pattern, cannot verify a specific repo.`)
+        continue
+      }
       const parts = repo.split('/')
       if (parts.length !== 2) {
         lines.push(`SKIP: "${repo}" — not in owner/name format.`)
