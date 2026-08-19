@@ -23,7 +23,21 @@ npm run typecheck      # tsc --noEmit
   --user-data-dir="$HOME/.chrome-dev-profile"
 ```
 
-Load the extension via "Load unpacked" → `extension/dist/` in `chrome://extensions`.
+Load the extension via "Load unpacked" → `extension/dist/` in `chrome://extensions` (or launch with `--load-extension="$(pwd)/extension/dist"` appended to the command above, which loads it non-interactively on every launch).
+
+**Verify before proceeding** — do this every time before driving the dev Chrome instance, not just on first launch:
+
+1. Confirm CDP is actually up: `curl -s http://127.0.0.1:9222/json/version`. If this fails, the browser either isn't running or wasn't launched with `--remote-debugging-port=9222` — relaunch it; don't assume a stale window is already wired up.
+2. Confirm the extension is loaded and enabled — `chrome.management.getAll()` should include id `akbchnphednohmffplmejpefockadcbg` with `enabled: true` (see the CDP script pattern under "Reloading the extension" below; run the same `Runtime.evaluate` against any open tab).
+3. Confirm the dev profile is actually **signed in to GitHub** before testing anything auth-gated (the picker, add/remove, membership state). Navigate to `https://github.com` and check for a real signed-in page (dashboard/feed, avatar in the top nav) rather than a "Sign in" prompt. `$HOME/.chrome-dev-profile` persists cookies across launches once you've signed in there once, but a fresh profile (or one created in a different `$HOME`, e.g. a sandboxed agent environment) starts logged out — sign in manually in that window if so. **Do not** fall back to a different Chrome/Brave instance or profile to "fix" this — a personal/work browser may be signed in but is out of scope for automated testing here; ask the user to sign in in the dev profile window instead.
+4. Only after all three checks pass, proceed with navigation, screenshots, or DOM inspection against GitHub pages.
+
+**Avoid stealing window focus while driving the dev browser.** `PUT http://127.0.0.1:9222/json/new?<url>` creates a brand-new tab (and can raise/focus the whole Chrome window), which yanks focus away from whatever else the user is doing on their machine — annoying mid-session. Prefer reusing one existing tab's CDP target for the whole session:
+
+- Get its target id once (e.g. from `GET /json`, or the id returned by your first `/json/new` call).
+- Navigate it repeatedly via `Page.navigate` over its `webSocketDebuggerUrl` (`Page.enable` once, then `Page.navigate({url})`) instead of opening a new tab per URL.
+- Only call `PUT /json/new` again if you specifically need a second tab open concurrently (e.g. comparing two pages) or the reused tab's target has gone away.
+- Never call `Page.bringToFront` / `Target.activateTarget` on the dev browser unless the user explicitly asks to see it live — driving it via CDP does not require the window to be foregrounded, and raising it interrupts the user's other work.
 
 ### Extension IDs
 

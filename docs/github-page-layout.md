@@ -2,6 +2,10 @@
 
 Reference for content script authors. Documents the DOM differences between GitHub **issue** pages and **pull request** pages that are relevant to this extension.
 
+**Last verified against live github.com DOM**: 2026-08-19 (issue picker + PR picker, `filecoin-project/FIPs#1111` and `#1226`).
+
+GitHub changes this DOM without notice (Primer component updates, React rewrites of legacy pickers). Re-verify this doc — reopen the gear picker on both an issue and a PR page and diff the actual DOM against what's documented below — whenever: a picker-detection or mount-point bug is reported, it's been **6+ months** since the date above, or GitHub ships a visible redesign of the Projects sidebar/picker. Update the date above after re-verifying, even if nothing changed.
+
 ## Overview
 
 GitHub issue and pull request pages share a sidebar layout but use **fundamentally different DOM structures** for the Projects gear picker. Content scripts that inject into the picker must handle each separately.
@@ -17,14 +21,17 @@ Triggered by clicking the gear icon next to **Projects** on an issue page.
 **Container**:
 ```
 <div role="dialog" class="prc-SelectPanel-Overlay-*">
-  <div class="prc-SelectPanel-*">           ← header + filter input
-    <input placeholder="Filter projects">   ← or aria-label*="Filter"
-  </div>
-  <div class*="FilteredActionList-Container">  ← scrollable list (SIBLING of header)
-    <ul role="listbox">
-      <li role="option">…</li>              ← existing project rows
-    </ul>
-    <!-- inject Global boards <section> here -->
+  <div class="prc-FilteredActionList-Root-*">      ← flex-direction:column wrapper
+    <div class="prc-FilteredActionList-Header-*">   ← header + filter input
+      <input placeholder="Filter projects">         ← or aria-label*="Filter"
+    </div>
+    <div class*="FilteredActionList-Container">     ← scrollable list, SIBLING of header
+      <ul role="listbox">                            ← display:flex;flex-direction:row internally
+        <li role="option">…</li>                    ← existing project rows
+      </ul>
+    </div>
+    <!-- inject Global boards <section> here — AFTER FilteredActionList-Container,
+         as a sibling within the flex-column Root, NOT inside the Container -->
   </div>
 </div>
 ```
@@ -32,7 +39,7 @@ Triggered by clicking the gear icon next to **Projects** on an issue page.
 **Key points**:
 - Detected via `document.querySelectorAll('[role="dialog"]')` with inner-text check for `Filter projects`, `Select projects`, or (`Projects` + `Recent` + `Repository`).
 - The scrollable `FilteredActionList-Container` is a **sibling** of the header div, **not** an ancestor of the filter input. Walking `parentElement` from the input does not reach it — query the dialog directly: `dialog.querySelector('[class*="FilteredActionList-Container"]')`.
-- Mount point: **append** the Global boards `<section>` as the last child of `FilteredActionList-Container`.
+- **Mount point**: insert the Global boards `<section>` **after** `FilteredActionList-Container` (`container.insertAdjacentElement('afterend', section)`), landing it as a sibling inside the `FilteredActionList-Root` flex-column wrapper — **not** appended as a child *inside* the container. The container itself is `display:flex;flex-direction:row` (laying out its `<ul role="listbox">`); appending a plain block child inside it puts our section in that same row, squeezing it into a narrow column instead of stacking below the list. Verified live 2026-08-19: appending inside produced a ~90px-wide, 347px-tall broken panel wedged next to the list.
 - Class names on the Primer components are **hashed** (e.g. `prc-SelectPanel-Overlay-abc123`) — use `class*=` attribute selectors or semantic roles/placeholders only (constitution VI).
 
 ---
@@ -58,8 +65,9 @@ Triggered by clicking the gear icon next to **Projects** on a pull request page.
         <div role="tabpanel">…</div>   ← Recent
         <div role="tabpanel">…</div>   ← Repository
         <div role="tabpanel">…</div>   ← Organization
+        <div role="tabpanel" hidden>…</div>   ← Global boards (injected, 4th)
+        <button role="tab">Global boards</button>  ← injected into the [role="tablist"] above, after Organization
       </tab-container>
-      <!-- inject Global boards <section> here, after tab-container -->
     </project-picker>
   </div>
 </details-menu>
@@ -68,6 +76,8 @@ Triggered by clicking the gear icon next to **Projects** on a pull request page.
 **Key points**:
 - There is **no** `role="dialog"` — detection code that only looks for `[role="dialog"]` will **miss** the PR picker entirely.
 - Detected by walking up from `input[placeholder*="Filter project"]` to find an ancestor `project-picker` element (`el.tagName.toLowerCase() === 'project-picker'`).
+- **The picker opens via an `open` attribute toggle on the ancestor `<details>`, not a DOM insertion** — `<project-picker>` and its `<tab-container>` are already present in the DOM (hidden) before the gear is clicked. A `MutationObserver` watching only `{childList: true, subtree: true}` will **never fire** when the picker opens — it must also watch `{attributes: true, attributeFilter: ['open', ...]}`. Verified live 2026-08-19: this was a real bug (childList-only observer silently never injected on PRs).
+- **Global boards mounts as a real fourth tab** (superseded 2026-08-19, see spec.md Session 2026-08-19 — the original "peer section after `<tab-container>`" design was replaced after live review). GitHub's Catalyst `<tab-container>` pairs each `[role="tab"]` in the tablist with a `[role="tabpanel"]` purely by **DOM position** — append a tab `<button role="tab">` to the existing `[role="tablist"]` (after Organization) and a matching `<div role="tabpanel" hidden>` as the last tabpanel sibling; `<tab-container>`'s own built-in click handling then shows/hides it automatically, no manual event wiring required. Verified live 2026-08-19 by injecting a dummy tab+panel and clicking it — native behavior handled `aria-selected` and `hidden` correctly with zero extra JS.
 - Mount point: **insert after** the `<tab-container>` element inside `<project-picker>`.
 - The tab-container uses GitHub's Catalyst `<tab-container>` custom element. Global boards should appear as a peer grouping beneath the tabs — not inside any tab panel — so it remains visible regardless of which tab is active.
 - Interaction with Catalyst: clicking tabs triggers `mousedown` + `click` events. Global boards rows are independent and not affected by tab switches while the menu is open.
@@ -76,21 +86,21 @@ Triggered by clicking the gear icon next to **Projects** on a pull request page.
 
 ## Detection strategy
 
-Both pickers contain `input[placeholder*="Filter project"]`. Use that as the anchor:
+Both pickers contain `input[placeholder*="Filter project"]`. Use that as the anchor — but **don't** use `querySelector` (singular) with a broad `aria-label*="Filter"` fallback: the issue/PR sidebar has other filter inputs too (e.g. a "Filter labels" input for the Labels picker) that also match, and can sit **earlier** in the DOM than the actual open project picker's input, so `querySelector` silently grabs the wrong one and detection fails with no error. Verified live 2026-08-19: this was a real bug (PR picker never injected because `querySelector` returned the Labels input). Check every candidate with `querySelectorAll` and return the first one that actually resolves to a picker ancestor:
 
 ```typescript
 function findPicker(): { el: HTMLElement; kind: 'issue' | 'pr' } | null {
-  const input = document.querySelector<HTMLInputElement>(
-    'input[placeholder="Filter projects"], input[placeholder*="Filter project"], input[aria-label*="Filter"]'
+  const inputs = document.querySelectorAll<HTMLInputElement>(
+    'input[placeholder="Filter projects"], input[placeholder*="Filter project"], input[aria-label*="Filter project"]'
   )
-  if (!input) return null
-
-  // Walk up looking for project-picker (PR) or role="dialog" (issue)
-  let el: HTMLElement | null = input.parentElement
-  while (el && el !== document.body) {
-    if (el.tagName.toLowerCase() === 'project-picker') return { el, kind: 'pr' }
-    if (el.getAttribute('role') === 'dialog') return { el, kind: 'issue' }
-    el = el.parentElement
+  for (const input of inputs) {
+    // Walk up looking for project-picker (PR) or role="dialog" (issue)
+    let el: HTMLElement | null = input.parentElement
+    while (el && el !== document.body) {
+      if (el.tagName.toLowerCase() === 'project-picker') return { el, kind: 'pr' }
+      if (el.getAttribute('role') === 'dialog') return { el, kind: 'issue' }
+      el = el.parentElement
+    }
   }
   return null
 }
@@ -114,7 +124,7 @@ Both issue and PR pages use the same right-hand sidebar structure. The Projects 
 </div>
 ```
 
-The gear button's `aria-label` is `"Select projects"` on issues and `"Edit projects"` on PRs (observed; may vary by GitHub version).
+The gear button has **no** `aria-label` on issues as of 2026-08-19 — its accessible name comes from inner text "Edit Projects" (visually a gear icon only). Extension code does not depend on this button's label; it's located by clicking the sidebar Projects section's only `<button>`, and the picker itself is then detected via the filter input (see "Detection strategy" below). May vary by GitHub version — re-verify if adding new automation that depends on this button specifically.
 
 ---
 
