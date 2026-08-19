@@ -94,8 +94,9 @@ After this feature ships, the extension no longer renders its own "Global boards
 - **FR-006**: The feature MUST NOT inject a board row when the board already appears natively (same-org repos), and MUST NOT show actionable rows to viewers who cannot update the board.
 - **FR-007**: All interception MUST fail open: if augmentation fails for any reason, GitHub's native picker and sidebar behave exactly as without the extension, with a console warning for diagnosis.
 - **FR-008**: The existing custom picker UI (issue dialog section, PR fourth tab, and their styles) MUST be removed once FR-001 through FR-005 are verified on the canonical test URLs.
-- **FR-009**: The FOC sidebar field card (Status and other field editing) MUST continue to work unchanged.
+- **FR-009**: The FOC field card (spec 002) MUST continue to work on legacy PR pages, where GitHub cannot render cross-org boards natively. On issue pages it MUST NOT render (superseded by FR-011's native parity; added 2026-08-19 per user direction).
 - **FR-010**: Membership resolution MUST NOT show a false checked or unchecked state while loading, consistent with spec 006 edge-case rules.
+- **FR-011**: On issue pages, injected global boards MUST render with FULL native parity to same-org boards (added 2026-08-19: "not done until global boards render the same as repo/organization boards"): a project card in the Projects section with a collapsed Status row, an expandable native field list, and native field editing that persists to the board.
 
 ### Extension trust and data
 

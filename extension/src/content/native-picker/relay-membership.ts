@@ -2,30 +2,37 @@
  * Relay store surgery for cross-org membership display (spec 008, US2).
  *
  * GitHub server-side filters cross-org project memberships out of every issue
- * page payload, so the native sidebar shows "No projects" and the picker shows
- * the row unchecked even when the item IS on the board. GitHub's own add
- * mutation proves the fix: its Relay updater inserts an edge into
+ * page payload (Projects section and picker checked state), but two things ARE
+ * served cross-org over the user's session: GitHub's own add/remove mutations,
+ * and node-by-id queries such as `ProjectItemSectionFieldListQuery` (verified
+ * live 2026-08-19). This module inserts a membership edge into
  * `client:<issueId>:__ProjectSection_projectItems_connection(allowSameEnterprise:true)`
- * and the sidebar + picker immediately render it. This module performs the
- * same insert for memberships the extension resolved itself.
+ * enriched with the item's Status value and the board's Status field
+ * definition, so GitHub renders the project card natively, identical to a
+ * same-org board: collapsed Status row, expandable field list (which GitHub
+ * itself lazily fetches by item id), and native field editing.
  *
- * Mirrors the fiber-walk discovery family used by the OR filter
- * (board-filter/board-data-injector.ts findQueryClient). All private React and
- * Relay internals are touched inside try/catch; failure logs a warning and
- * leaves native behavior untouched (feed augmentation still covers soft navs).
+ * All private React and Relay internals are touched inside try/catch; failure
+ * logs a warning and leaves native behavior untouched.
  */
 
 import type { InjectedBoard } from './feed-shapes.js'
 
 const LOG = '[FilOz:native-picker]'
 
+const STATUS_FIELD_ARGS = { name: 'Status' }
+
 type RecordProxy = {
   getDataID(): string
-  getLinkedRecord(name: string): RecordProxy | null
-  getLinkedRecords(name: string): Array<RecordProxy | null> | null
-  setLinkedRecord(record: RecordProxy, name: string): RecordProxy
-  setLinkedRecords(records: Array<RecordProxy | null>, name: string): RecordProxy
-  setValue(value: unknown, name: string): RecordProxy
+  getLinkedRecord(name: string, args?: Record<string, unknown>): RecordProxy | null
+  getLinkedRecords(name: string, args?: Record<string, unknown>): Array<RecordProxy | null> | null
+  setLinkedRecord(record: RecordProxy, name: string, args?: Record<string, unknown>): RecordProxy
+  setLinkedRecords(
+    records: Array<RecordProxy | null>,
+    name: string,
+    args?: Record<string, unknown>,
+  ): RecordProxy
+  setValue(value: unknown, name: string, args?: Record<string, unknown>): RecordProxy
 }
 
 type StoreProxy = {
@@ -116,7 +123,97 @@ function findRelayEnvironment(): RelayEnvironment | null {
   }
 }
 
-function ensureProjectRecord(store: StoreProxy, board: InjectedBoard): RecordProxy {
+// --- Status enrichment via GitHub's own node-by-id query ---------------------
+
+type JsonObject = Record<string, unknown>
+
+type StatusData = {
+  /** ProjectV2SingleSelectField def node named Status (scalars + options). */
+  field: JsonObject | null
+  /** ProjectV2ItemFieldSingleSelectValue node for that field, if a status is set. */
+  value: JsonObject | null
+}
+
+/**
+ * Fetch the item's field defs and values with the same persisted query GitHub
+ * uses when a project card is expanded. Served cross-org (session cookies).
+ */
+async function fetchStatusData(
+  fetcher: typeof fetch,
+  itemId: string,
+): Promise<StatusData | null> {
+  try {
+    const body = JSON.stringify({
+      persistedQueryName: 'ProjectItemSectionFieldListQuery',
+      query: 'db338523457639ec271344f360559dce',
+      variables: { id: itemId },
+    })
+    const res = await fetcher(`/_graphql?body=${encodeURIComponent(body)}`, {
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+    })
+    if (!res.ok) return null
+    const data = (await res.json()) as {
+      data?: {
+        node?: {
+          project?: { fields?: { edges?: Array<{ node?: JsonObject } | null> } }
+          fieldValues?: { edges?: Array<{ node?: JsonObject } | null> }
+        }
+      }
+    }
+    const node = data.data?.node
+    if (!node) return null
+    const field =
+      (node.project?.fields?.edges ?? [])
+        .map((e) => e?.node)
+        .find((n) => n?.name === 'Status' && n?.__typename === 'ProjectV2SingleSelectField') ??
+      null
+    const fieldId = field?.id
+    const value =
+      (node.fieldValues?.edges ?? [])
+        .map((e) => e?.node)
+        .find(
+          (n) =>
+            n?.__typename === 'ProjectV2ItemFieldSingleSelectValue' &&
+            (fieldId === undefined || (n?.field as JsonObject | undefined)?.id === fieldId),
+        ) ?? null
+    return { field, value }
+  } catch (err) {
+    console.warn(LOG, 'Status data fetch failed:', err)
+    return null
+  }
+}
+
+/** Copy all scalar (non-object) properties of src onto a record. */
+function setScalars(record: RecordProxy, src: JsonObject): void {
+  for (const [key, val] of Object.entries(src)) {
+    if (val === null || typeof val !== 'object') record.setValue(val, key)
+  }
+}
+
+function buildStatusFieldRecord(store: StoreProxy, field: JsonObject): RecordProxy | null {
+  const id = field.id as string | undefined
+  if (!id) return null
+  const record = store.get(id) ?? store.create(id, (field.__typename as string) ?? 'ProjectV2SingleSelectField')
+  setScalars(record, field)
+  const options = Array.isArray(field.options) ? (field.options as JsonObject[]) : []
+  const optionRecords: RecordProxy[] = []
+  for (const opt of options) {
+    const optId = opt.id as string | undefined
+    if (!optId) continue
+    const optRecord = store.get(optId) ?? store.create(optId, 'ProjectV2SingleSelectFieldOption')
+    setScalars(optRecord, opt)
+    optionRecords.push(optRecord)
+  }
+  if (optionRecords.length > 0) record.setLinkedRecords(optionRecords, 'options')
+  return record
+}
+
+function ensureProjectRecord(
+  store: StoreProxy,
+  board: InjectedBoard,
+  statusField: RecordProxy | null,
+): RecordProxy {
   const existing = store.get(board.projectId)
   const project = existing ?? store.create(board.projectId, 'ProjectV2')
   project.setValue(board.projectId, 'id')
@@ -128,30 +225,53 @@ function ensureProjectRecord(store: StoreProxy, board: InjectedBoard): RecordPro
   project.setValue(board.viewerCanUpdate, 'viewerCanUpdate')
   project.setValue(false, 'hasReachedItemsLimit')
   project.setValue('ProjectV2', '__typename')
+  if (statusField) project.setLinkedRecord(statusField, 'field', STATUS_FIELD_ARGS)
   return project
 }
 
 /**
  * Insert a membership edge for `board` into the issue's projectItems
- * connection. Idempotent by item id. Returns true when the edge is present
- * after the call (inserted now or already there).
+ * connection, enriched with the Status value/field so GitHub renders the card
+ * with full same-org parity. Idempotent by item id. Returns true when the edge
+ * is present after the call.
  */
-export function commitMembershipEdge(
+export async function commitMembershipEdge(
   contentNodeId: string,
   board: InjectedBoard,
   itemId: string,
-): boolean {
+  fetcher: typeof fetch,
+): Promise<boolean> {
   const env = findRelayEnvironment()
   if (!env) {
     console.warn(LOG, 'Relay environment not found; sidebar membership not injected')
     return false
   }
+  const status = await fetchStatusData(fetcher, itemId)
   const connectionId = `client:${contentNodeId}:__ProjectSection_projectItems_connection(allowSameEnterprise:true)`
   let committed = false
   try {
     env.commitUpdate((store) => {
       const connection = store.get(connectionId)
       if (!connection) return
+
+      const statusField = status?.field ? buildStatusFieldRecord(store, status.field) : null
+      const project = ensureProjectRecord(store, board, statusField)
+
+      const item = store.get(itemId) ?? store.create(itemId, 'ProjectV2Item')
+      item.setValue(itemId, 'id')
+      item.setValue(false, 'isArchived')
+      item.setValue('ProjectV2Item', '__typename')
+      item.setLinkedRecord(project, 'project')
+      if (status?.value?.id) {
+        const valueRecord =
+          store.get(status.value.id as string) ??
+          store.create(status.value.id as string, 'ProjectV2ItemFieldSingleSelectValue')
+        setScalars(valueRecord, status.value)
+        if (statusField) valueRecord.setLinkedRecord(statusField, 'field')
+        item.setLinkedRecord(valueRecord, 'fieldValueByName', STATUS_FIELD_ARGS)
+      } else {
+        item.setValue(null, 'fieldValueByName', STATUS_FIELD_ARGS)
+      }
 
       const edges = connection.getLinkedRecords('edges') ?? []
       const already = edges.some(
@@ -161,13 +281,6 @@ export function commitMembershipEdge(
         committed = true
         return
       }
-
-      const item = store.get(itemId) ?? store.create(itemId, 'ProjectV2Item')
-      item.setValue(itemId, 'id')
-      item.setValue(false, 'isArchived')
-      item.setValue('ProjectV2Item', '__typename')
-      item.setLinkedRecord(ensureProjectRecord(store, board), 'project')
-
       const edge = store.create(`client:${connectionId}:filoz-edge:${itemId}`, 'ProjectV2ItemEdge')
       edge.setLinkedRecord(item, 'node')
       connection.setLinkedRecords([...edges, edge], 'edges')

@@ -128,74 +128,7 @@ if ((window as unknown as Record<string, unknown>).__filozNativePickerInstalled)
     }
   }
 
-  // --- 2. issue viewer membership edges ------------------------------------
-
-  type IssueViewerData = {
-    data?: {
-      repository?: {
-        issue?: {
-          id?: string
-          projectItems?: { edges?: Array<{ node?: { id?: string } } | null> }
-        }
-      }
-    }
-  }
-
-  function membershipEdgesToInject(): Array<{ board: InjectedBoard; itemId: string }> {
-    const out: Array<{ board: InjectedBoard; itemId: string }> = []
-    for (const entry of state.membership.values()) {
-      if (entry.status !== 'member' || !entry.itemId) continue
-      const board = boardById(entry.projectId)
-      if (board) out.push({ board, itemId: entry.itemId })
-    }
-    return out
-  }
-
-  async function augmentIssueViewer(res: Response): Promise<Response> {
-    try {
-      const inject = membershipEdgesToInject()
-      if (inject.length === 0) return res
-      const data = (await res.clone().json()) as IssueViewerData
-      const issue = data.data?.repository?.issue
-      const edges = issue?.projectItems?.edges
-      if (!issue || !Array.isArray(edges)) return res
-      if (state.contentNodeId && issue.id && issue.id !== state.contentNodeId) return res
-
-      let changed = false
-      for (const { board, itemId } of inject) {
-        if (edges.some((e) => e?.node?.id === itemId)) continue
-        edges.push({
-          node: {
-            id: itemId,
-            isArchived: false,
-            fieldValueByName: null,
-            project: {
-              id: board.projectId,
-              title: board.title,
-              closed: false,
-              number: board.number,
-              url: board.url,
-              template: false,
-              viewerCanUpdate: board.viewerCanUpdate,
-              hasReachedItemsLimit: false,
-              field: null,
-              __typename: 'ProjectV2',
-            },
-            __typename: 'ProjectV2Item',
-          } as unknown as { id: string },
-        })
-        changed = true
-      }
-      if (!changed) return res
-      console.log(LOG, 'Injected membership edges into IssueViewerViewQuery response')
-      return overrideBody(res, JSON.stringify(data))
-    } catch (err) {
-      console.warn(LOG, 'IssueViewer augmentation failed, passing through:', err)
-      return res
-    }
-  }
-
-  // --- 3. native mutation observation ---------------------------------------
+  // --- 2. native mutation observation ---------------------------------------
 
   type GraphqlPostBody = {
     persistedQueryName?: string
@@ -402,8 +335,11 @@ if ((window as unknown as Record<string, unknown>).__filozNativePickerInstalled)
         if (board) {
           const itemId = entry.itemId
           const tryCommit = (attempt: number): void => {
-            if (commitMembershipEdge(detail.contentNodeId, board, itemId)) return
-            if (attempt < 5) setTimeout(() => tryCommit(attempt + 1), 1500 * attempt)
+            void commitMembershipEdge(detail.contentNodeId, board, itemId, originalFetch).then(
+              (ok) => {
+                if (!ok && attempt < 5) setTimeout(() => tryCommit(attempt + 1), 1500 * attempt)
+              },
+            )
           }
           tryCommit(1)
         }
@@ -469,12 +405,6 @@ if ((window as unknown as Record<string, unknown>).__filozNativePickerInstalled)
       if (url.pathname === '/_ghui/item-pickers/projects') {
         const res = await originalFetch(input, init)
         return res.ok ? augmentItemPickers(res, url) : res
-      }
-
-      // 2. issue viewer data (persisted query name is inside the body param)
-      if (url.pathname === '/_graphql' && (url.searchParams.get('body') ?? '').includes('IssueViewerViewQuery')) {
-        const res = await originalFetch(input, init)
-        return res.ok ? augmentIssueViewer(res) : res
       }
 
       // 4. PR suggestions feed

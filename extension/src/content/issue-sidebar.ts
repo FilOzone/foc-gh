@@ -330,6 +330,15 @@ async function sync(): Promise<void> {
     return
   }
 
+  // Issue pages get full native parity from data injection (spec 008): the
+  // native project card in the Projects section shows Status and editable
+  // fields, so the extension card would be a duplicate. Legacy PR pages
+  // cannot render cross-org boards natively, so the card remains there.
+  if (ctx.kind === 'issue') {
+    clearHost()
+    return
+  }
+
   injectStylesheet()
   const host = ensureHost()
   if (!host) return

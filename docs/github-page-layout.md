@@ -6,9 +6,19 @@ Reference for content script authors. Documents the DOM differences between GitH
 
 GitHub changes this DOM without notice (Primer component updates, React rewrites of legacy pickers). Re-verify this doc — reopen the gear picker on both an issue and a PR page and diff the actual DOM against what's documented below — whenever: a picker-detection or mount-point bug is reported, it's been **6+ months** since the date above, or GitHub ships a visible redesign of the Projects sidebar/picker. Update the date above after re-verifying, even if nothing changed.
 
+## Terminology (canonical)
+
+Use these terms in specs, docs, code comments, and commit messages. Avoid the older synonyms listed after each.
+
+- **Projects section**: the native sidebar block titled "Projects" listing the boards an issue/PR belongs to. Issues: `[data-testid="sidebar-projects-section"]`. Legacy PRs: the `.discussion-sidebar-item` containing `form[aria-label="Select projects"]`. (Avoid: "Project panel", "Projects panel".)
+- **Project card**: one board's entry inside the Projects section: a collapsed row (board title + Status control) plus an expandable field list. Native GitHub UI; the field list is lazily fetched by item id (`ProjectItemSectionFieldListQuery`).
+- **Projects picker**: the popover for adding/removing the item to boards, opened from the Projects section's gear control ("Edit Projects" button on issues; gear `summary` on PRs). Issues: Primer SelectPanel; legacy PRs: `<project-picker>` element. (Avoid: "Projects gear widget", "gear menu", "gear picker".)
+- **FOC field card**: the extension-rendered card (spec 002, `#filoz-foc-board-panel-host`). As of spec 008 it renders on legacy PR pages only; issue pages get full native parity via data injection. (Avoid: "custom FOC status", "FOC sidebar card" for the native card.)
+- **Global board**: a Projects v2 board configured in extension options, typically in a different org than the viewed repo (canonically FilOzone FOC #14).
+
 ## Overview
 
-GitHub issue and pull request pages share a sidebar layout but use **fundamentally different DOM structures** for the Projects gear picker. As of spec 008 the extension no longer injects UI into either picker; global boards reach the picker through the data layer (next section). The DOM notes below remain for detection/debugging and for the FOC sidebar card.
+GitHub issue and pull request pages share a sidebar layout but use **fundamentally different DOM structures** for the Projects picker. As of spec 008 the extension no longer injects UI into either picker; global boards reach the picker AND the Projects section through the data layer (next section). The DOM notes below remain for detection/debugging and for the FOC field card on legacy PR pages.
 
 ---
 
@@ -19,6 +29,7 @@ Verified live 2026-08-19. Full details in [specs/008-native-picker-data-injectio
 - **Issue picker feed**: `GET /_ghui/item-pickers/projects?owner=&repo=&queryId=` returns GraphQL-shaped JSON. `owner` is nested INSIDE `repository`; the picker renders `repository.projectsV2.nodes` (Repository group), `repository.owner.projectsV2.edges` (Organization) and `repository.owner.recentProjects.edges` (Recent). `repository.recentProjects` is parsed but never rendered.
 - **Picker persistence**: results cache in React Query, persisted per user in IndexedDB `offline_cache_v2::<login>::queries` under `key-["item_picker","projects",{owner,query,repo}]`; first paint comes from the store, network refreshes it. The extension seeds this entry so injected rows show on the first open.
 - **Issue membership**: server-side filters cross-org memberships out of ALL issue payloads (SSR island and `IssueViewerViewQuery`). The Relay connection `client:<issueId>:__ProjectSection_projectItems_connection(allowSameEnterprise:true)` is where membership edges live; the extension commits edges there (fiber-walk to the Relay environment via `react-app[app-name="issues-react"]`'s `reactRoot` container key, provider ~90 levels deep).
+- **Node-by-id queries are NOT org-filtered**: `GET /_graphql` with `ProjectItemSectionFieldListQuery` (variables `{id: <PVTI item id>}`) returns the full cross-org field list AND the item's field values over session cookies. GitHub fires it itself when a project card is expanded, so an injected edge with a real item id gets a fully native expandable card. The extension also uses it to enrich the committed edge with the Status field def and value (collapsed-row parity). Native field editing fires `updateProjectItemFieldValueMutation`, which the server also accepts cross-org (verified live 2026-08-19).
 - **Issue mutations**: GitHub's own picker fires cookie-authenticated `updateIssueProjectsRelayMutation` (`addProjectV2ItemById` / delete variant) via `POST /_graphql`; the server ACCEPTS cross-org project ids, so native add/remove works once the row and membership edge are injected.
 - **PR picker feed (legacy)**: `GET /<o>/<r>/projects/issues/projects_suggestions?scope=recent|repository|organization` returns `{projects:[{id:<numeric memex id>, name, owner, selected, search_slug}]}`.
 - **PR toggle (legacy)**: closing the menu POSTs a multipart form to `/<o>/<r>/projects/issues/<n>` (`_method=put`) with one `issue_memex_project_ids[<id>]` field per LISTED project; the VALUE carries state (`on` = checked, empty = unchecked). The server silently ignores cross-org ids, so the extension strips its ids and performs the mutation via GraphQL.

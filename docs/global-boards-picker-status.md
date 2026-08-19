@@ -11,15 +11,18 @@ Configured global boards now appear as **native rows inside GitHub's own Project
 - **Membership resolution cost**: resolved at page load on proactive target repos; deferred to first picker open elsewhere.
 - Boards appear as plain rows (no "global" label) by design.
 
+## Full native parity on issue pages (2026-08-19)
+
+The injected project card in the Projects section is indistinguishable from a same-org board: collapsed Status row (the extension enriches the Relay edge with the Status value/field via GitHub's own `ProjectItemSectionFieldListQuery`, which is served cross-org), an expandable field list that GitHub fetches and renders itself, and native field editing (`updateProjectItemFieldValueMutation`, accepted cross-org). The FOC field card no longer renders on issue pages; it remains on legacy PR pages only.
+
 ## Limitations
 
 - Pages where the viewer lacks repo write access get no native picker from GitHub, so no add/remove entry point there (matches previously shipped behavior).
 - On non-proactive repos, existing membership becomes visible only after the picker is first opened (lazy resolution).
-- The injected sidebar membership row shows the board title without Status details until GitHub refetches richer data (e.g. after a native add it shows Status too).
+- Legacy PR pages cannot render cross-org boards in the Projects section; the FOC field card covers membership display and field editing there until GitHub's React PR experience lands.
 
 ## What else works
 
-- **FOC sidebar card** on configured repos (primary board, field editing) — unchanged.
 - Options: **Global board URLs** and **Repos to proactively check** govern visibility and resolution timing.
 
 History: the previous custom-rendered picker section/tab (spec 006) was retired by spec 008.

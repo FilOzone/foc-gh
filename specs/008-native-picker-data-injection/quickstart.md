@@ -62,6 +62,10 @@ URLs are the canonical set from [docs/canonical-test-urls.md](../../docs/canonic
 - Light/dark: picker and sidebar rendering is 100% GitHub-native, so theming is inherited; a human eyeball pass on both modes is still recommended before release.
 - Board state restored after every mutation; the FOC board is unchanged.
 
+### Parity round (2026-08-19, after FR-011 was added)
+
+On filecoin-project/solstice#9 (cross-org member): the native Projects section renders "FOC | Status: 🐱 Todo" collapsed (edge enriched with Status via `ProjectItemSectionFieldListQuery`, served cross-org); expanding renders the FULL native field card (Dev Days Estimate, Prio, Cycle, Cycle Theme, Workstream, Project, ECD), fetched and rendered by GitHub itself; editing Status natively fired GitHub's `updateProjectItemFieldValueMutation`, the server accepted it cross-org (Todo -> Triage -> reverted to Todo). The FOC field card no longer renders on issue pages (PR pages keep it); the `IssueViewerViewQuery` response augmentation was removed in favor of the single Relay-commit mechanism.
+
 ## Exit criteria
 
 All of V1-V8 pass in light and dark modes; custom picker UI code and CSS deleted; docs/github-page-layout.md and docs/global-boards-picker-status.md updated; PR includes the manifest smoke checklist.
