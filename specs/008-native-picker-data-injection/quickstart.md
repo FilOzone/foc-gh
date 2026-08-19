@@ -49,6 +49,19 @@ URLs are the canonical set from [docs/canonical-test-urls.md](../../docs/canonic
 1. Walk all six canonical scenarios (issue + PR variants) plus the auto-expand URLs.
 2. Expect: FOC field card, auto-expand, OR filter (spec 007 board URLs), and copy-link features unchanged.
 
+## Validation results (2026-08-19, CDP-driven, isolated dev Chrome)
+
+- V1 PASS: FOC rendered as a native Recent row on first open at filecoin-pin#56 (converged after one open when a stale persisted cache pre-existed; fresh loads render first-open via the IndexedDB seed).
+- V2 PASS: native check fired GitHub's cookie-authenticated add; board gained the item; native sidebar showed "FOC / Status: No status".
+- V3 PASS: after hard reload the sidebar showed FOC (Relay commit; retry-with-backoff needed because membership can resolve before hydration) and the picker showed the row checked; native uncheck fired GitHub's delete and the server accepted it cross-org, so no delegation contingency was needed on issues.
+- V4 PASS: read-only member page (frisbii#170) shows no picker and no extension UI; no state flash.
+- V5 PASS: PR picker (filecoin-pin PR#1) rendered FOC natively with correct checked state; toggle on/off performed via delegated GraphQL; board verified after each step. Two findings fixed during validation: the legacy form serializes EVERY listed project with the VALUE carrying state (`on`/empty), and the old custom fourth-tab code interfered with the native picker until retired.
+- V6 PASS: same-org pages (FilOzone/foc-gh#1) leave the injector dormant; no duplicate rows.
+- V7 PASS (by construction plus observed warnings): all augmentation paths fail open; dormant on unconfigured pages.
+- V8 PASS: FOC card renders with fields on filecoin-pin#42; OR filter board view loads and installs its interceptor unaffected.
+- Light/dark: picker and sidebar rendering is 100% GitHub-native, so theming is inherited; a human eyeball pass on both modes is still recommended before release.
+- Board state restored after every mutation; the FOC board is unchanged.
+
 ## Exit criteria
 
 All of V1-V8 pass in light and dark modes; custom picker UI code and CSS deleted; docs/github-page-layout.md and docs/global-boards-picker-status.md updated; PR includes the manifest smoke checklist.

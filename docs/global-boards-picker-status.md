@@ -1,20 +1,25 @@
 # Global boards in the Projects picker — status
 
-**Last updated:** 2026-03
+**Last updated:** 2026-08-19
 
-## Current behavior
+## Current behavior (spec 008: native picker data injection)
 
-When visibility rules in options apply (see the **Global board URLs** and **Repos to proactively check…** hints on the extension options page), opening GitHub’s **Projects** picker on an issue or pull request may show a **Global boards** block. That block currently displays a **Coming soon** message only.
+Configured global boards now appear as **native rows inside GitHub's own Projects picker** on issue and pull request pages for repos outside the board's org. There is no extension-rendered picker UI anymore; the extension augments GitHub's picker data feeds instead (see [specs/008-native-picker-data-injection/](../specs/008-native-picker-data-injection/) and the data-layer section of [github-page-layout.md](github-page-layout.md)).
 
-## Not implemented yet
+- **Issue pages**: the board shows in the picker's Recent group; checking/unchecking uses GitHub's own session-authenticated add/remove (verified working cross-org). Existing membership shows in the native sidebar Projects section and as a checked picker row, injected into the page's Relay store from the extension's membership resolution.
+- **PR pages (legacy UI)**: the board shows as a native picker row with correct checked state; because GitHub's legacy endpoint silently ignores cross-org project ids, the extension intercepts the toggle and performs add/remove via its existing GraphQL path (PAT/OAuth).
+- **Membership resolution cost**: resolved at page load on proactive target repos; deferred to first picker open elsewhere.
+- Boards appear as plain rows (no "global" label) by design.
 
-- Listing configured global boards with checkboxes (or equivalent) inside the picker.
-- **Adding** or **removing** the current issue/PR on those boards via the picker, including keeping that state in sync with GitHub’s native project rows.
-- Relying on this picker as a substitute for using the organization project on [github.com](https://github.com) or the **FOC sidebar** on repos you configure for proactive membership checks.
+## Limitations
 
-## What still works
+- Pages where the viewer lacks repo write access get no native picker from GitHub, so no add/remove entry point there (matches previously shipped behavior).
+- On non-proactive repos, existing membership becomes visible only after the picker is first opened (lazy resolution).
+- The injected sidebar membership row shows the board title without Status details until GitHub refetches richer data (e.g. after a native add it shows Status too).
 
-- **FOC sidebar card** on configured repos (primary board, field editing where supported).
-- **Global board URLs** and **target repos** settings in options (wording describes intended behavior for when picker support lands).
+## What else works
 
-Work tracked under spec **006** in [`specs/006-outside-org-projects-picker/`](../specs/006-outside-org-projects-picker/).
+- **FOC sidebar card** on configured repos (primary board, field editing) — unchanged.
+- Options: **Global board URLs** and **Repos to proactively check** govern visibility and resolution timing.
+
+History: the previous custom-rendered picker section/tab (spec 006) was retired by spec 008.

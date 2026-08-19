@@ -31,7 +31,7 @@
 - [X] T007 [US1] In `native-picker-injector.ts`, augment `_ghui/item-pickers/projects` responses per contracts/github-feeds.md section 1: unshift injected nodes into `data.repository.owner.recentProjects.edges`, dedupe by node id across the whole feed, skip boards whose org equals the repo owner, honor `query=` search matching, set `viewerCanUpdate` from config/membership state
 - [X] T008 [US1] In `native-picker-injector.ts`, observe `updateIssueProjectsRelayMutation` POST responses touching injected board ids (contracts section 3): capture added `itemId` (or removal), update in-injector membership state, dispatch `filoz-np-native-mutation`; in `native-picker-main.ts`, forward to `NOTE_MEMBERSHIP_CHANGE`
 - [X] T009 [P] [US1] Implement `extension/src/content/native-picker/idb-seeder.ts` (main world, invoked from injector on config arrival): seed `offline_cache_v2::<login>::queries` entry `key-["item_picker","projects",{owner,query:"",repo}]` per contracts section 5; no-op when DB/entry absent; never throw
-- [ ] T010 [US1] CHECKPOINT: build, reload extension via chrome.management, run quickstart V1 (row renders natively on first open, light+dark) and V2 (native add succeeds, board updated); revert board state; record results in quickstart or PR notes
+- [X] T010 [US1] CHECKPOINT: build, reload extension via chrome.management, run quickstart V1 (row renders natively on first open, light+dark) and V2 (native add succeeds, board updated); revert board state; record results in quickstart or PR notes
 
 ## Phase 4: User Story 2 - Native membership display, checked state, and remove (P1)
 
@@ -41,8 +41,8 @@
 
 - [X] T011 [US2] In `native-picker-injector.ts`, augment `IssueViewerViewQuery` `_graphql` GET responses with the ProjectItemsEdge for member boards (contracts section 2); requires membership already resolved, otherwise skip (Relay commit covers late arrival)
 - [X] T012 [US2] Implement `extension/src/content/native-picker/relay-membership.ts`: discover the Relay environment via React fiber walk (bounded depth, pattern family: `board-data-injector.ts` findQueryClient), then `commitUpdate` inserting the edge into `client:<issueNodeId>:__ProjectSection_projectItems_connection(allowSameEnterprise:true)`; idempotent by item id; triggered on `filoz-np-membership` when status is member; fail-open with warning
-- [ ] T013 [US2] Validate the native delete path live: with the edge injected, uncheck the row and confirm the delete mutation fires and succeeds cross-org; capture its persistedQueryName and extend T008 observation to removals. CONTINGENCY: if the native delete is rejected cross-org, intercept that mutation for injected boards and delegate to `DELETE_PROJECT_ITEM` (itemId from MembershipState), mirroring the PR path
-- [ ] T014 [US2] CHECKPOINT: run quickstart V3 (reload persistence + remove) and V4 (no-picker page shows no extension picker, no state flash); restore board state
+- [X] T013 [US2] Validate the native delete path live: with the edge injected, uncheck the row and confirm the delete mutation fires and succeeds cross-org; capture its persistedQueryName and extend T008 observation to removals. RESULT: native delete verified working cross-org (2026-08-19); no contingency needed
+- [X] T014 [US2] CHECKPOINT: run quickstart V3 (reload persistence + remove) and V4 (no-picker page shows no extension picker, no state flash); restore board state
 
 ## Phase 5: User Story 3 - PR pages (legacy UI) (P2)
 
@@ -52,7 +52,7 @@
 
 - [X] T015 [US3] In `native-picker-injector.ts`, augment `projects_suggestions?scope=recent` responses per contracts section 6 (numeric `databaseId` rows, extension-computed `selected`, skip same-org, skip boards without databaseId with a warning)
 - [X] T016 [US3] In `native-picker-injector.ts`, intercept the PR sidebar form POST per contracts section 7: diff injected-board form fields against MembershipState, strip injected ids before passthrough (skip native call if only injected ids changed), dispatch `filoz-np-pr-toggle`; in `native-picker-main.ts`, execute via `ADD_TO_PROJECT`/`DELETE_PROJECT_ITEM` and answer with `filoz-np-pr-toggle-result`
-- [ ] T017 [US3] CHECKPOINT: run quickstart V5 (native row + toggle on/off with board verification); restore state
+- [X] T017 [US3] CHECKPOINT: run quickstart V5 (native row + toggle on/off with board verification); restore state
 
 ## Phase 6: User Story 4 - Retire the custom picker UI (P2)
 
@@ -60,15 +60,15 @@
 
 **Independent Test**: quickstart.md V6 + full V1-V8 sweep.
 
-- [ ] T018 [US4] Remove `initGlobalBoardsPicker`/`destroyGlobalBoardsPicker` wiring from `extension/src/content/issue-sidebar.ts` (lines ~8-9, 323-336) and delete `extension/src/content/global-boards-picker.ts`; keep `showGlobalBoardsSection` config logic for the injector's board-list derivation if still referenced
-- [ ] T019 [P] [US4] Remove the global-boards picker CSS block from `extension/src/styles/sidebar.css` (~lines 271-350, `.filoz-global-board*` rules); keep FOC card styles
-- [ ] T020 [US4] CHECKPOINT: run quickstart V6 (same-org no duplicate row) and the full V1-V8 regression sweep in light and dark modes
+- [X] T018 [US4] Remove `initGlobalBoardsPicker`/`destroyGlobalBoardsPicker` wiring from `extension/src/content/issue-sidebar.ts` (lines ~8-9, 323-336) and delete `extension/src/content/global-boards-picker.ts`; keep `showGlobalBoardsSection` config logic for the injector's board-list derivation if still referenced
+- [X] T019 [P] [US4] Remove the global-boards picker CSS block from `extension/src/styles/sidebar.css` (~lines 271-350, `.filoz-global-board*` rules); keep FOC card styles
+- [X] T020 [US4] CHECKPOINT: run quickstart V6 (same-org no duplicate row) and the full V1-V8 regression sweep in light and dark modes
 
 ## Phase 7: Polish & cross-cutting
 
-- [ ] T021 [P] Update `docs/github-page-layout.md`: add a data-layer section (item-pickers feed shape and owner nesting, IndexedDB persister, Relay connection key, PR suggestions/form endpoints, mutation names) and prune retired DOM-anchoring guidance; refresh the last-verified date
-- [ ] T022 [P] Update `docs/global-boards-picker-status.md` and `AGENT.md` architecture list to describe the native-picker module and retired custom UI
-- [ ] T023 Final gates: `npm run build`, `npm run lint`, `npm run typecheck`; confirm quickstart exit criteria; draft PR description with manifest smoke checklist (new content script + web_accessible_resource) per constitution Principle IV
+- [X] T021 [P] Update `docs/github-page-layout.md`: add a data-layer section (item-pickers feed shape and owner nesting, IndexedDB persister, Relay connection key, PR suggestions/form endpoints, mutation names) and prune retired DOM-anchoring guidance; refresh the last-verified date
+- [X] T022 [P] Update `docs/global-boards-picker-status.md` and `AGENT.md` architecture list to describe the native-picker module and retired custom UI
+- [X] T023 Final gates: `npm run build`, `npm run lint`, `npm run typecheck`; confirm quickstart exit criteria; draft PR description with manifest smoke checklist (new content script + web_accessible_resource) per constitution Principle IV
 
 ## Dependencies & execution order
 

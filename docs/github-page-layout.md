@@ -8,7 +8,20 @@ GitHub changes this DOM without notice (Primer component updates, React rewrites
 
 ## Overview
 
-GitHub issue and pull request pages share a sidebar layout but use **fundamentally different DOM structures** for the Projects gear picker. Content scripts that inject into the picker must handle each separately.
+GitHub issue and pull request pages share a sidebar layout but use **fundamentally different DOM structures** for the Projects gear picker. As of spec 008 the extension no longer injects UI into either picker; global boards reach the picker through the data layer (next section). The DOM notes below remain for detection/debugging and for the FOC sidebar card.
+
+---
+
+## Data layer (spec 008: native picker data injection)
+
+Verified live 2026-08-19. Full details in [specs/008-native-picker-data-injection/research.md](../specs/008-native-picker-data-injection/research.md) and its contracts.
+
+- **Issue picker feed**: `GET /_ghui/item-pickers/projects?owner=&repo=&queryId=` returns GraphQL-shaped JSON. `owner` is nested INSIDE `repository`; the picker renders `repository.projectsV2.nodes` (Repository group), `repository.owner.projectsV2.edges` (Organization) and `repository.owner.recentProjects.edges` (Recent). `repository.recentProjects` is parsed but never rendered.
+- **Picker persistence**: results cache in React Query, persisted per user in IndexedDB `offline_cache_v2::<login>::queries` under `key-["item_picker","projects",{owner,query,repo}]`; first paint comes from the store, network refreshes it. The extension seeds this entry so injected rows show on the first open.
+- **Issue membership**: server-side filters cross-org memberships out of ALL issue payloads (SSR island and `IssueViewerViewQuery`). The Relay connection `client:<issueId>:__ProjectSection_projectItems_connection(allowSameEnterprise:true)` is where membership edges live; the extension commits edges there (fiber-walk to the Relay environment via `react-app[app-name="issues-react"]`'s `reactRoot` container key, provider ~90 levels deep).
+- **Issue mutations**: GitHub's own picker fires cookie-authenticated `updateIssueProjectsRelayMutation` (`addProjectV2ItemById` / delete variant) via `POST /_graphql`; the server ACCEPTS cross-org project ids, so native add/remove works once the row and membership edge are injected.
+- **PR picker feed (legacy)**: `GET /<o>/<r>/projects/issues/projects_suggestions?scope=recent|repository|organization` returns `{projects:[{id:<numeric memex id>, name, owner, selected, search_slug}]}`.
+- **PR toggle (legacy)**: closing the menu POSTs a multipart form to `/<o>/<r>/projects/issues/<n>` (`_method=put`) with one `issue_memex_project_ids[<id>]` field per LISTED project; the VALUE carries state (`on` = checked, empty = unchecked). The server silently ignores cross-org ids, so the extension strips its ids and performs the mutation via GraphQL.
 
 ---
 

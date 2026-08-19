@@ -324,11 +324,12 @@ if ((window as unknown as Record<string, unknown>).__filozNativePickerInstalled)
       for (const board of state.boards) {
         if (board.databaseId === null) continue
         const field = `issue_memex_project_ids[${board.databaseId}]`
-        const checkedInForm = form.has(field)
-        if (checkedInForm) {
-          form.delete(field)
-          stripped = true
-        }
+        if (!form.has(field)) continue
+        // The picker serializes every listed project; the VALUE carries the
+        // state ("on" = checked, empty = unchecked). Verified live 2026-08-19.
+        const checkedInForm = form.getAll(field).includes('on')
+        form.delete(field)
+        stripped = true
         const isMember = state.membership.get(board.projectId)?.status === 'member'
         if (checkedInForm !== isMember) {
           toggles.push({ projectId: board.projectId, desired: checkedInForm ? 'member' : 'not-member' })
@@ -391,7 +392,16 @@ if ((window as unknown as Record<string, unknown>).__filozNativePickerInstalled)
       state.membership.set(entry.projectId, entry)
       if (entry.status === 'member' && entry.itemId && state.page?.kind === 'issue') {
         const board = boardById(entry.projectId)
-        if (board) commitMembershipEdge(detail.contentNodeId, board, entry.itemId)
+        // Retry with backoff: membership can resolve before React hydration
+        // makes the Relay environment discoverable.
+        if (board) {
+          const itemId = entry.itemId
+          const tryCommit = (attempt: number): void => {
+            if (commitMembershipEdge(detail.contentNodeId, board, itemId)) return
+            if (attempt < 5) setTimeout(() => tryCommit(attempt + 1), 1500 * attempt)
+          }
+          tryCommit(1)
+        }
       }
     }
   })

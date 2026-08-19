@@ -93,9 +93,10 @@ npm run build  # then reload extension via chrome.management, then navigate tab
 ## Architecture
 
 - `extension/src/content/board-filter/` — OR filter feature (fetch interceptor, parser, merger)
+- `extension/src/content/native-picker/` — global boards as native rows in GitHub's Projects picker via data injection (fetch interception, Relay store commits, IndexedDB persister seeding)
 - `extension/src/content/pr-expand/` — PR description auto-expand
 - `extension/src/lib/` — shared config, GitHub auth
 - `scripts/` — dev tooling (CDP reload, SW logs)
 - `specs/` — feature specs and research docs
 
-See `specs/007-project-board-or-filter/research.md` for detailed architecture of the OR filter feature, including the React Query cache invalidation approach.
+See `specs/007-project-board-or-filter/research.md` for detailed architecture of the OR filter feature (React Query cache invalidation) and `specs/008-native-picker-data-injection/research.md` for the native picker data injection (GitHub feed shapes, Relay membership commits, legacy PR form semantics).

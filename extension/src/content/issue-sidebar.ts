@@ -5,15 +5,10 @@ import { pageContextFromLocation } from '../lib/github-url.js'
 import type { GetPanelStateMessage, ExtensionMessage } from '../lib/messages.js'
 import type { SerializableProjectField } from '../lib/project-board-fields.js'
 import {
-  destroyGlobalBoardsPicker,
-  initGlobalBoardsPicker,
-} from './global-boards-picker.js'
-import {
   DEFAULT_STATUS_FIELD_NAME,
   isTargetRepo,
   loadConfig,
   resolveGithubBearer,
-  showGlobalBoardsSection,
 } from '../lib/project-config.js'
 import { getOrCreatePanelHost, placePanelHost } from './projects-sidebar-mount.js'
 import { createFocProjectCard } from './foc-project-card.js'
@@ -320,7 +315,6 @@ async function sync(): Promise<void> {
   const ctx = pageContextFromLocation(window.location)
   if (!ctx) {
     clearHost()
-    destroyGlobalBoardsPicker()
     syncNativeProjectsExpand(false)
     return
   }
@@ -328,13 +322,8 @@ async function sync(): Promise<void> {
   const cfg = await loadConfig()
   syncNativeProjectsExpand(cfg.issuePrProjectsAutoExpand)
 
-  // Gear picker runs on all pages where visibility applies — not gated by target repos
-  if (showGlobalBoardsSection(ctx.owner, cfg.crossOrgBoardUrls)) {
-    injectStylesheet()
-    initGlobalBoardsPicker(ctx)
-  } else {
-    destroyGlobalBoardsPicker()
-  }
+  // Global boards in the Projects picker are handled by data injection
+  // (native-picker/, spec 008); no custom picker UI is rendered here.
 
   if (!isTargetRepo(cfg, ctx.owner, ctx.name)) {
     clearHost()

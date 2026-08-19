@@ -58,17 +58,24 @@ function fiberRootsFromDom(): Fiber[] {
   const roots: Fiber[] = []
   const candidates = document.querySelectorAll('react-app, [data-target="react-app.reactRoot"]')
   for (const el of candidates) {
-    const withRoot = el as Element & { reactRoot?: { _internalRoot?: { current?: Fiber } } }
+    const withRoot = el as Element & {
+      reactRoot?: Element & { _internalRoot?: { current?: Fiber } }
+    }
     const fromProp = withRoot.reactRoot?._internalRoot?.current
     if (fromProp) {
       roots.push(fromProp)
       continue
     }
-    // React 18 stamps the container with a __reactContainer$<hash> property.
-    for (const key of Object.keys(el)) {
-      if (key.startsWith('__reactContainer$')) {
-        const fiber = (el as unknown as Record<string, unknown>)[key] as Fiber | undefined
-        if (fiber) roots.push(fiber)
+    // React 18 stamps the mount container with a __reactContainer$<hash>
+    // property. On issue pages `react-app.reactRoot` is the container DOM
+    // element (verified live 2026-08-19), so check both it and the host.
+    for (const host of [withRoot.reactRoot, el]) {
+      if (!host) continue
+      for (const key of Object.keys(host)) {
+        if (key.startsWith('__reactContainer$')) {
+          const fiber = (host as unknown as Record<string, unknown>)[key] as Fiber | undefined
+          if (fiber) roots.push(fiber)
+        }
       }
     }
   }
@@ -78,22 +85,29 @@ function fiberRootsFromDom(): Fiber[] {
 /**
  * Walk fibers looking for a context provider whose value is either the Relay
  * environment itself or a `{ environment }` wrapper (ReactRelayContext).
+ * The provider sits ~90 levels deep on issue pages, so this is an iterative
+ * walk bounded by node count rather than depth.
  */
 function findRelayEnvironment(): RelayEnvironment | null {
   try {
-    const walk = (fiber: Fiber | null, depth: number): RelayEnvironment | null => {
-      if (!fiber || depth > 30) return null
-      const value = fiber.memoizedProps?.value
-      if (value) {
-        if (isRelayEnvironment(value)) return value
-        const wrapped = (value as { environment?: unknown }).environment
-        if (isRelayEnvironment(wrapped)) return wrapped
-      }
-      return walk(fiber.child, depth + 1) ?? walk(fiber.sibling, depth + 1)
-    }
     for (const root of fiberRootsFromDom()) {
-      const env = walk(root, 0)
-      if (env) return env
+      const stack: Fiber[] = [root]
+      const seen = new Set<Fiber>()
+      let visited = 0
+      while (stack.length > 0 && visited < 10_000) {
+        const fiber = stack.pop()
+        if (!fiber || seen.has(fiber)) continue
+        seen.add(fiber)
+        visited++
+        const value = fiber.memoizedProps?.value
+        if (value) {
+          if (isRelayEnvironment(value)) return value
+          const wrapped = (value as { environment?: unknown }).environment
+          if (isRelayEnvironment(wrapped)) return wrapped
+        }
+        if (fiber.child) stack.push(fiber.child)
+        if (fiber.sibling) stack.push(fiber.sibling)
+      }
     }
     return null
   } catch (err) {
