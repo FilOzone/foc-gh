@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "FOC GH",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Utilities for FOC team members working in GitHub.",
   "icons": {
     "16": "icons/icon16.png",
@@ -9,8 +9,14 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "permissions": ["storage", "identity"],
+  "permissions": ["storage", "identity", "activeTab", "scripting"],
   "host_permissions": ["https://github.com/*", "https://api.github.com/*"],
+  "commands": {
+    "copy-link-as-markdown": {
+      "suggested_key": { "default": "Alt+Shift+C" },
+      "description": "Copy this page's title and URL as a rich-text link"
+    }
+  },
   "background": {
     "service_worker": "service-worker.js",
     "type": "module"

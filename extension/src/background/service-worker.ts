@@ -6,6 +6,7 @@ import {
   type SerializableProjectField,
 } from '../lib/project-board-fields.js'
 import { parseGithubIssuePrInput } from '../lib/github-url.js'
+import { buildHtmlLink, buildMarkdownLink } from '../lib/copy-link.js'
 import { handleGetAuthStatus, handleGithubOAuthDisconnect, handleGithubOAuthStart } from './github-oauth-handler.js'
 import {
   DEFAULT_STATUS_FIELD_NAME,
@@ -979,6 +980,41 @@ async function runSampleBoardLinkStreaming(port: chrome.runtime.Port, sampleInpu
 
 chrome.action.onClicked.addListener(() => {
   void chrome.runtime.openOptionsPage()
+})
+
+const COPY_LINK_COMMAND = 'copy-link-as-markdown'
+
+function flashActionBadge(tabId: number, text: string, color: string): void {
+  void chrome.action.setBadgeText({ text, tabId })
+  void chrome.action.setBadgeBackgroundColor({ color, tabId })
+  setTimeout(() => {
+    void chrome.action.setBadgeText({ text: '', tabId })
+  }, 1500)
+}
+
+chrome.commands.onCommand.addListener((command, tab) => {
+  if (command !== COPY_LINK_COMMAND) return
+  void (async () => {
+    if (!tab?.id || !tab.url) return
+    const html = buildHtmlLink(tab.title ?? tab.url, tab.url)
+    const markdown = buildMarkdownLink(tab.title ?? tab.url, tab.url)
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: (htmlText: string, plainText: string) => {
+          const item = new ClipboardItem({
+            'text/html': new Blob([htmlText], { type: 'text/html' }),
+            'text/plain': new Blob([plainText], { type: 'text/plain' }),
+          })
+          return navigator.clipboard.write([item])
+        },
+        args: [html, markdown],
+      })
+      flashActionBadge(tab.id, '✓', '#1f883d')
+    } catch {
+      flashActionBadge(tab.id, '!', '#cf222e')
+    }
+  })()
 })
 
 chrome.runtime.onConnect.addListener((port) => {

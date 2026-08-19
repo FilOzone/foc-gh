@@ -31,6 +31,8 @@ const sampleCopyBtn = document.querySelector<HTMLButtonElement>('#sample-copy')
 const sampleOutEl = document.querySelector<HTMLPreElement>('#sample-out')
 const issuePrProjectsAutoExpandEl = document.querySelector<HTMLInputElement>('#issuePrProjectsAutoExpand')
 const orFilterPatternsEl = document.querySelector<HTMLTextAreaElement>('#or-filter-patterns')
+const copyLinkShortcutStatusEl = document.querySelector<HTMLParagraphElement>('#copy-link-shortcut-status')
+const changeShortcutBtn = document.querySelector<HTMLButtonElement>('#change-shortcut')
 
 function authMode(): 'github' | 'pat' {
   return authModePatEl?.checked === true ? 'pat' : 'github'
@@ -231,8 +233,22 @@ function renderStreamingDiag(
   pre.scrollTop = pre.scrollHeight
 }
 
+async function loadShortcutStatus(): Promise<void> {
+  if (!copyLinkShortcutStatusEl) return
+  const commands = await chrome.commands.getAll()
+  const cmd = commands.find((c) => c.name === 'copy-link-as-markdown')
+  copyLinkShortcutStatusEl.textContent = cmd?.shortcut
+    ? `Current shortcut: ${cmd.shortcut}`
+    : 'No shortcut assigned — click below to set one.'
+}
+
 void load()
+void loadShortcutStatus()
 saveBtn?.addEventListener('click', () => void save())
+
+changeShortcutBtn?.addEventListener('click', () => {
+  void chrome.tabs.create({ url: 'chrome://extensions/shortcuts' })
+})
 
 reposModeDefaultEl?.addEventListener('change', syncReposPanels)
 reposModeCustomEl?.addEventListener('change', syncReposPanels)
