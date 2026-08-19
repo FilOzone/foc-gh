@@ -49,11 +49,23 @@
       ],
       "js": ["board-filter.js"],
       "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://github.com/*"
+      ],
+      "js": ["native-picker.js"],
+      "run_at": "document_start"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["sidebar.css", "pr-expand-main-world.js", "board-data-injector.js"],
+      "resources": [
+        "sidebar.css",
+        "pr-expand-main-world.js",
+        "board-data-injector.js",
+        "native-picker-injector.js"
+      ],
       "matches": ["https://github.com/*"]
     }
   ]

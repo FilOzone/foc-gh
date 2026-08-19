@@ -203,6 +203,10 @@ export const QUERY_PROJECT_V2 = `
         id
         title
         url
+        number
+        closed
+        databaseId
+        viewerCanUpdate
       }
     }
   }

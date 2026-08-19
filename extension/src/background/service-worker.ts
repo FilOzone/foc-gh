@@ -1,4 +1,10 @@
-import type { ExtensionMessage, GetGlobalBoardsStateResponse, GlobalBoardRowState } from '../lib/messages.js'
+import type {
+  ExtensionMessage,
+  GetGlobalBoardsStateResponse,
+  GetNativePickerBoardsResponse,
+  GlobalBoardRowState,
+  NativePickerBoard,
+} from '../lib/messages.js'
 import {
   findSingleSelectFieldByName,
   linesForBoardFieldDiagnostics,
@@ -1082,6 +1088,10 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
     return getGlobalBoardsState(message.payload)
   }
 
+  if (message.type === 'GET_NATIVE_PICKER_BOARDS') {
+    return getNativePickerBoards()
+  }
+
   if (message.type === 'DELETE_PROJECT_ITEM') {
     const cfg = await loadConfig()
     const token = resolveGithubBearer(cfg)
@@ -1270,6 +1280,73 @@ async function resolveGlobalBoardRow(
     itemId: match?.id ?? null,
     label: project.title,
   }
+}
+
+/**
+ * Board metadata for native picker injection (spec 008). Board identity rarely
+ * changes, so results are cached for the service worker's lifetime.
+ */
+const nativePickerBoardCache = new Map<string, NativePickerBoard>()
+
+async function getNativePickerBoards(): Promise<GetNativePickerBoardsResponse> {
+  const cfg = await loadConfig()
+  const bearer = resolveGithubBearer(cfg)
+  if (!bearer) {
+    return {
+      ok: false,
+      code: 'NO_TOKEN',
+      error: 'Configure a GitHub PAT or OAuth token in extension options.',
+    }
+  }
+
+  const boards: NativePickerBoard[] = []
+  for (const raw of cfg.crossOrgBoardUrls) {
+    const url = raw.trim()
+    const parsed = parseOrgProjectUrl(url)
+    if (!parsed) continue
+
+    const cached = nativePickerBoardCache.get(url)
+    if (cached) {
+      boards.push(cached)
+      continue
+    }
+
+    const res = await graphqlRequest(bearer, QUERY_PROJECT_V2, {
+      org: parsed.org,
+      number: parsed.number,
+    })
+    if (res.errors?.length) continue
+    const project = (
+      res.data as {
+        organization?: {
+          projectV2?: {
+            id?: string
+            title?: string
+            url?: string
+            number?: number
+            closed?: boolean
+            databaseId?: number | null
+            viewerCanUpdate?: boolean
+          }
+        }
+      }
+    )?.organization?.projectV2
+    if (!project?.id || project.closed) continue
+
+    const board: NativePickerBoard = {
+      projectId: project.id,
+      databaseId: typeof project.databaseId === 'number' ? project.databaseId : null,
+      title: project.title ?? url,
+      number: project.number ?? parsed.number,
+      org: parsed.org,
+      url: project.url ?? url,
+      viewerCanUpdate: project.viewerCanUpdate === true,
+    }
+    nativePickerBoardCache.set(url, board)
+    boards.push(board)
+  }
+
+  return { ok: true, boards }
 }
 
 async function getGlobalBoardsState(payload: {

@@ -45,6 +45,26 @@ export type DeleteProjectItemMessage = {
   }
 }
 
+/** Native picker data injection (spec 008): configured board metadata. */
+export type GetNativePickerBoardsMessage = {
+  type: 'GET_NATIVE_PICKER_BOARDS'
+}
+
+export type NativePickerBoard = {
+  projectId: string
+  /** Numeric memex id (legacy PR picker); null when resolution failed. */
+  databaseId: number | null
+  title: string
+  number: number
+  org: string
+  url: string
+  viewerCanUpdate: boolean
+}
+
+export type GetNativePickerBoardsResponse =
+  | { ok: true; boards: NativePickerBoard[] }
+  | { ok: false; error: string; code?: 'NO_TOKEN' }
+
 export type GlobalBoardRowState = {
   url: string
   projectId: string
@@ -134,6 +154,7 @@ export type ExtensionMessage =
   | AddToProjectMessage
   | GetGlobalBoardsStateMessage
   | DeleteProjectItemMessage
+  | GetNativePickerBoardsMessage
   | UpdateStatusMessage
   | UpdateItemFieldMessage
   | StatusFieldMessage

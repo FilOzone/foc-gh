@@ -34,7 +34,7 @@ Replace the custom global-boards picker UI on issue and PR pages with data-layer
 
 | Principle | Status | Notes |
 |-----------|--------|-------|
-| I. Least privilege | PASS | No new hosts, scopes, or permissions. Adds one `web_accessible_resources` script and one content-script entry on already-matched URL patterns; called out for review. |
+| I. Least privilege | PASS | No new hosts, scopes, or permissions. Adds one `web_accessible_resources` script and one content-script entry. The new entry matches `https://github.com/*` (wider than the issue/PR patterns) because GitHub soft-navigates from issue lists into issue pages within one JS context: a fetch patch installed only on `issues/*`/`pull/*` hard loads would silently miss the common list-to-detail navigation. The script is a tiny loader whose injector stays dormant off issue/PR pages; host permissions already cover `https://github.com/*`. |
 | II. User-owned credentials | PASS | Issue-page adds/removes ride the user's own GitHub session via GitHub's own UI actions. Extension-performed PR mutations reuse the existing consented PAT/OAuth path unchanged. |
 | III. GitHub API discipline | PASS with recorded deviation | Extension-initiated calls remain supported GraphQL/REST. Page-data augmentation reads/rewrites GitHub's internal feeds, same accepted deviation class as spec 007 (see Complexity Tracking). All paths fail open with console warnings. |
 | IV. Lightweight verification | PASS | quickstart.md defines manual scenarios mapped to canonical test URLs; manifest change includes smoke checklist in PR. |
