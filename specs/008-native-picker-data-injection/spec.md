@@ -1,8 +1,11 @@
 # Feature Specification: Native Picker Data Injection
 
 **Feature Branch**: `008-native-picker-data-injection`
+
 **Created**: 2026-08-19
+
 **Status**: Draft
+
 **Input**: User description: "Replace the custom global-boards picker UI on GitHub issue and PR pages with data-layer interception: augment GitHub's own picker data feeds so global boards (e.g. the FilOzone FOC board) appear and behave as native rows in GitHub's own Projects picker and sidebar, mirroring the interception pattern already used by the project-board OR filter."
 
 ## User Scenarios & Testing *(mandatory)*

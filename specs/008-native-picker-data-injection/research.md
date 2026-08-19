@@ -122,11 +122,24 @@ The PR sidebar Projects section is a server-rendered partial and also excludes c
 - Kept: FOC field card and its service-worker paths, membership resolution (REST fallback and GraphQL), OAuth/PAT plumbing; the picker feed injection consumes the same membership answers.
 - The OR filter's injector (`board-filter/board-data-injector.ts`) is the pattern template: `document_start` main-world script via `web_accessible_resources`, original-fetch preservation, fail-open on any error. Prefer overriding `res.json`/`res.text` on the real Response (keeps `response.url` and headers intact) over constructing a synthetic Response; the PoC used this successfully.
 
+## Learnings applied from spec 007 (OR filter): initial load vs followup updates
+
+The OR filter project established a two-phase pattern that this feature adopts (decision confirmed with the user 2026-08-19):
+
+- **Followup requests are the easy case.** A `document_start` main-world fetch patch (via `web_accessible_resources` script src injection, guarded by an install flag because Turbo preserves the JS context across SPA navs) catches every post-load request. Here that covers the picker feed, picker search, `IssueViewerViewQuery` on soft navs, and PR `projects_suggestions`.
+- **Initial page load never goes through fetch.** GitHub server-renders JSON islands and hydrates client caches from them; for an augmented view of that data, do NOT fight the SSR payload (spec 007's failed-approaches table: clearing or overwriting islands breaks layout or is a no-op). Instead, mutate the client cache after hydration through the framework's own API, which triggers GitHub's own re-render.
+  - Spec 007 did this with React Query: fiber-walk from the app root to a context provider exposing the QueryClient, then `invalidateQueries` so active queries refetch through the patched fetch.
+  - Here the issue page membership data lives in a **Relay** store, and invalidation is not enough because the server filters cross-org memberships out of any refetch. So the analog is a **Relay store commit**: locate the Relay environment (same fiber-walk family, or via the mutation-observed root), then insert the membership edge into `client:<issueNodeId>:__ProjectSection_projectItems_connection(allowSameEnterprise:true)` once the extension's membership answer arrives. The PoC observed GitHub's own mutation updater do exactly this insert live, updating both sidebar and picker state, so the store path is proven renderable.
+  - This also resolves the async race: the membership answer arrives whenever it arrives, and the commit works at any time after hydration; no pre-hydration rewrite needed.
+- **Fail open everywhere** (spec 007 discipline): any error in patching, augmenting, fiber-walking, or committing must leave native behavior untouched, with a console warning.
+- **Response identity matters**: override `res.json`/`res.text` on the real Response rather than constructing a synthetic Response (GitHub code paths can depend on `response.url`/headers; the PoC validated the override approach).
+- **Picker first-open staleness**: the picker's React Query cache is backed by an IndexedDB persister (`offline_cache_v2::<login>::queries`). Decision: seed/patch the persisted `key-["item_picker","projects",{...}]` entry at page load (its `state.data` holds the transformed lists whose exact shape is documented above), so the injected row appears on the very first open. Fetch interception remains the source of truth; the IDB seed only fixes first paint.
+
 ## Open questions for the plan
 
-1. SSR island rewrite vs Relay store commit for membership on hard navs (race between async membership answer and hydration). Prototype both; the Relay commit also gives live sidebar updates.
+1. Resolved (see learnings above): hard-nav membership display uses a post-hydration Relay store commit, not SSR island rewriting.
 2. Native delete mutation variant on issue pages: confirm it fires and succeeds cross-org once the membership edge is injected with a real item id.
-3. IndexedDB seeding to make the injected row appear on the very first picker open, vs accepting one-open lag.
+3. Resolved (see learnings above): seed the IndexedDB persister entry at page load for first-open correctness.
 4. PR pages: how far to go (picker-only vs also augmenting the sidebar partial) given GitHub's pending React PR rollout.
 5. De-duplication guard for same-org repos where the board is already in the feed (scenarios 1 and 2).
 6. Whether `manifest.json` content-script matches need widening from `issues/*`/`pull/*` for the `document_start` injector (current picker scripts already run there; the injector must run at `document_start` like the OR filter's).
