@@ -31,7 +31,7 @@ import type {
   SuggestionRow,
 } from './feed-shapes.js'
 import { buildPickerFeedNode, NP_EVENTS, parseDetail } from './feed-shapes.js'
-import { commitMembershipEdge } from './relay-membership.js'
+import { commitMembershipEdge, noteFieldListQueryHash } from './relay-membership.js'
 import { seedItemPickerCache } from './idb-seeder.js'
 
 const LOG = '[FilOz:native-picker]'
@@ -373,7 +373,30 @@ if ((window as unknown as Record<string, unknown>).__filozNativePickerInstalled)
     } catch {
       return originalFetch(input, init)
     }
-    if (!armed() || url.origin !== window.location.origin) return originalFetch(input, init)
+    if (url.origin !== window.location.origin) return originalFetch(input, init)
+
+    // Capture-and-cache: whenever GitHub itself fires the field list query
+    // (any project card expansion, any page), harvest the CURRENT persisted
+    // query hash so Status enrichment survives hash rotation. Runs even while
+    // dormant — it is a read-only sniff of the outgoing URL.
+    if (url.pathname === '/_graphql') {
+      const rawBody = url.searchParams.get('body')
+      if (rawBody?.includes('ProjectItemSectionFieldListQuery')) {
+        try {
+          const parsed = JSON.parse(rawBody) as { persistedQueryName?: string; query?: string }
+          if (
+            parsed.persistedQueryName === 'ProjectItemSectionFieldListQuery' &&
+            typeof parsed.query === 'string'
+          ) {
+            noteFieldListQueryHash(parsed.query)
+          }
+        } catch {
+          // not JSON — ignore
+        }
+      }
+    }
+
+    if (!armed()) return originalFetch(input, init)
 
     try {
       const method = (

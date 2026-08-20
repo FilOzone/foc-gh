@@ -125,6 +125,44 @@ function findRelayEnvironment(): RelayEnvironment | null {
 
 // --- Status enrichment via GitHub's own node-by-id query ---------------------
 
+/**
+ * `_graphql` only accepts persisted queries: the client sends a hash of a
+ * query document registered server-side at GitHub's deploy time, never the
+ * query text. Since the extension initiates this request itself, it must
+ * present a valid hash. The default below was captured live 2026-08-19 and
+ * can rotate with GitHub deploys, so the injector also harvests the current
+ * hash from GitHub's OWN requests whenever any project card is expanded
+ * (capture-and-cache, see noteFieldListQueryHash) and the cached value is
+ * preferred. On total failure the collapsed Status row is simply omitted;
+ * everything else keeps working.
+ */
+const DEFAULT_FIELD_LIST_QUERY_HASH = 'db338523457639ec271344f360559dce'
+const FIELD_LIST_HASH_CACHE_KEY = 'filoz-np:ProjectItemSectionFieldListQuery-hash'
+
+/** Called by the injector when GitHub itself fires the field list query. */
+export function noteFieldListQueryHash(hash: string): void {
+  try {
+    if (!/^[0-9a-f]{16,64}$/.test(hash)) return
+    if (localStorage.getItem(FIELD_LIST_HASH_CACHE_KEY) === hash) return
+    localStorage.setItem(FIELD_LIST_HASH_CACHE_KEY, hash)
+    console.log(LOG, 'Captured current ProjectItemSectionFieldListQuery hash')
+  } catch {
+    // storage unavailable — the hardcoded default still applies
+  }
+}
+
+function fieldListHashCandidates(): string[] {
+  let cached: string | null = null
+  try {
+    cached = localStorage.getItem(FIELD_LIST_HASH_CACHE_KEY)
+  } catch {
+    cached = null
+  }
+  return cached && cached !== DEFAULT_FIELD_LIST_QUERY_HASH
+    ? [cached, DEFAULT_FIELD_LIST_QUERY_HASH]
+    : [DEFAULT_FIELD_LIST_QUERY_HASH]
+}
+
 type JsonObject = Record<string, unknown>
 
 type StatusData = {
@@ -143,17 +181,7 @@ async function fetchStatusData(
   itemId: string,
 ): Promise<StatusData | null> {
   try {
-    const body = JSON.stringify({
-      persistedQueryName: 'ProjectItemSectionFieldListQuery',
-      query: 'db338523457639ec271344f360559dce',
-      variables: { id: itemId },
-    })
-    const res = await fetcher(`/_graphql?body=${encodeURIComponent(body)}`, {
-      credentials: 'include',
-      headers: { Accept: 'application/json' },
-    })
-    if (!res.ok) return null
-    const data = (await res.json()) as {
+    type FieldListResponse = {
       data?: {
         node?: {
           project?: { fields?: { edges?: Array<{ node?: JsonObject } | null> } }
@@ -161,8 +189,31 @@ async function fetchStatusData(
         }
       }
     }
-    const node = data.data?.node
-    if (!node) return null
+    let node: NonNullable<FieldListResponse['data']>['node'] | undefined
+    for (const hash of fieldListHashCandidates()) {
+      const body = JSON.stringify({
+        persistedQueryName: 'ProjectItemSectionFieldListQuery',
+        query: hash,
+        variables: { id: itemId },
+      })
+      const res = await fetcher(`/_graphql?body=${encodeURIComponent(body)}`, {
+        credentials: 'include',
+        headers: { Accept: 'application/json' },
+      })
+      if (!res.ok) continue
+      const data = (await res.json()) as FieldListResponse
+      if (data.data?.node) {
+        node = data.data.node
+        break
+      }
+    }
+    if (!node) {
+      console.warn(
+        LOG,
+        'ProjectItemSectionFieldListQuery failed for all known hashes; Status enrichment skipped (hash likely rotated — it re-captures when any project card is expanded)',
+      )
+      return null
+    }
     const field =
       (node.project?.fields?.edges ?? [])
         .map((e) => e?.node)
