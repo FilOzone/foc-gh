@@ -1,6 +1,20 @@
-# Global boards in the Projects picker — status
+# Global boards on issue and PR pages — status
 
-**Last updated:** 2026-08-19
+**Last updated:** 2026-08-20
+
+## Support matrix: native vs extension-rendered
+
+Terminology per [github-page-layout.md](github-page-layout.md#terminology-canonical). "Native" means GitHub renders it from data the extension injects; "FOC field card" is the extension-rendered card (spec 002).
+
+| Surface | Issue pages (React UI) | Legacy PR pages |
+|---------|------------------------|-----------------|
+| Projects picker row for global boards | Native (item-pickers feed augmentation) | Native (projects_suggestions augmentation) |
+| Add / remove via picker | Native GitHub mutation, session cookies | Extension GraphQL (PAT/OAuth); GitHub's endpoint ignores cross-org ids |
+| Membership in the Projects section | Native project card (Relay edge commit) | Not possible natively; FOC field card renders instead |
+| Collapsed Status row | Native (edge enriched via ProjectItemSectionFieldListQuery) | FOC field card |
+| Expanded field list | Native (GitHub lazily fetches it by item id) | FOC field card |
+| Field editing | Native GitHub mutation, session cookies | FOC field card via extension GraphQL |
+| Picker checked state | Native (derived from the committed Relay edge) | Extension-computed `selected` in the injected row |
 
 ## Current behavior (spec 008: native picker data injection)
 
@@ -15,11 +29,20 @@ Configured global boards now appear as **native rows inside GitHub's own Project
 
 The injected project card in the Projects section is indistinguishable from a same-org board: collapsed Status row (the extension enriches the Relay edge with the Status value/field via GitHub's own `ProjectItemSectionFieldListQuery`, which is served cross-org), an expandable field list that GitHub fetches and renders itself, and native field editing (`updateProjectItemFieldValueMutation`, accepted cross-org). The FOC field card no longer renders on issue pages; it remains on legacy PR pages only.
 
-## Limitations
+## Open issues and known risks
 
-- Pages where the viewer lacks repo write access get no native picker from GitHub, so no add/remove entry point there (matches previously shipped behavior).
-- On non-proactive repos, existing membership becomes visible only after the picker is first opened (lazy resolution).
-- Legacy PR pages cannot render cross-org boards in the Projects section; the FOC field card covers membership display and field editing there until GitHub's React PR experience lands.
+Behavioral gaps (by design or pending):
+
+- **No picker without repo write access**: GitHub renders no picker for read-only viewers, so there is no add/remove entry point on such pages (e.g. ipld repos). Matches previously shipped behavior; membership display on issues still works when the repo is proactive.
+- **Lazy membership on non-proactive repos**: existing membership (checked state, native project card) becomes visible only after the picker is first opened, because the REST membership scan is deferred to keep API cost at the old picker's profile. Proactive target repos resolve at page load.
+- **Legacy PR Projects section cannot show cross-org boards**: the section is a server-rendered partial; the FOC field card fills the gap until GitHub's React PR experience replaces the legacy page (at which point the issue-page path applies and the card can be fully retired).
+- **First picker open with a pre-existing stale cache**: GitHub paints the picker from its IndexedDB persister; the extension seeds that entry at page load, but a picker opened in the same instant as page load can still show the pre-seed list once.
+
+Fragility risks (fail-open, but worth knowing):
+
+- **Hardcoded persisted-query hash**: the Status enrichment calls `ProjectItemSectionFieldListQuery` with its persisted hash (`db33852345…`) captured 2026-08-19. If GitHub rotates it, enrichment fails gracefully: the project card renders without the collapsed Status row until the hash in `native-picker/relay-membership.ts` is refreshed. Same class of risk for the mutation names the injector observes (`updateIssueProjectsRelayMutation`), matched by name.
+- **React/Relay internals**: Relay environment discovery walks React fiber internals (`react-app` reactRoot container key, provider ~90 levels deep) and the connection id format `__ProjectSection_projectItems_connection(allowSameEnterprise:true)`. A GitHub frontend rewrite breaks membership display (not the picker or mutations); symptom is the console warning "Relay environment not found".
+- **Undocumented endpoints**: all intercepted feeds (item-pickers, projects_suggestions, the PR form) are GitHub internals and can change without notice; every path falls back to untouched native behavior with a `[FilOz:native-picker]` console warning.
 
 ## What else works
 
