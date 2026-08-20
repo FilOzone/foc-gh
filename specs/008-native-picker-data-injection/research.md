@@ -163,8 +163,8 @@ projectV2(number: 14) { items(filterBy: { contentId: "PR_kwDO…" }, first: 1) {
 
 **Wish 2: ask from the content side.** `node(id: <PR/issue id>) { … projectItems { … } }` exists, reads LIVE data, and would answer in one request — but GitHub server-side filters cross-org memberships out of the connection. Verified repeatedly (2026-08-19/20): solstice#9 returned only same-org Solstice with the FOC item omitted; filecoin-pin#56 returned `[]` moments after the FOC item verifiably existed. Consequences:
 
-- Same-org boards: fully reliable in both directions; this is why `QUERY_NODE_PROJECT_ITEMS` is the same-org path and needs no help.
-- Cross-org boards: **presence proves membership, absence proves nothing.** It can confirm but never deny.
+- Same-org boards: it would be fully reliable, but same-org boards are OUT OF SCOPE for the extension entirely (GitHub renders and manages them natively), so no same-org code path exists; the extension just skips.
+- Cross-org boards (the only case the extension handles): **presence proves membership, absence proves nothing.** It can confirm but never deny.
 
 ### The stale search index
 
@@ -179,8 +179,7 @@ Paginating `ProjectV2.items` (100/page) and matching `content.id` client-side IS
 "At time X the user removed item Y. If search says otherwise a couple of minutes afterwards, don't trust it — trust me."
 
 - When the extension performs (or observes) an add/remove, the mutation response is authoritative and includes the item id. The native-picker layer forwards it via `filoz:boards-changed` detail `{projectId, itemId|null}`.
-- issue-sidebar stores it per tab (`sessionStorage`, 5 min TTL) and passes it to `GET_PANEL_STATE`; the worker then skips the REST search entirely — `itemId` present means member (field values fetched live by node id, no index involved), null means not a member.
-- Same-org boards ignore the hint: the content-side GraphQL connection is live and unfiltered there, hence authoritative on its own (this is also the invalidation anchor: a live GraphQL result showing the item always wins, and on same-org pages that signal is available on every load).
+- issue-sidebar stores it per tab (`sessionStorage`, 30 min TTL; index convergence was measured taking up to ~20 minutes) and passes it to `GET_PANEL_STATE`; the worker then skips the REST search entirely — `itemId` present means member (field values fetched live by node id, no index involved), null means not a member.
 - After the TTL the search index has converged in practice and becomes the source of truth again, so changes made from other tabs or machines re-surface.
 - Known residual: within the TTL, a change made by ANOTHER actor contradicting the hint is indistinguishable from index staleness and loses; the TTL bounds this window. Cross-tab: the hint is per tab, so a second tab inside the lag window still sees the index's stale answer.
 

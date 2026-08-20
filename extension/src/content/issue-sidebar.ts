@@ -8,6 +8,7 @@ import {
   DEFAULT_STATUS_FIELD_NAME,
   isTargetRepo,
   loadConfig,
+  parseOrgProjectUrl,
   resolveGithubBearer,
 } from '../lib/project-config.js'
 import { getOrCreatePanelHost, placePanelHost } from './projects-sidebar-mount.js'
@@ -32,12 +33,13 @@ type MembershipHint = {
 }
 
 /**
- * "At time X I know the user removed item Y; if search says otherwise a
- * couple of minutes afterwards, trust me." After the TTL the search index
- * has converged in practice, and trusting it again keeps changes made
- * outside this tab visible.
+ * "At time X I know the user removed item Y; if search says otherwise
+ * shortly afterwards, trust me." Index convergence has been measured at up
+ * to ~20 minutes (2026-08-20), so the TTL must comfortably exceed that;
+ * afterwards the search becomes the source of truth again so changes made
+ * outside this tab re-surface.
  */
-const MEMBERSHIP_HINT_TTL_MS = 5 * 60 * 1000
+const MEMBERSHIP_HINT_TTL_MS = 30 * 60 * 1000
 const MEMBERSHIP_HINT_STORAGE_KEY = 'filoz-membership-hint'
 
 // Persisted per tab (sessionStorage) so a page reload inside the index-lag
@@ -224,6 +226,14 @@ async function render(
   const cfg = await loadConfig()
 
   if (!isTargetRepo(cfg, ctx.owner, ctx.name)) {
+    clearHost()
+    return
+  }
+
+  // A global board in the same org as this repo is GitHub's business: it
+  // renders and manages it natively, so the extension skips entirely.
+  const boardOrg = parseOrgProjectUrl(cfg.crossOrgBoardUrls[0] ?? '')?.org
+  if (boardOrg && boardOrg.toLowerCase() === ctx.owner.toLowerCase()) {
     clearHost()
     return
   }

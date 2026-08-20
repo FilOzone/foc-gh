@@ -291,62 +291,6 @@ export const QUERY_PR_NODE_ID = `
   }
 `
 
-export const QUERY_NODE_PROJECT_ITEMS = `
-  query NodeProjectItems($id: ID!) {
-    node(id: $id) {
-      ... on Issue {
-        id
-        projectItems(first: 100) {
-          nodes {
-            id
-            project {
-              ... on ProjectV2 {
-                id
-                title
-                url
-                number
-                owner {
-                  ... on Organization { login }
-                  ... on User { login }
-                }
-              }
-            }
-            fieldValues(first: 50) {
-              nodes {
-${PROJECT_V2_ITEM_FIELD_VALUE_NODE_FRAGMENTS}
-              }
-            }
-          }
-        }
-      }
-      ... on PullRequest {
-        id
-        projectItems(first: 100) {
-          nodes {
-            id
-            project {
-              ... on ProjectV2 {
-                id
-                title
-                url
-                number
-                owner {
-                  ... on Organization { login }
-                  ... on User { login }
-                }
-              }
-            }
-            fieldValues(first: 50) {
-              nodes {
-${PROJECT_V2_ITEM_FIELD_VALUE_NODE_FRAGMENTS}
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-`
 
 /** Paginate project board items to find the card for an Issue/PR node id (R3 fallback). */
 export const QUERY_PROJECT_V2_ITEMS_PAGE = `
