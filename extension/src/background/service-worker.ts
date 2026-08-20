@@ -1395,6 +1395,7 @@ type PanelPayload = {
   name: string
   number: number
   kind: 'issue' | 'pull_request'
+  membershipHint?: { projectId: string; itemId: string | null }
 }
 
 async function getPanelStateForBoardUrl(
@@ -1460,7 +1461,35 @@ async function getPanelStateForBoardUrl(
   let match: ProjectItemNode | null = null
 
   let fieldDefsError: string | null = null
-  if (crossOrg) {
+  // The hint applies only cross-org: for same-org boards the content-side
+  // GraphQL projectItems connection below is live and unfiltered, so it is
+  // authoritative on its own (see docs: membership resolution & stale search).
+  const hint = crossOrg ? payload.membershipHint : undefined
+  if (hint && hint.projectId === project.id) {
+    // Authoritative post-mutation state from the page (spec 008): the REST
+    // membership search index lags mutations by minutes, so trust the hint
+    // and resolve field values by node id instead of searching.
+    const defsRes = await graphqlRequest(bearer, QUERY_PROJECT_V2_FIELD_DEFINITIONS, {
+      projectId: project.id,
+    })
+    if (defsRes.errors?.length) {
+      fieldDefsError = firstError(defsRes.errors)
+    } else {
+      boardFields = parseProjectV2FieldDefinitions(defsRes.data)
+    }
+    if (hint.itemId) {
+      const fvRes = await graphqlRequest(bearer, QUERY_PROJECT_V2_ITEM_FIELD_VALUES, {
+        itemId: hint.itemId,
+      })
+      const fvNode = (fvRes.data as { node?: { fieldValues?: ProjectItemNode['fieldValues'] } })
+        ?.node
+      match = {
+        id: hint.itemId,
+        project: { id: project.id },
+        fieldValues: fvRes.errors?.length ? undefined : fvNode?.fieldValues,
+      }
+    }
+  } else if (crossOrg) {
     const [defsRes, restMatch] = await Promise.all([
       graphqlRequest(bearer, QUERY_PROJECT_V2_FIELD_DEFINITIONS, {
         projectId: project.id,

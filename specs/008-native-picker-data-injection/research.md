@@ -148,6 +148,42 @@ Relay components come in two kinds, and GitHub's Projects section uses both:
 
 **Persisted-query hash resilience (capture-and-cache).** `_graphql` accepts only persisted queries: the client sends a server-registered hash, never query text, so the extension must present a valid hash for its one self-initiated call. The hash captured 2026-08-19 (`db338523…`) is the hardcoded seed; the injector additionally harvests the current hash from GitHub's OWN field-list requests (fired on any project card expansion, any page, even while the injector is dormant) into `localStorage` (`filoz-np:ProjectItemSectionFieldListQuery-hash`), and enrichment tries the cached hash before the seed. If every hash fails (rotation with no capture yet), the collapsed Status row is omitted and a console warning explains that expanding any project card re-captures; picker, card expansion, and mutations are unaffected.
 
+## Membership resolution: the queries we wish we could run, the stale search index, and the hint protocol
+
+Added 2026-08-20 after debugging the "temperamental" FOC field card on legacy PR pages.
+
+### The queries we wish we could run
+
+**Wish 1: filter a board's items by content, server-side.** Does not exist in the public GraphQL schema: `ProjectV2.items` accepts only `first/after/last/before/orderBy(POSITION)`; there is no `filterBy` and no `query:` argument. The board filter language (`repo:x/y is:pr 1`) exists only on the REST endpoint (`GET /orgs/<org>/projectsV2/<n>/items?q=…`) and the internal memex API.
+
+```graphql
+# ✗ rejected by the schema — items() has no content filter
+projectV2(number: 14) { items(filterBy: { contentId: "PR_kwDO…" }, first: 1) { … } }
+```
+
+**Wish 2: ask from the content side.** `node(id: <PR/issue id>) { … projectItems { … } }` exists, reads LIVE data, and would answer in one request — but GitHub server-side filters cross-org memberships out of the connection. Verified repeatedly (2026-08-19/20): solstice#9 returned only same-org Solstice with the FOC item omitted; filecoin-pin#56 returned `[]` moments after the FOC item verifiably existed. Consequences:
+
+- Same-org boards: fully reliable in both directions; this is why `QUERY_NODE_PROJECT_ITEMS` is the same-org path and needs no help.
+- Cross-org boards: **presence proves membership, absence proves nothing.** It can confirm but never deny.
+
+### The stale search index
+
+The REST `?q=` endpoint answers from GitHub's search index, which is eventually consistent and lags board mutations by **seconds to minutes in both directions** (measured live: a deleted item still returned minutes after deletion; a fresh add invisible for over 70 seconds of retries). Any membership strategy that re-queries it shortly after a mutation renders the wrong state: the FOC field card lingering after a remove, failing to appear after an add, or resurrecting on a page reload inside the lag window. Retry-with-backoff does not fix this; the lag routinely outlives any reasonable retry budget.
+
+### Rejected: the live GraphQL scan
+
+Paginating `ProjectV2.items` (100/page) and matching `content.id` client-side IS live and correct, but costs `ceil(boardSize/100)` requests per check, the board has thousands of items, and every check on a PR that is NOT on the board pays the full worst case. Rejected on cost (decision 2026-08-20); `QUERY_PROJECT_V2_ITEMS_PAGE` remains diagnostics-only.
+
+### Chosen: the mutation-derived membership hint
+
+"At time X the user removed item Y. If search says otherwise a couple of minutes afterwards, don't trust it — trust me."
+
+- When the extension performs (or observes) an add/remove, the mutation response is authoritative and includes the item id. The native-picker layer forwards it via `filoz:boards-changed` detail `{projectId, itemId|null}`.
+- issue-sidebar stores it per tab (`sessionStorage`, 5 min TTL) and passes it to `GET_PANEL_STATE`; the worker then skips the REST search entirely — `itemId` present means member (field values fetched live by node id, no index involved), null means not a member.
+- Same-org boards ignore the hint: the content-side GraphQL connection is live and unfiltered there, hence authoritative on its own (this is also the invalidation anchor: a live GraphQL result showing the item always wins, and on same-org pages that signal is available on every load).
+- After the TTL the search index has converged in practice and becomes the source of truth again, so changes made from other tabs or machines re-surface.
+- Known residual: within the TTL, a change made by ANOTHER actor contradicting the hint is indistinguishable from index staleness and loses; the TTL bounds this window. Cross-tab: the hint is per tab, so a second tab inside the lag window still sees the index's stale answer.
+
 ## Open questions for the plan
 
 1. Resolved (see learnings above): hard-nav membership display uses a post-hydration Relay store commit, not SSR island rewriting.

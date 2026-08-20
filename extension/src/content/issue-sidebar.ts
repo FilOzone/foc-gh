@@ -18,6 +18,72 @@ import { syncNativeProjectsExpand } from './native-projects-expand.js'
 
 let loadToken = 0
 
+/**
+ * Authoritative membership state from the native-picker layer's last add or
+ * remove on this page (spec 008), delivered via `filoz:boards-changed`
+ * detail. Overrides the REST membership search, whose index lags mutations
+ * by minutes and would otherwise show (or hide) the card incorrectly.
+ */
+type MembershipHint = {
+  pageKey: string
+  projectId: string
+  itemId: string | null
+  at: number
+}
+
+/**
+ * "At time X I know the user removed item Y; if search says otherwise a
+ * couple of minutes afterwards, trust me." After the TTL the search index
+ * has converged in practice, and trusting it again keeps changes made
+ * outside this tab visible.
+ */
+const MEMBERSHIP_HINT_TTL_MS = 5 * 60 * 1000
+const MEMBERSHIP_HINT_STORAGE_KEY = 'filoz-membership-hint'
+
+// Persisted per tab (sessionStorage) so a page reload inside the index-lag
+// window still renders the authoritative post-mutation state.
+let membershipHint: MembershipHint | null = null
+try {
+  const raw = sessionStorage.getItem(MEMBERSHIP_HINT_STORAGE_KEY)
+  if (raw) membershipHint = JSON.parse(raw) as MembershipHint
+} catch {
+  membershipHint = null
+}
+
+function pageKeyFromLocation(): string {
+  const ctx = pageContextFromLocation(window.location)
+  return ctx ? `${ctx.owner}/${ctx.name}#${ctx.number}`.toLowerCase() : ''
+}
+
+function activeMembershipHint(): { projectId: string; itemId: string | null } | undefined {
+  if (!membershipHint) return undefined
+  if (membershipHint.pageKey !== pageKeyFromLocation()) return undefined
+  if (Date.now() - membershipHint.at > MEMBERSHIP_HINT_TTL_MS) return undefined
+  return { projectId: membershipHint.projectId, itemId: membershipHint.itemId }
+}
+
+function captureMembershipHint(ev: Event): void {
+  const raw = (ev as CustomEvent).detail
+  if (typeof raw !== 'string') return
+  try {
+    const detail = JSON.parse(raw) as { projectId?: string; itemId?: string | null }
+    if (typeof detail.projectId !== 'string') return
+    membershipHint = {
+      pageKey: pageKeyFromLocation(),
+      projectId: detail.projectId,
+      itemId: typeof detail.itemId === 'string' ? detail.itemId : null,
+      at: Date.now(),
+    }
+    try {
+      sessionStorage.setItem(MEMBERSHIP_HINT_STORAGE_KEY, JSON.stringify(membershipHint))
+    } catch {
+      // storage unavailable — in-memory hint still applies for this page view
+    }
+  } catch {
+    // event without a parseable detail — plain refresh request
+  }
+}
+
 function injectStylesheet(): void {
   const id = 'filoz-foc-sidebar-css'
   if (document.getElementById(id)) return
@@ -193,6 +259,7 @@ async function render(
 
   let state: PanelState
   try {
+    const hint = activeMembershipHint()
     state = await sendMessage<PanelState>({
       type: 'GET_PANEL_STATE',
       payload: {
@@ -200,6 +267,7 @@ async function render(
         name: ctx.name,
         number: ctx.number,
         kind: ctx.kind,
+        membershipHint: hint,
       },
     } satisfies GetPanelStateMessage)
   } catch (e) {
@@ -351,7 +419,10 @@ function bindNavigation(): void {
     document.addEventListener(ev, run)
   }
   window.addEventListener('popstate', run)
-  document.addEventListener('filoz:boards-changed', run)
+  document.addEventListener('filoz:boards-changed', (ev) => {
+    captureMembershipHint(ev)
+    run()
+  })
 }
 
 void sync()

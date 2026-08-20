@@ -40,6 +40,21 @@ import { NP_EVENTS, parseDetail } from './feed-shapes.js'
 
 const LOG = '[FilOz:native-picker]'
 
+/**
+ * Keep the FOC field card (spec 002) in sync with picker toggles. The board's
+ * REST membership search index lags mutations by minutes, so the card layer
+ * cannot be left to re-discover membership on its own. Instead the mutation
+ * result is forwarded as an authoritative hint via `filoz:boards-changed`
+ * detail (consumed by issue-sidebar.ts, passed to GET_PANEL_STATE). Removal
+ * additionally clears the card from the DOM immediately.
+ */
+function syncFocFieldCard(boardProjectId: string, itemId: string | null): void {
+  if (itemId === null) {
+    document.getElementById('filoz-foc-board-panel-host')?.remove()
+  }
+  dispatch('filoz:boards-changed', { projectId: boardProjectId, itemId })
+}
+
 function injectMainWorldScript(): void {
   const id = 'filoz-native-picker-injector'
   if (document.getElementById(id)) return
@@ -242,6 +257,7 @@ async function handlePrToggle(detail: NpPrToggleDetail): Promise<void> {
         status: 'member',
         itemId,
       } satisfies NpPrToggleResultDetail)
+      syncFocFieldCard(board.projectId, itemId)
     } else {
       const itemId = membership.get(board.projectId)?.itemId
       if (!itemId) {
@@ -266,6 +282,7 @@ async function handlePrToggle(detail: NpPrToggleDetail): Promise<void> {
         status: 'not-member',
         itemId: null,
       } satisfies NpPrToggleResultDetail)
+      syncFocFieldCard(board.projectId, null)
     }
     console.log(LOG, `Delegated PR toggle done: ${board.title} → ${detail.desired}`)
   } catch (err) {

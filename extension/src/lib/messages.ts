@@ -15,6 +15,13 @@ export type GetPanelStateMessage = {
     name: string
     number: number
     kind: PageKind
+    /**
+     * Authoritative membership state from a just-performed mutation (spec 008).
+     * When set for the resolved board, the worker skips the REST membership
+     * search (whose index lags mutations by minutes): itemId present = member
+     * (field values fetched by node id), null = not a member.
+     */
+    membershipHint?: { projectId: string; itemId: string | null }
   }
 }
 
