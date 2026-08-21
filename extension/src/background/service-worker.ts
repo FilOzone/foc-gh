@@ -579,6 +579,44 @@ async function findProjectItemWithRestQuery(
  * Tries a narrow query (repo + type + number), then a broad query (repo + type only) so we
  * still client-filter by number when the API omits rows for the numeric token.
  */
+/**
+ * Both the FOC field card (GET_PANEL_STATE) and the native picker layer
+ * (GET_GLOBAL_BOARDS_STATE) resolve membership at page load on proactive
+ * repos, and multiple tabs may load at once. Dedupe concurrent identical
+ * lookups so a page costs one REST scan instead of two and bursts stay
+ * under GitHub's secondary rate limit.
+ */
+const membershipLookupInflight = new Map<string, Promise<ProjectItemNode | null>>()
+
+function findProjectItemViaRestDeduped(
+  token: string,
+  org: string,
+  projectNumber: number,
+  projectGraphqlId: string,
+  owner: string,
+  name: string,
+  number: number,
+  kind: 'issue' | 'pull_request',
+): Promise<ProjectItemNode | null> {
+  const key = [org, projectNumber, owner, name, number, kind].join('|').toLowerCase()
+  const existing = membershipLookupInflight.get(key)
+  if (existing) return existing
+  const p = findProjectItemViaRest(
+    token,
+    org,
+    projectNumber,
+    projectGraphqlId,
+    owner,
+    name,
+    number,
+    kind,
+  ).finally(() => {
+    membershipLookupInflight.delete(key)
+  })
+  membershipLookupInflight.set(key, p)
+  return p
+}
+
 async function findProjectItemViaRest(
   token: string,
   org: string,
@@ -1214,7 +1252,7 @@ async function resolveGlobalBoardRow(
     ?.organization?.projectV2
   if (!project?.id) return null
 
-  const match: ProjectItemNode | null = await findProjectItemViaRest(
+  const match: ProjectItemNode | null = await findProjectItemViaRestDeduped(
     bearer,
     parsed.org,
     parsed.number,
@@ -1448,7 +1486,7 @@ async function getPanelStateForBoardUrl(
       graphqlRequest(bearer, QUERY_PROJECT_V2_FIELD_DEFINITIONS, {
         projectId: project.id,
       }),
-      findProjectItemViaRest(
+      findProjectItemViaRestDeduped(
         bearer,
         parsed.org,
         parsed.number,

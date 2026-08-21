@@ -87,7 +87,39 @@ let currentCtx: PageContext | null = null
 let currentBoards: InjectedBoard[] = []
 let contentNodeId: string | null = null
 let membershipPromise: Promise<void> | null = null
+let membershipRetries = 0
 const membership = new Map<string, MembershipEntry>()
+
+/**
+ * A failed resolution must not be terminal: opening many tabs at once can
+ * trip GitHub's secondary rate limit and fail the lookup for a tab that
+ * would succeed seconds later (observed 2026-08-20 with the canonical test
+ * URL set). Retry with backoff; a later picker open also retries naturally
+ * once the promise is cleared.
+ */
+function retryMembershipLater(myGen: number): void {
+  if (myGen !== generation || membershipRetries >= 3) return
+  membershipRetries += 1
+  window.setTimeout(() => {
+    if (myGen !== generation) return
+    membershipPromise = null
+    resolveMembershipOnce()
+  }, 15_000 * membershipRetries)
+}
+
+/** Same failure class as membership, but for config/arming (board metadata). */
+let syncRetries = 0
+let lastCtxKey = ''
+
+function retrySyncLater(myGen: number): void {
+  if (myGen !== generation || syncRetries >= 3) return
+  syncRetries += 1
+  window.setTimeout(() => {
+    if (myGen !== generation) return
+    currentCtx = null // defeat the sameCtx guard so sync() runs fully again
+    void sync()
+  }, 15_000 * syncRetries)
+}
 
 function sameCtx(a: PageContext | null, b: PageContext | null): boolean {
   return JSON.stringify(a) === JSON.stringify(b)
@@ -103,7 +135,8 @@ async function resolveMembership(myGen: number): Promise<void> {
     })
     if (myGen !== generation) return
     if (!res.ok) {
-      console.warn(LOG, 'Membership resolution failed:', res.error)
+      console.warn(LOG, 'Membership resolution failed (will retry):', res.error)
+      retryMembershipLater(myGen)
       return
     }
     contentNodeId = res.contentNodeId
@@ -123,7 +156,8 @@ async function resolveMembership(myGen: number): Promise<void> {
       entries,
     } satisfies NpMembershipDetail)
   } catch (err) {
-    console.warn(LOG, 'Membership resolution error:', err)
+    console.warn(LOG, 'Membership resolution error (will retry):', err)
+    retryMembershipLater(myGen)
   }
 }
 
@@ -145,6 +179,12 @@ async function sync(): Promise<void> {
   contentNodeId = null
   membership.clear()
   membershipPromise = null
+  membershipRetries = 0
+  const ctxKey = JSON.stringify(ctx)
+  if (ctxKey !== lastCtxKey) {
+    lastCtxKey = ctxKey
+    syncRetries = 0
+  }
 
   if (!ctx) {
     dispatch(NP_EVENTS.config, { page: null, boards: [] } satisfies NpConfigDetail)
@@ -164,8 +204,9 @@ async function sync(): Promise<void> {
     })
     if (myGen !== generation) return
     if (!res.ok) {
-      console.warn(LOG, 'Board metadata unavailable:', res.error)
+      console.warn(LOG, 'Board metadata unavailable (will retry):', res.error)
       dispatch(NP_EVENTS.config, { page: ctx, boards: [] } satisfies NpConfigDetail)
+      retrySyncLater(myGen)
       return
     }
     currentBoards = res.boards.filter(
@@ -179,7 +220,8 @@ async function sync(): Promise<void> {
       resolveMembershipOnce()
     }
   } catch (err) {
-    console.warn(LOG, 'Config resolution error:', err)
+    console.warn(LOG, 'Config resolution error (will retry):', err)
+    retrySyncLater(myGen)
   }
 }
 
