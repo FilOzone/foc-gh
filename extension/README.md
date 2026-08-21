@@ -57,6 +57,7 @@ A production build that falls back to plain **`GITHUB_OAUTH_*`** prints a **warn
 ### Publishing a new version to Chrome Web Store
 
 1. **Bump the version** in both `extension/manifest.json` and `package.json` — the Web Store rejects uploads with the same version as the current listing.
+   If the release changes permissions, host permissions, or content-script matches, the dashboard's **Privacy practices** tab must be re-completed before publishing succeeds; canonical answer text lives in [docs/chrome-webstore-listing.md](../docs/chrome-webstore-listing.md).
 2. **`npm run publish:chrome`** — builds the production ZIP (with production OAuth credentials), uploads, and publishes.
 3. **Rebuild for dev**: `npm run build` — restores development OAuth credentials and adds `-dev` suffix to the version in `extension/dist/`.
 4. **Commit and push** the version bump.
