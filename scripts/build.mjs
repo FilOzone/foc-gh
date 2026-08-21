@@ -182,6 +182,24 @@ await esbuild.build({
 })
 
 await esbuild.build({
+  entryPoints: [path.join(root, 'extension', 'src', 'content', 'native-picker', 'native-picker-main.ts')],
+  bundle: true,
+  format: 'iife',
+  platform: 'browser',
+  target: 'es2022',
+  outfile: path.join(dist, 'native-picker.js'),
+})
+
+await esbuild.build({
+  entryPoints: [path.join(root, 'extension', 'src', 'content', 'native-picker', 'native-picker-injector.ts')],
+  bundle: true,
+  format: 'iife',
+  platform: 'browser',
+  target: 'es2022',
+  outfile: path.join(dist, 'native-picker-injector.js'),
+})
+
+await esbuild.build({
   entryPoints: [path.join(root, 'extension', 'src', 'options', 'options.ts')],
   bundle: true,
   format: 'esm',

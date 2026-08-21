@@ -86,6 +86,16 @@ After reloading the extension, navigate the GitHub tab to pick up new content sc
 npm run build  # then reload extension via chrome.management, then navigate tab
 ```
 
+### Testing a worktree build (agents working in git worktrees)
+
+Modern branded Chrome (137+) ignores `--load-extension`, and the dev profile's unpacked install points at the MAIN checkout's `extension/dist` (gitignored). To live-test a worktree build end to end without touching the user's dev browser or their working tree (verified 2026-08-19):
+
+1. Copy `~/.chrome-dev-profile` to a scratch directory (keeps GitHub cookies, extension options, and token; delete the `Singleton*` files from the copy) and launch a second Chrome on `--remote-debugging-port=9223` with `--user-data-dir=<copy>`.
+2. Back up the main checkout's `extension/dist`, copy the worktree's freshly built `dist` over it, then hard-reload the extension via `chrome.developerPrivate.reload(id)` evaluated on the copy's `chrome://extensions` tab. A plain `chrome.management.setEnabled` off/on toggle does NOT pick up manifest changes; `developerPrivate.reload` does.
+3. Drive tests through CDP on port 9223 only. When done, restore the backed-up `dist` immediately, kill the second Chrome, and delete the profile copy (~450MB).
+
+Do not point the user's own dev browser (port 9222) at worktree code, and never leave the main `dist` holding a worktree build: the user's primary browser serves whatever is on that path the next time its service worker restarts.
+
 ### Test URLs
 
 - **OR filter (saved view)**: `https://github.com/orgs/FilOzone/projects/14/views/44`
@@ -93,9 +103,10 @@ npm run build  # then reload extension via chrome.management, then navigate tab
 ## Architecture
 
 - `extension/src/content/board-filter/` — OR filter feature (fetch interceptor, parser, merger)
+- `extension/src/content/native-picker/` — global boards as native rows in GitHub's Projects picker via data injection (fetch interception, Relay store commits, IndexedDB persister seeding)
 - `extension/src/content/pr-expand/` — PR description auto-expand
 - `extension/src/lib/` — shared config, GitHub auth
 - `scripts/` — dev tooling (CDP reload, SW logs)
 - `specs/` — feature specs and research docs
 
-See `specs/007-project-board-or-filter/research.md` for detailed architecture of the OR filter feature, including the React Query cache invalidation approach.
+See `specs/007-project-board-or-filter/research.md` for detailed architecture of the OR filter feature (React Query cache invalidation) and `specs/008-native-picker-data-injection/research.md` for the native picker data injection (GitHub feed shapes, Relay membership commits, legacy PR form semantics).

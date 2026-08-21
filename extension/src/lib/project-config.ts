@@ -19,8 +19,13 @@ export const STORAGE_KEYS = {
 
 export const DEFAULT_BOARD_URLS = ['https://github.com/orgs/FilOzone/projects/14'] as const
 
-/** Glob-style owner/repo patterns (e.g. `FilOzone/*`), same syntax as {@link DEFAULT_OR_FILTER_BOARD_PATTERNS}. */
-export const DEFAULT_TARGET_REPOS = ['FilOzone/*', 'filecoin-project/*', 'filbeam/*'] as const
+/**
+ * Glob-style owner/repo patterns (e.g. `filecoin-project/*`), same syntax as
+ * {@link DEFAULT_OR_FILTER_BOARD_PATTERNS}. FilOzone repos are intentionally
+ * absent: the FOC board lives in that org, so GitHub's native UI already
+ * covers membership there; proactive cross-org checks only matter elsewhere.
+ */
+export const DEFAULT_TARGET_REPOS = ['filecoin-project/*', 'filbeam/*'] as const
 
 export const DEFAULT_OR_FILTER_BOARD_PATTERNS = [
   'https://github.com/orgs/FilOzone/projects/*',

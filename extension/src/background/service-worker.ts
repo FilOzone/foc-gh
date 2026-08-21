@@ -1,4 +1,10 @@
-import type { ExtensionMessage, GetGlobalBoardsStateResponse, GlobalBoardRowState } from '../lib/messages.js'
+import type {
+  ExtensionMessage,
+  GetGlobalBoardsStateResponse,
+  GetNativePickerBoardsResponse,
+  GlobalBoardRowState,
+  NativePickerBoard,
+} from '../lib/messages.js'
 import {
   findSingleSelectFieldByName,
   linesForBoardFieldDiagnostics,
@@ -24,7 +30,6 @@ import {
   MUTATION_UPDATE_SINGLE_SELECT,
   MUTATION_UPDATE_TEXT,
   QUERY_ISSUE_NODE_ID,
-  QUERY_NODE_PROJECT_ITEMS,
   QUERY_PR_NODE_ID,
   QUERY_PROJECT_STATUS_FIELD,
   QUERY_PROJECT_V2,
@@ -320,31 +325,6 @@ type ProjectItemNode = {
   fieldValues?: { nodes?: FieldValueNode[] }
 }
 
-type NodeWithItems = {
-  id?: string
-  projectItems?: { nodes?: ProjectItemNode[] }
-}
-
-function matchProjectItem(
-  nodes: ProjectItemNode[] | undefined,
-  projectId: string,
-  orgLogin: string,
-  projectNumber: number,
-): ProjectItemNode | null {
-  if (!nodes) return null
-  for (const it of nodes) {
-    if (it.project?.id === projectId) return it
-  }
-  const orgLower = orgLogin.toLowerCase()
-  for (const it of nodes) {
-    const p = it.project
-    if (p?.number !== projectNumber) continue
-    const login = p.owner?.login?.toLowerCase()
-    if (login === orgLower) return it
-  }
-  return null
-}
-
 function githubRestHeaders(token: string): Record<string, string> {
   return {
     Authorization: `Bearer ${token}`,
@@ -599,6 +579,44 @@ async function findProjectItemWithRestQuery(
  * Tries a narrow query (repo + type + number), then a broad query (repo + type only) so we
  * still client-filter by number when the API omits rows for the numeric token.
  */
+/**
+ * Both the FOC field card (GET_PANEL_STATE) and the native picker layer
+ * (GET_GLOBAL_BOARDS_STATE) resolve membership at page load on proactive
+ * repos, and multiple tabs may load at once. Dedupe concurrent identical
+ * lookups so a page costs one REST scan instead of two and bursts stay
+ * under GitHub's secondary rate limit.
+ */
+const membershipLookupInflight = new Map<string, Promise<ProjectItemNode | null>>()
+
+function findProjectItemViaRestDeduped(
+  token: string,
+  org: string,
+  projectNumber: number,
+  projectGraphqlId: string,
+  owner: string,
+  name: string,
+  number: number,
+  kind: 'issue' | 'pull_request',
+): Promise<ProjectItemNode | null> {
+  const key = [org, projectNumber, owner, name, number, kind].join('|').toLowerCase()
+  const existing = membershipLookupInflight.get(key)
+  if (existing) return existing
+  const p = findProjectItemViaRest(
+    token,
+    org,
+    projectNumber,
+    projectGraphqlId,
+    owner,
+    name,
+    number,
+    kind,
+  ).finally(() => {
+    membershipLookupInflight.delete(key)
+  })
+  membershipLookupInflight.set(key, p)
+  return p
+}
+
 async function findProjectItemViaRest(
   token: string,
   org: string,
@@ -1082,6 +1100,10 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
     return getGlobalBoardsState(message.payload)
   }
 
+  if (message.type === 'GET_NATIVE_PICKER_BOARDS') {
+    return getNativePickerBoards()
+  }
+
   if (message.type === 'DELETE_PROJECT_ITEM') {
     const cfg = await loadConfig()
     const token = resolveGithubBearer(cfg)
@@ -1212,10 +1234,13 @@ async function resolveGlobalBoardRow(
   bearer: string,
   boardUrl: string,
   payload: { owner: string; name: string; number: number; kind: 'issue' | 'pull_request' },
-  contentId: string,
 ): Promise<GlobalBoardRowState | null> {
   const parsed = parseOrgProjectUrl(boardUrl)
   if (!parsed) return null
+
+  // Same-org boards are out of scope: GitHub handles them natively, so the
+  // extension skips them everywhere (no row, no card, no membership lookups).
+  if (payload.owner.trim().toLowerCase() === parsed.org.trim().toLowerCase()) return null
 
   const projRes = await graphqlRequest(bearer, QUERY_PROJECT_V2, {
     org: parsed.org,
@@ -1227,42 +1252,16 @@ async function resolveGlobalBoardRow(
     ?.organization?.projectV2
   if (!project?.id) return null
 
-  const crossOrg = payload.owner.trim().toLowerCase() !== parsed.org.trim().toLowerCase()
-  let match: ProjectItemNode | null = null
-
-  if (crossOrg) {
-    match = await findProjectItemViaRest(
-      bearer,
-      parsed.org,
-      parsed.number,
-      project.id,
-      payload.owner,
-      payload.name,
-      payload.number,
-      payload.kind,
-    )
-  } else {
-    const itemsRes = await graphqlRequest(bearer, QUERY_NODE_PROJECT_ITEMS, {
-      id: contentId,
-    })
-    if (!itemsRes.errors?.length) {
-      const node = (itemsRes.data as { node?: NodeWithItems })?.node
-      const items = node?.projectItems?.nodes
-      match = matchProjectItem(items, project.id, parsed.org, parsed.number)
-    }
-    if (!match) {
-      match = await findProjectItemViaRest(
-        bearer,
-        parsed.org,
-        parsed.number,
-        project.id,
-        payload.owner,
-        payload.name,
-        payload.number,
-        payload.kind,
-      )
-    }
-  }
+  const match: ProjectItemNode | null = await findProjectItemViaRestDeduped(
+    bearer,
+    parsed.org,
+    parsed.number,
+    project.id,
+    payload.owner,
+    payload.name,
+    payload.number,
+    payload.kind,
+  )
 
   return {
     url: boardUrl.trim(),
@@ -1270,6 +1269,73 @@ async function resolveGlobalBoardRow(
     itemId: match?.id ?? null,
     label: project.title,
   }
+}
+
+/**
+ * Board metadata for native picker injection (spec 008). Board identity rarely
+ * changes, so results are cached for the service worker's lifetime.
+ */
+const nativePickerBoardCache = new Map<string, NativePickerBoard>()
+
+async function getNativePickerBoards(): Promise<GetNativePickerBoardsResponse> {
+  const cfg = await loadConfig()
+  const bearer = resolveGithubBearer(cfg)
+  if (!bearer) {
+    return {
+      ok: false,
+      code: 'NO_TOKEN',
+      error: 'Configure a GitHub PAT or OAuth token in extension options.',
+    }
+  }
+
+  const boards: NativePickerBoard[] = []
+  for (const raw of cfg.crossOrgBoardUrls) {
+    const url = raw.trim()
+    const parsed = parseOrgProjectUrl(url)
+    if (!parsed) continue
+
+    const cached = nativePickerBoardCache.get(url)
+    if (cached) {
+      boards.push(cached)
+      continue
+    }
+
+    const res = await graphqlRequest(bearer, QUERY_PROJECT_V2, {
+      org: parsed.org,
+      number: parsed.number,
+    })
+    if (res.errors?.length) continue
+    const project = (
+      res.data as {
+        organization?: {
+          projectV2?: {
+            id?: string
+            title?: string
+            url?: string
+            number?: number
+            closed?: boolean
+            databaseId?: number | null
+            viewerCanUpdate?: boolean
+          }
+        }
+      }
+    )?.organization?.projectV2
+    if (!project?.id || project.closed) continue
+
+    const board: NativePickerBoard = {
+      projectId: project.id,
+      databaseId: typeof project.databaseId === 'number' ? project.databaseId : null,
+      title: project.title ?? url,
+      number: project.number ?? parsed.number,
+      org: parsed.org,
+      url: project.url ?? url,
+      viewerCanUpdate: project.viewerCanUpdate === true,
+    }
+    nativePickerBoardCache.set(url, board)
+    boards.push(board)
+  }
+
+  return { ok: true, boards }
 }
 
 async function getGlobalBoardsState(payload: {
@@ -1307,7 +1373,7 @@ async function getGlobalBoardsState(payload: {
 
   const urls = cfg.crossOrgBoardUrls.map((u) => u.trim()).filter((u) => u.length > 0)
   const rows = (
-    await Promise.all(urls.map((url) => resolveGlobalBoardRow(bearer, url, payload, contentId)))
+    await Promise.all(urls.map((url) => resolveGlobalBoardRow(bearer, url, payload)))
   ).filter((r): r is GlobalBoardRowState => r !== null)
 
   return { ok: true, contentNodeId: contentId, rows }
@@ -1318,6 +1384,7 @@ type PanelPayload = {
   name: string
   number: number
   kind: 'issue' | 'pull_request'
+  membershipHint?: { projectId: string; itemId: string | null }
 }
 
 async function getPanelStateForBoardUrl(
@@ -1333,6 +1400,21 @@ async function getPanelStateForBoardUrl(
   const parsed = parseOrgProjectUrl(primaryUrl)
   if (!parsed) {
     return { ok: false as const, error: `Invalid board URL: ${primaryUrl}` }
+  }
+
+  // Same-org boards are out of scope: GitHub renders and manages them
+  // natively, so the extension skips them entirely (no card, no lookups).
+  if (payload.owner.trim().toLowerCase() === parsed.org.trim().toLowerCase()) {
+    return {
+      ok: true as const,
+      projectId: '',
+      projectTitle: '',
+      primaryBoardUrl: primaryUrl,
+      contentNodeId: '',
+      boardFields: [],
+      fieldDefsError: null,
+      item: null,
+    }
   }
 
   const idQuery = payload.kind === 'issue' ? QUERY_ISSUE_NODE_ID : QUERY_PR_NODE_ID
@@ -1370,25 +1452,41 @@ async function getPanelStateForBoardUrl(
     return { ok: false as const, error: 'Issue or pull request not found.' }
   }
 
-  /**
-   * `QUERY_NODE_PROJECT_ITEMS` only returns project links visible in-repo for the
-   * same org; cross-org boards (issue under e.g. filecoin-project, project under
-   * FilOzone) always come back empty after a wasted round trip. Skip GraphQL and
-   * use REST list-items immediately when repo owner !== configured project org.
-   */
-  const crossOrg =
-    payload.owner.trim().toLowerCase() !== parsed.org.trim().toLowerCase()
-
   let boardFields: SerializableProjectField[] = []
   let match: ProjectItemNode | null = null
 
   let fieldDefsError: string | null = null
-  if (crossOrg) {
+  const hint = payload.membershipHint
+  if (hint && hint.projectId === project.id) {
+    // Authoritative post-mutation state from the page (spec 008): the REST
+    // membership search index lags mutations by minutes, so trust the hint
+    // and resolve field values by node id instead of searching.
+    const defsRes = await graphqlRequest(bearer, QUERY_PROJECT_V2_FIELD_DEFINITIONS, {
+      projectId: project.id,
+    })
+    if (defsRes.errors?.length) {
+      fieldDefsError = firstError(defsRes.errors)
+    } else {
+      boardFields = parseProjectV2FieldDefinitions(defsRes.data)
+    }
+    if (hint.itemId) {
+      const fvRes = await graphqlRequest(bearer, QUERY_PROJECT_V2_ITEM_FIELD_VALUES, {
+        itemId: hint.itemId,
+      })
+      const fvNode = (fvRes.data as { node?: { fieldValues?: ProjectItemNode['fieldValues'] } })
+        ?.node
+      match = {
+        id: hint.itemId,
+        project: { id: project.id },
+        fieldValues: fvRes.errors?.length ? undefined : fvNode?.fieldValues,
+      }
+    }
+  } else {
     const [defsRes, restMatch] = await Promise.all([
       graphqlRequest(bearer, QUERY_PROJECT_V2_FIELD_DEFINITIONS, {
         projectId: project.id,
       }),
-      findProjectItemViaRest(
+      findProjectItemViaRestDeduped(
         bearer,
         parsed.org,
         parsed.number,
@@ -1405,38 +1503,6 @@ async function getPanelStateForBoardUrl(
       boardFields = parseProjectV2FieldDefinitions(defsRes.data)
     }
     match = restMatch
-  } else {
-    const [itemsRes, defsRes] = await Promise.all([
-      graphqlRequest(bearer, QUERY_NODE_PROJECT_ITEMS, {
-        id: contentId,
-      }),
-      graphqlRequest(bearer, QUERY_PROJECT_V2_FIELD_DEFINITIONS, {
-        projectId: project.id,
-      }),
-    ])
-    if (itemsRes.errors?.length) {
-      return { ok: false as const, error: firstError(itemsRes.errors) }
-    }
-    if (defsRes.errors?.length) {
-      fieldDefsError = firstError(defsRes.errors)
-    } else {
-      boardFields = parseProjectV2FieldDefinitions(defsRes.data)
-    }
-    const node = (itemsRes.data as { node?: NodeWithItems })?.node
-    const items = node?.projectItems?.nodes
-    match = matchProjectItem(items, project.id, parsed.org, parsed.number)
-    if (!match) {
-      match = await findProjectItemViaRest(
-        bearer,
-        parsed.org,
-        parsed.number,
-        project.id,
-        payload.owner,
-        payload.name,
-        payload.number,
-        payload.kind,
-      )
-    }
   }
 
   return {

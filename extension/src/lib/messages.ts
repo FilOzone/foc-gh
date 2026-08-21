@@ -15,6 +15,13 @@ export type GetPanelStateMessage = {
     name: string
     number: number
     kind: PageKind
+    /**
+     * Authoritative membership state from a just-performed mutation (spec 008).
+     * When set for the resolved board, the worker skips the REST membership
+     * search (whose index lags mutations by minutes): itemId present = member
+     * (field values fetched by node id), null = not a member.
+     */
+    membershipHint?: { projectId: string; itemId: string | null }
   }
 }
 
@@ -44,6 +51,26 @@ export type DeleteProjectItemMessage = {
     itemId: string
   }
 }
+
+/** Native picker data injection (spec 008): configured board metadata. */
+export type GetNativePickerBoardsMessage = {
+  type: 'GET_NATIVE_PICKER_BOARDS'
+}
+
+export type NativePickerBoard = {
+  projectId: string
+  /** Numeric memex id (legacy PR picker); null when resolution failed. */
+  databaseId: number | null
+  title: string
+  number: number
+  org: string
+  url: string
+  viewerCanUpdate: boolean
+}
+
+export type GetNativePickerBoardsResponse =
+  | { ok: true; boards: NativePickerBoard[] }
+  | { ok: false; error: string; code?: 'NO_TOKEN' }
 
 export type GlobalBoardRowState = {
   url: string
@@ -134,6 +161,7 @@ export type ExtensionMessage =
   | AddToProjectMessage
   | GetGlobalBoardsStateMessage
   | DeleteProjectItemMessage
+  | GetNativePickerBoardsMessage
   | UpdateStatusMessage
   | UpdateItemFieldMessage
   | StatusFieldMessage
