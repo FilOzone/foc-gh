@@ -164,24 +164,6 @@ await esbuild.build({
 })
 
 await esbuild.build({
-  entryPoints: [path.join(root, 'extension', 'src', 'content', 'board-filter', 'board-filter-main.ts')],
-  bundle: true,
-  format: 'iife',
-  platform: 'browser',
-  target: 'es2022',
-  outfile: path.join(dist, 'board-filter.js'),
-})
-
-await esbuild.build({
-  entryPoints: [path.join(root, 'extension', 'src', 'content', 'board-filter', 'board-data-injector.ts')],
-  bundle: true,
-  format: 'iife',
-  platform: 'browser',
-  target: 'es2022',
-  outfile: path.join(dist, 'board-data-injector.js'),
-})
-
-await esbuild.build({
   entryPoints: [path.join(root, 'extension', 'src', 'content', 'native-picker', 'native-picker-main.ts')],
   bundle: true,
   format: 'iife',

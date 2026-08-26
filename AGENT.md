@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Chrome extension (Manifest V3) that adds utilities for the FOC team working in GitHub. Key feature: OR filter support for GitHub project board views.
+Chrome extension (Manifest V3) that adds utilities for the FOC team working in GitHub, including a native-style project board sidebar for cross-org issues/PRs and auto-expand for project panels.
 
 ## Build & Test
 
@@ -98,15 +98,16 @@ Do not point the user's own dev browser (port 9222) at worktree code, and never 
 
 ### Test URLs
 
-- **OR filter (saved view)**: `https://github.com/orgs/FilOzone/projects/14/views/44`
+- **FOC board**: `https://github.com/orgs/FilOzone/projects/14/views/44`
 
 ## Architecture
 
-- `extension/src/content/board-filter/` — OR filter feature (fetch interceptor, parser, merger)
 - `extension/src/content/native-picker/` — global boards as native rows in GitHub's Projects picker via data injection (fetch interception, Relay store commits, IndexedDB persister seeding)
 - `extension/src/content/pr-expand/` — PR description auto-expand
 - `extension/src/lib/` — shared config, GitHub auth
 - `scripts/` — dev tooling (CDP reload, SW logs)
 - `specs/` — feature specs and research docs
 
-See `specs/007-project-board-or-filter/research.md` for detailed architecture of the OR filter feature (React Query cache invalidation) and `specs/008-native-picker-data-injection/research.md` for the native picker data injection (GitHub feed shapes, Relay membership commits, legacy PR form semantics).
+See `specs/008-native-picker-data-injection/research.md` for the native picker data injection (GitHub feed shapes, Relay membership commits, legacy PR form semantics).
+
+**Removed:** the OR filter feature (`extension/src/content/board-filter/`, spec `specs/007-project-board-or-filter/`) was stripped out because GitHub Projects now natively supports `AND`/`OR` in the filter bar — see [Advanced search for Projects is generally available](https://github.blog/changelog/2026-07-16-advanced-search-for-projects-is-generally-available/) (2026-07-16). The spec directory is kept for history only.

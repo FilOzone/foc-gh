@@ -5,9 +5,9 @@
  *   → main-world injector (native-picker-injector.ts) → feed augmentation.
  *
  * The main-world script must be injected synchronously at startup so its
- * fetch patch beats GitHub's first captured fetch reference (same constraint
- * as board-filter). Config and membership resolution run async afterwards;
- * the injector stays a pure passthrough until armed.
+ * fetch patch beats GitHub's first captured fetch reference. Config and
+ * membership resolution run async afterwards; the injector stays a pure
+ * passthrough until armed.
  *
  * Membership resolution cost note: `GET_GLOBAL_BOARDS_STATE` can involve a
  * REST membership scan for cross-org boards, so it runs at page load only for

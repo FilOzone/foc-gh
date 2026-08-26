@@ -13,23 +13,17 @@ export const STORAGE_KEYS = {
   crossOrgTargetReposMode: 'cross_org_target_repos_mode',
   /** When true (default), FOC sidebar card field body loads expanded on issues/PRs. */
   issuePrProjectsAutoExpand: 'issue_pr_projects_auto_expand',
-  /** URL patterns (glob-style) for project boards where OR filter support is enabled. */
-  orFilterBoardPatterns: 'or_filter_board_patterns',
 } as const
 
 export const DEFAULT_BOARD_URLS = ['https://github.com/orgs/FilOzone/projects/14'] as const
 
 /**
- * Glob-style owner/repo patterns (e.g. `filecoin-project/*`), same syntax as
- * {@link DEFAULT_OR_FILTER_BOARD_PATTERNS}. FilOzone repos are intentionally
- * absent: the FOC board lives in that org, so GitHub's native UI already
- * covers membership there; proactive cross-org checks only matter elsewhere.
+ * Glob-style owner/repo patterns (e.g. `filecoin-project/*`). FilOzone repos
+ * are intentionally absent: the FOC board lives in that org, so GitHub's
+ * native UI already covers membership there; proactive cross-org checks only
+ * matter elsewhere.
  */
 export const DEFAULT_TARGET_REPOS = ['filecoin-project/*', 'filbeam/*'] as const
-
-export const DEFAULT_OR_FILTER_BOARD_PATTERNS = [
-  'https://github.com/orgs/FilOzone/projects/*',
-] as const
 
 export const DEFAULT_STATUS_FIELD_NAME = 'Status'
 
@@ -47,7 +41,6 @@ export type StoredConfig = {
   crossOrgTargetRepos: string[]
   crossOrgTargetReposMode: TargetRepoMode
   issuePrProjectsAutoExpand: boolean
-  orFilterBoardPatterns: string[]
 }
 
 export function normalizeRepoKey(owner: string, name: string): string {
@@ -117,12 +110,10 @@ export async function loadConfig(): Promise<StoredConfig> {
     STORAGE_KEYS.crossOrgTargetRepos,
     STORAGE_KEYS.crossOrgTargetReposMode,
     STORAGE_KEYS.issuePrProjectsAutoExpand,
-    STORAGE_KEYS.orFilterBoardPatterns,
   ])
 
   const urls = raw[STORAGE_KEYS.crossOrgBoardUrls] as string[] | undefined
   const repos = raw[STORAGE_KEYS.crossOrgTargetRepos] as string[] | undefined
-  const orPatterns = raw[STORAGE_KEYS.orFilterBoardPatterns] as string[] | undefined
   const targetReposMode = readTargetRepoMode(raw as Record<string, unknown>, repos)
   const autoRaw = raw[STORAGE_KEYS.issuePrProjectsAutoExpand]
   const issuePrProjectsAutoExpand = autoRaw === false ? false : true
@@ -159,8 +150,6 @@ export async function loadConfig(): Promise<StoredConfig> {
     crossOrgTargetRepos: Array.isArray(repos) ? repos : [],
     crossOrgTargetReposMode: targetReposMode,
     issuePrProjectsAutoExpand,
-    orFilterBoardPatterns:
-      Array.isArray(orPatterns) ? orPatterns : [...DEFAULT_OR_FILTER_BOARD_PATTERNS],
   }
 }
 
@@ -173,17 +162,6 @@ function globToRegExp(pattern: string): RegExp {
     .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
     .replace(/\*/g, '.*')
   return new RegExp(`^${escaped}$`, 'i')
-}
-
-/** Check whether a URL matches any of the configured OR filter board patterns. */
-export function isOrFilterBoard(config: StoredConfig, pageUrl: string): boolean {
-  return config.orFilterBoardPatterns.some((pattern) => {
-    try {
-      return globToRegExp(pattern.trim()).test(pageUrl)
-    } catch {
-      return false
-    }
-  })
 }
 
 /** The `owner/repo` glob patterns actually in effect, given the current mode. */

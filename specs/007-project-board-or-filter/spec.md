@@ -2,7 +2,7 @@
 
 **Feature Branch**: `007-project-board-or-filter`  
 **Created**: 2026-05-27  
-**Status**: Draft  
+**Status**: Removed 2026-08-26 — GitHub Projects now natively supports `AND`/`OR` in the filter bar, see [Advanced search for Projects is generally available](https://github.blog/changelog/2026-07-16-advanced-search-for-projects-is-generally-available/) (2026-07-16). Kept for history only; the implementation was deleted from `extension/src/content/board-filter/`.  
 **Input**: User description: "Support enriched query syntax on GitHub project boards — specifically OR conditions (GitHub issue #8)."
 
 ## User Scenarios & Testing *(mandatory)*

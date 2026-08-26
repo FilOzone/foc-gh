@@ -2,8 +2,7 @@
  * Main-world data injector for the native Projects picker (spec 008).
  *
  * Injected via <script src> at document_start from native-picker-main.ts so
- * the fetch patch beats GitHub's first captured fetch reference (same
- * requirement and pattern as board-filter/board-data-injector.ts).
+ * the fetch patch beats GitHub's first captured fetch reference.
  *
  * The patch is installed unconditionally but stays a pure passthrough until a
  * `filoz-np-config` event arms it with boards for the current page. Every
